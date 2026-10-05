@@ -1,0 +1,10 @@
+{
+  "countries": [
+    { "code": "62", "name": "Indonesia", "flag": "🇮🇩", "selected": true },
+    { "code": "60", "name": "Malaysia", "flag": "🇲🇾", "selected": false },
+    { "code": "65", "name": "Singapore", "flag": "🇸🇬", "selected": false },
+    { "code": "61", "name": "Australia", "flag": "🇦🇺", "selected": false },
+    { "code": "1", "name": "USA / Canada", "flag": "🇺🇸", "selected": false },
+    { "code": "44", "name": "United Kingdom", "flag": "🇬🇧", "selected": false }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "articles": [
+    {
+      "id": 1,
+      "title": "Panduan Lengkap Liburan ke Mandalika Lombok",
+      "description": "Tips rute terbaik dari bandara, pilihan pantai tersembunyi, serta daya tarik Sirkuit Internasional Mandalika...",
+      "image": "/images/pantaimandalika.jpg",
+      "linkText": "Pesan Transportasi &rarr;"
+    },
+    {
+      "id": 2,
+      "title": "Tips Mendaki Gunung Rinjani via Senaru & Sembalun",
+      "description": "Hal-hal penting yang perlu Anda persiapkan sebelum memulai pendakian, termasuk layanan antar-jemput yang tepat waktu.",
+      "image": "/images/gunungrinjani.jpg",
+      "linkText": "Pesan Transportasi &rarr;"
+    },
+    {
+      "id": 3,
+      "title": "Menikmati Keindahan Pantai Pink Lombok",
+      "description": "Rute tercepat dari bandara ke Pantai Pink, tips terbaik untuk menikmati keindahan pantai, dan layanan transportasi yang nyaman.",
+      "image": "/images/pantaipink.jpg",
+      "linkText": "Pesan Transportasi &rarr;"
+    }
+  ]
+}

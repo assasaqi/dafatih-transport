@@ -1,0 +1,39 @@
+{
+  "galleryItems": [
+    {
+      "image": "/fotos/1.png",
+      "title": "Penjemputan Bandara BIL",
+      "description": "Layanan jemput tepat waktu di Bandara Internasional Lombok menuju Kuta."
+    },
+    {
+      "image": "/fotos/2.png",
+      "title": "Wisata Senggigi",
+      "description": "Perjalanan nyaman menikmati panorama pantai sunset di kawasan Senggigi."
+    },
+        {
+      "image": "/fotos/3.png",
+      "title": "Wisata Kuta Mandalika",
+      "description": "Perjalanan nyaman menikmati panorama pantai sunset di kawasan Senggigi."
+    },
+     {
+      "image": "/fotos/4.png",
+      "title": "Wisata Pantai Pink",
+      "description": "Perjalanan nyaman menikmati panorama pantai sunset di kawasan Senggigi."
+    },
+     {
+      "image": "/fotos/5.png",
+      "title": "Pantai Selong belanak",
+      "description": "Perjalanan nyaman menikmati panorama pantai sunset di kawasan Senggigi."
+    },
+     {
+      "image": "/fotos/6.png",
+      "title": "Wisata Sembalun Rinjani",
+      "description": "Perjalanan nyaman menikmati panorama pantai sunset di kawasan Senggigi."
+    },
+     {
+      "image": "/fotos/7.png",
+      "title": "Wisata Gili Trawangan",
+      "description": "Perjalanan nyaman menikmati panorama pantai sunset di kawasan Senggigi."
+    }
+  ]
+}
