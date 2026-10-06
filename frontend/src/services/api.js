@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-    baseURL: 'https://dev.dafatihtransport.com/api',
+    baseURL: 'https://dafatih-transport.rasmantech.web.id/api',
     baseURL: 'http://localhost:5000/api',
     headers: {
         'Content-Type': 'application/json',

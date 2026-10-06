@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useHome } from '@/context/HomeContext';
 import { getRoutes, getBlogs } from '@/services/api';
 
-import heroData from '@/data/hero.json';
-
 // Secara dinamis membaca semua berkas gambar dari folder /public/images/
 const localImagesModules = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp,avif}', {
     eager: true,
