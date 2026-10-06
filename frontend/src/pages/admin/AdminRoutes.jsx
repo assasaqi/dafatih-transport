@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { getRoutes, createRoute, updateRoute, deleteRoute } from '@/services/api';
 import AdminNavbar from '@/components/AdminNavbar';
 
@@ -9,6 +9,9 @@ const AdminRoutes = () => {
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({ pickup_location: '', dropoff_location: '', price: '' });
     const [imageFile, setImageFile] = useState(null);
+    const [activeDropdownId, setActiveDropdownId] = useState(null);
+
+    const dropdownRef = useRef(null);
 
     const loadRoutes = () => {
         setLoading(true);
@@ -22,9 +25,24 @@ const AdminRoutes = () => {
 
     useEffect(() => {
         loadRoutes();
+
+        // Menutup dropdown saat mengklik area di luar dropdown
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setActiveDropdownId(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const toggleDropdown = (id, e) => {
+        e.stopPropagation();
+        setActiveDropdownId(activeDropdownId === id ? null : id);
+    };
+
     const handleOpenModal = (route = null) => {
+        setActiveDropdownId(null);
         setImageFile(null);
         if (route) {
             setEditingId(route.id);
@@ -59,6 +77,7 @@ const AdminRoutes = () => {
     };
 
     const handleDelete = async (id) => {
+        setActiveDropdownId(null);
         if (window.confirm('Hapus rute ini?')) {
             try {
                 await deleteRoute(id);
@@ -73,8 +92,8 @@ const AdminRoutes = () => {
         <>
             <style>{`
         .admin-container {
-          padding: 20px 5%;
-          max-width: 1100px;
+          padding: 24px 5%;
+          max-width: 1200px;
           margin: 0 auto;
           box-sizing: border-box;
         }
@@ -83,19 +102,19 @@ const AdminRoutes = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 20px;
-          gap: 12px;
+          margin-bottom: 24px;
+          gap: 16px;
         }
 
         .admin-title-area h2 {
-          font-size: 1.3rem;
+          font-size: 1.35rem;
           font-weight: 800;
           color: #0f172a;
           margin: 0;
         }
 
         .admin-title-area p {
-          font-size: 0.8rem;
+          font-size: 0.82rem;
           color: #64748b;
           margin: 4px 0 0 0;
         }
@@ -104,155 +123,173 @@ const AdminRoutes = () => {
           background: #0284c7;
           color: #fff;
           border: none;
-          padding: 10px 16px;
-          border-radius: 6px;
+          padding: 10px 18px;
+          border-radius: 8px;
           font-weight: 700;
           font-size: 0.82rem;
           cursor: pointer;
           white-space: nowrap;
           display: inline-flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
+          box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
+          transition: background 0.2s;
         }
 
-        /* 🖥️ Mode Tablet & Desktop (Tabel) */
-        .tablet-table-wrapper {
-          display: block;
+        .btn-add-primary:hover {
+          background: #0369a1;
+        }
+
+        /* Pembungkus Tabel */
+        .table-card-wrapper {
           background: #fff;
-          border-radius: 8px;
+          border-radius: 12px;
           border: 1px solid #e2e8f0;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .table-responsive {
+          width: 100%;
           overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
         }
 
         .admin-table {
           width: 100%;
           border-collapse: collapse;
           text-align: left;
-          font-size: 0.85rem;
+          font-size: 0.82rem;
+          min-width: 480px;
         }
 
         .admin-table th {
           background: #f8fafc;
-          padding: 12px;
-          border-bottom: 1px solid #e2e8f0;
-          color: #334155;
+          padding: 12px 14px;
+          border-bottom: 1.5px solid #e2e8f0;
+          color: #475569;
+          font-weight: 700;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+          white-space: nowrap;
         }
 
         .admin-table td {
-          padding: 12px;
+          padding: 10px 14px;
           border-bottom: 1px solid #f1f5f9;
+          color: #1e293b;
+          vertical-align: middle;
+          white-space: nowrap;
         }
 
-        /* Jarak antar tombol di Mode Tabel Desktop/Tablet */
-        .action-buttons-cell {
+        .cell-truncate {
+          max-width: 120px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .admin-table tbody tr:hover {
+          background-color: #f8fafc;
+        }
+
+        .route-img-thumb {
+          width: 46px;
+          height: 32px;
+          object-fit: cover;
+          border-radius: 6px;
+          border: 1px solid #e2e8f0;
+          display: block;
+          margin: 0 auto;
+        }
+
+        /* Style Dropdown Aksi */
+        .dropdown-wrapper {
+          position: relative;
+          display: inline-block;
+        }
+
+        .btn-dropdown-toggle {
+          background: #f1f5f9;
+          border: 1px solid #cbd5e1;
+          color: #334155;
+          width: 32px;
+          height: 32px;
+          border-radius: 6px;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-        }
-
-        .btn-action-edit {
-          background: #f59e0b;
-          color: #fff;
-          border: none;
-          padding: 6px 12px;
-          border-radius: 4px;
-          font-size: 0.75rem;
-          font-weight: 700;
           cursor: pointer;
+          transition: all 0.2s;
         }
 
-        .btn-action-delete {
-          background: #ef4444;
-          color: #fff;
-          border: none;
-          padding: 6px 12px;
-          border-radius: 4px;
-          font-size: 0.75rem;
-          font-weight: 700;
-          cursor: pointer;
-        }
-
-        /* 📱 Mode Mobile (< 600px) */
-        .mobile-routes-grid {
-          display: none;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .route-card-mobile {
-          background: #fff;
-          border: 1px solid #e2e8f0;
-          border-radius: 10px;
-          padding: 14px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .route-card-content {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-        }
-
-        .route-card-img {
-          width: 65px;
-          height: 55px;
-          border-radius: 6px;
-          object-fit: cover;
-          flex-shrink: 0;
-        }
-
-        .route-card-info {
-          flex-grow: 1;
-        }
-
-        .route-card-title {
-          font-weight: 700;
-          font-size: 0.88rem;
+        .btn-dropdown-toggle:hover {
+          background: #e2e8f0;
           color: #0f172a;
-          margin-bottom: 4px;
         }
 
-        .route-card-price {
-          font-weight: 800;
-          color: #0284c7;
-          font-size: 0.85rem;
+        .dropdown-menu-list {
+          position: absolute;
+          right: 0;
+          top: 38px;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          min-width: 120px;
+          z-index: 100;
+          overflow: hidden;
+          padding: 4px 0;
         }
 
-        .route-card-actions {
-          display: flex;
-          flex-direction: row;
-          gap: 10px;
+        .dropdown-item-btn {
           width: 100%;
+          text-align: left;
+          background: none;
+          border: none;
+          padding: 8px 12px;
+          font-size: 0.78rem;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: background 0.15s;
         }
 
-        .route-card-actions .btn-action-edit,
-        .route-card-actions .btn-action-delete {
-          flex: 1;
-          padding: 8px;
-          border-radius: 6px;
-          font-size: 0.8rem;
+        .dropdown-item-btn.edit {
+          color: #d97706;
         }
 
-        @media (max-width: 600px) {
-          .tablet-table-wrapper {
-            display: none;
-          }
+        .dropdown-item-btn.edit:hover {
+          background: #fef3c7;
+        }
 
-          .mobile-routes-grid {
-            display: flex;
-          }
+        .dropdown-item-btn.delete {
+          color: #dc2626;
+        }
 
+        .dropdown-item-btn.delete:hover {
+          background: #fee2e2;
+        }
+
+        @media (max-width: 640px) {
           .admin-header-bar {
             flex-direction: column;
-            align-items: flex-start;
+            align-items: stretch;
           }
 
           .btn-add-primary {
             width: 100%;
             justify-content: center;
+          }
+
+          .admin-container {
+            padding: 16px 3%;
+          }
+
+          .cell-truncate {
+            max-width: 90px;
           }
         }
       `}</style>
@@ -263,7 +300,7 @@ const AdminRoutes = () => {
                 <div className="admin-header-bar">
                     <div className="admin-title-area">
                         <h2>Kelola Rute & Tarif</h2>
-                        <p>Atur daftar rute transfer dan tarif resmi.</p>
+                        <p>Atur daftar rute transfer dan tarif resmi aplikasi.</p>
                     </div>
                     <button className="btn-add-primary" onClick={() => handleOpenModal()}>
                         <i className="fa-solid fa-plus"></i> Tambah Rute
@@ -271,98 +308,106 @@ const AdminRoutes = () => {
                 </div>
 
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                        <i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '8px' }}></i> Memuat rute...
+                    <div style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b' }}>
+                        <i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '8px', fontSize: '1.2rem' }}></i> Memuat daftar rute...
                     </div>
                 ) : (
-                    <>
-                        {/* Tampilan Desktop / Tablet (Tabel) */}
-                        <div className="tablet-table-wrapper">
+                    <div className="table-card-wrapper">
+                        <div className="table-responsive">
                             <table className="admin-table">
                                 <thead>
                                     <tr>
-                                        <th style={{ width: '70px' }}>Foto</th>
+                                        <th style={{ width: '55px', textAlign: 'center' }}>Foto</th>
                                         <th>Penjemputan</th>
                                         <th>Tujuan</th>
-                                        <th>Harga</th>
-                                        <th style={{ textAlign: 'center', minWidth: '150px' }}>Aksi</th>
+                                        <th>Tarif</th>
+                                        <th style={{ textAlign: 'center', width: '60px' }}>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {routes.map((r) => (
-                                        <tr key={r.id}>
-                                            <td>
-                                                <img
-                                                    src={r.image_url ? (r.image_url.startsWith('http') ? r.image_url : `http://localhost:5000${r.image_url}`) : 'https://placehold.co/60x40'}
-                                                    style={{ width: '50px', height: '35px', objectFit: 'cover', borderRadius: '4px' }}
-                                                    alt={r.pickup_location}
-                                                />
-                                            </td>
-                                            <td style={{ fontWeight: 600 }}>{r.pickup_location}</td>
-                                            <td style={{ fontWeight: 600 }}>{r.dropoff_location}</td>
-                                            <td style={{ fontWeight: 700, color: '#0284c7' }}>Rp {Number(r.price).toLocaleString('id-ID')}</td>
-                                            <td>
-                                                <div className="action-buttons-cell">
-                                                    <button className="btn-action-edit" onClick={() => handleOpenModal(r)}>Edit</button>
-                                                    <button className="btn-action-delete" onClick={() => handleDelete(r.id)}>Hapus</button>
-                                                </div>
+                                    {routes.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
+                                                Belum ada data rute yang tersimpan.
                                             </td>
                                         </tr>
-                                    ))}
+                                    ) : (
+                                        routes.map((r) => (
+                                            <tr key={r.id}>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <img
+                                                        src={r.image_url ? (r.image_url.startsWith('http') ? r.image_url : `http://localhost:5000${r.image_url}`) : 'https://placehold.co/60x40'}
+                                                        className="route-img-thumb"
+                                                        alt={r.pickup_location}
+                                                    />
+                                                </td>
+                                                <td style={{ fontWeight: 600 }} className="cell-truncate" title={r.pickup_location}>
+                                                    {r.pickup_location}
+                                                </td>
+                                                <td style={{ fontWeight: 600 }} className="cell-truncate" title={r.dropoff_location}>
+                                                    {r.dropoff_location}
+                                                </td>
+                                                <td style={{ fontWeight: 800, color: '#0284c7' }}>
+                                                    Rp {Number(r.price).toLocaleString('id-ID')}
+                                                </td>
+                                                <td style={{ textAlign: 'center' }}>
+                                                    <div className="dropdown-wrapper" ref={activeDropdownId === r.id ? dropdownRef : null}>
+                                                        <button
+                                                            className="btn-dropdown-toggle"
+                                                            onClick={(e) => toggleDropdown(r.id, e)}
+                                                            aria-label="Opsi"
+                                                        >
+                                                            <i className="fa-solid fa-ellipsis-vertical"></i>
+                                                        </button>
+
+                                                        {activeDropdownId === r.id && (
+                                                            <div className="dropdown-menu-list">
+                                                                <button className="dropdown-item-btn edit" onClick={() => handleOpenModal(r)}>
+                                                                    <i className="fa-solid fa-pen-to-square"></i> Edit
+                                                                </button>
+                                                                <button className="dropdown-item-btn delete" onClick={() => handleDelete(r.id)}>
+                                                                    <i className="fa-solid fa-trash"></i> Hapus
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
-
-                        {/* Tampilan Mobile (< 600px) */}
-                        <div className="mobile-routes-grid">
-                            {routes.map((r) => (
-                                <div key={r.id} className="route-card-mobile">
-                                    <div className="route-card-content">
-                                        <img
-                                            src={r.image_url ? (r.image_url.startsWith('http') ? r.image_url : `http://localhost:5000${r.image_url}`) : 'https://placehold.co/60x40'}
-                                            className="route-card-img"
-                                            alt={r.pickup_location}
-                                        />
-                                        <div className="route-card-info">
-                                            <div className="route-card-title">{r.pickup_location} ➔ {r.dropoff_location}</div>
-                                            <div className="route-card-price">Rp {Number(r.price).toLocaleString('id-ID')}</div>
-                                        </div>
-                                    </div>
-                                    <div className="route-card-actions">
-                                        <button className="btn-action-edit" onClick={() => handleOpenModal(r)}>Edit</button>
-                                        <button className="btn-action-delete" onClick={() => handleDelete(r.id)}>Hapus</button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </>
+                    </div>
                 )}
 
-                {/* Modal Form */}
+                {/* Modal Form Tambah/Edit */}
                 {modalOpen && (
-                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-                        <div style={{ background: '#fff', padding: '20px', borderRadius: '10px', width: '100%', maxWidth: '400px', boxSizing: 'border-box' }}>
-                            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', color: '#0f172a' }}>{editingId ? 'Edit Rute' : 'Tambah Rute'}</h3>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300, padding: '16px' }}>
+                        <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', width: '100%', maxWidth: '420px', boxSizing: 'border-box', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}>
+                            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.15rem', color: '#0f172a', fontWeight: 800 }}>
+                                {editingId ? 'Edit Data Rute' : 'Tambah Rute Baru'}
+                            </h3>
                             <form onSubmit={handleSubmit}>
-                                <div style={{ marginBottom: '12px' }}>
-                                    <label style={{ fontSize: '0.78rem', fontWeight: 700, display: 'block', marginBottom: '4px', color: '#334155' }}>Lokasi Penjemputan</label>
-                                    <input type="text" required value={formData.pickup_location} onChange={(e) => setFormData({ ...formData, pickup_location: e.target.value })} style={{ width: '100%', height: '38px', padding: '0 10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.85rem' }} />
+                                <div style={{ marginBottom: '14px' }}>
+                                    <label style={{ fontSize: '0.78rem', fontWeight: 700, display: 'block', marginBottom: '6px', color: '#334155' }}>Lokasi Penjemputan</label>
+                                    <input type="text" required value={formData.pickup_location} onChange={(e) => setFormData({ ...formData, pickup_location: e.target.value })} style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '6px', border: '1.5px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.85rem' }} />
                                 </div>
-                                <div style={{ marginBottom: '12px' }}>
-                                    <label style={{ fontSize: '0.78rem', fontWeight: 700, display: 'block', marginBottom: '4px', color: '#334155' }}>Lokasi Tujuan</label>
-                                    <input type="text" required value={formData.dropoff_location} onChange={(e) => setFormData({ ...formData, dropoff_location: e.target.value })} style={{ width: '100%', height: '38px', padding: '0 10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.85rem' }} />
+                                <div style={{ marginBottom: '14px' }}>
+                                    <label style={{ fontSize: '0.78rem', fontWeight: 700, display: 'block', marginBottom: '6px', color: '#334155' }}>Lokasi Tujuan</label>
+                                    <input type="text" required value={formData.dropoff_location} onChange={(e) => setFormData({ ...formData, dropoff_location: e.target.value })} style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '6px', border: '1.5px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.85rem' }} />
                                 </div>
-                                <div style={{ marginBottom: '12px' }}>
-                                    <label style={{ fontSize: '0.78rem', fontWeight: 700, display: 'block', marginBottom: '4px', color: '#334155' }}>Tarif (Rp)</label>
-                                    <input type="number" required value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={{ width: '100%', height: '38px', padding: '0 10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.85rem' }} />
+                                <div style={{ marginBottom: '14px' }}>
+                                    <label style={{ fontSize: '0.78rem', fontWeight: 700, display: 'block', marginBottom: '6px', color: '#334155' }}>Tarif (Rp)</label>
+                                    <input type="number" required value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '6px', border: '1.5px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.85rem' }} />
                                 </div>
-                                <div style={{ marginBottom: '16px' }}>
-                                    <label style={{ fontSize: '0.78rem', fontWeight: 700, display: 'block', marginBottom: '4px', color: '#334155' }}>File Gambar</label>
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{ fontSize: '0.78rem', fontWeight: 700, display: 'block', marginBottom: '6px', color: '#334155' }}>Gambar Rute (Opsional)</label>
                                     <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} style={{ width: '100%', fontSize: '0.8rem' }} />
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                                    <button type="button" onClick={() => setModalOpen(false)} style={{ background: '#94a3b8', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>Batal</button>
-                                    <button type="submit" style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>Simpan</button>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                    <button type="button" onClick={() => setModalOpen(false)} style={{ background: '#94a3b8', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}>Batal</button>
+                                    <button type="submit" style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>Simpan Rute</button>
                                 </div>
                             </form>
                         </div>
