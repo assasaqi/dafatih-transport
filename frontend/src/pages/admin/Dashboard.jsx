@@ -5,7 +5,25 @@ import AdminNavbar from '@/components/AdminNavbar';
 
 const Dashboard = () => {
     const navigate = useNavigate();
-    const adminUser = localStorage.getItem('adminUser') || 'Admin';
+
+    // Fungsi membaca nama/email admin dari localStorage
+    const getAdminDisplayName = () => {
+        try {
+            const saved = localStorage.getItem('adminUser');
+            if (!saved) return 'Admin';
+
+            if (!saved.startsWith('{')) {
+                return saved;
+            }
+
+            const parsed = JSON.parse(saved);
+            return parsed.name || parsed.email || 'Admin';
+        } catch (e) {
+            return 'Admin';
+        }
+    };
+
+    const adminDisplayName = getAdminDisplayName();
 
     const [stats, setStats] = useState({
         totalVehicles: 0,
@@ -53,7 +71,7 @@ const Dashboard = () => {
                         Dashboard Utama
                     </h1>
                     <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '4px 0 0 0' }}>
-                        Selamat datang kembali, <strong>{adminUser}</strong>! Berikut adalah ringkasan data aplikasi Dafatih Transport.
+                        Selamat datang kembali, <strong>{adminDisplayName}</strong>! Berikut adalah ringkasan data aplikasi Dafatih Transport.
                     </p>
                 </div>
 
@@ -92,93 +110,7 @@ const Dashboard = () => {
                         </h2>
                     </div>
                 </div>
-
-                {/* Menu Aksi Cepat Management */}
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', marginBottom: '14px' }}>
-                    Kelola Data Aplikasi
-                </h3>
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-                    gap: '14px'
-                }}>
-                    {/* <button
-                        onClick={() => navigate('/admin/vehicles')}
-                        style={{
-                            background: '#fff',
-                            border: '1.5px solid #0284c7',
-                            color: '#0284c7',
-                            padding: '16px',
-                            borderRadius: '8px',
-                            fontWeight: 700,
-                            fontSize: '0.85rem',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        <i className="fa-solid fa-car" style={{ marginBottom: '8px', display: 'block', fontSize: '1.2rem' }}></i>
-                        Kelola Mobil
-                    </button> */}
-
-                    <button
-                        onClick={() => navigate('/admin/routes')}
-                        style={{
-                            background: '#fff',
-                            border: '1.5px solid #0284c7',
-                            color: '#0284c7',
-                            padding: '16px',
-                            borderRadius: '8px',
-                            fontWeight: 700,
-                            fontSize: '0.85rem',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        <i className="fa-solid fa-route" style={{ marginBottom: '8px', display: 'block', fontSize: '1.2rem' }}></i>
-                        Kelola Rute & Tarif
-                    </button>
-
-                    <button
-                        onClick={() => navigate('/admin/galleries')}
-                        style={{
-                            background: '#fff',
-                            border: '1.5px solid #0284c7',
-                            color: '#0284c7',
-                            padding: '16px',
-                            borderRadius: '8px',
-                            fontWeight: 700,
-                            fontSize: '0.85rem',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        <i className="fa-solid fa-images" style={{ marginBottom: '8px', display: 'block', fontSize: '1.2rem' }}></i>
-                        Kelola Galeri Foto
-                    </button>
-
-                    <button
-                        onClick={() => navigate('/admin/blogs')}
-                        style={{
-                            background: '#fff',
-                            border: '1.5px solid #0284c7',
-                            color: '#0284c7',
-                            padding: '16px',
-                            borderRadius: '8px',
-                            fontWeight: 700,
-                            fontSize: '0.85rem',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        <i className="fa-solid fa-blog" style={{ marginBottom: '8px', display: 'block', fontSize: '1.2rem' }}></i>
-                        Kelola Artikel Blog
-                    </button>
-                </div>
-            </div>
+          </div>
         </>
     );
 };

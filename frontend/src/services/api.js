@@ -10,10 +10,11 @@ const API = axios.create({
 });
 
 // Admin Auth & Profile API
-export const loginAdmin = (credentials) => API.post('/login', credentials);
-export const registerAdmin = (credentials) => API.post('/register', credentials);
-export const getProfile = (username) => API.get(`/profile?username=${username}`);
+// Pastikan parameter dikirim sebagai email
+export const getProfile = (email) => API.get(`/profile?email=${email}`);
 export const updateProfile = (data) => API.put('/profile', data);
+export const loginAdmin = (data) => API.post('/login', data);
+export const registerAdmin = (data) => API.post('/register', data);
 
 // Vehicle API
 export const getVehicles = () => API.get('/vehicles');

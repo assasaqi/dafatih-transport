@@ -3,18 +3,19 @@ import { getProfile, updateProfile } from '@/services/api';
 import AdminNavbar from '@/components/AdminNavbar';
 
 const AdminProfile = () => {
-    // Membaca data user dari localStorage yang tersimpan sebagai JSON object
+    // Membaca data user dari localStorage
     const getSavedAdmin = () => {
         try {
             const saved = localStorage.getItem('adminUser');
-            return saved ? JSON.parse(saved) : null;
+            if (!saved) return null;
+            return saved.startsWith('{') ? JSON.parse(saved) : { email: saved, name: '' };
         } catch (e) {
             return null;
         }
     };
 
     const savedAdmin = getSavedAdmin();
-    const currentEmail = savedAdmin?.email || 'admin@dafatihtransport.com';
+    const currentEmail = savedAdmin?.email || '';
 
     const [formData, setFormData] = useState({
         name: savedAdmin?.name || '',
@@ -28,9 +29,9 @@ const AdminProfile = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
+        // Hanya panggil API jika email di localStorage benar-benar ada
         if (!currentEmail) return;
 
-        // Muat data profil terbaru dari backend
         getProfile(currentEmail)
             .then((res) => {
                 if (res.data.success && res.data.data) {
@@ -42,7 +43,12 @@ const AdminProfile = () => {
                 }
             })
             .catch((err) => {
-                console.error('Gagal mengambil data profil awal:', err);
+                // Tangani 404 tanpa menghentikan aplikasi
+                if (err.response?.status === 404) {
+                    console.warn('Data profil belum ada di DB, menggunakan data sesi lokal.');
+                } else {
+                    console.error('Gagal mengambil data profil awal:', err);
+                }
             });
     }, [currentEmail]);
 
@@ -72,7 +78,6 @@ const AdminProfile = () => {
             if (res.data.success) {
                 setMessage({ type: 'success', text: 'Profil berhasil diperbarui!' });
 
-                // Update localStorage dengan data terbaru
                 const updatedUser = {
                     ...savedAdmin,
                     name: formData.name,
