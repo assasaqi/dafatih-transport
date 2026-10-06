@@ -316,15 +316,6 @@ const Home = () => {
                                     </select>
                                 </div>
                             </div>
-
-                            {/* Tombol Cari */}
-                            <button
-                                type="submit"
-                                className="bg-[#0194F3] hover:bg-sky-600 text-white w-full lg:w-13 h-12 rounded-xl flex items-center justify-center text-lg font-bold transition-colors shadow-md sm:col-span-2 lg:col-span-1 cursor-pointer"
-                                title="Cari Perjalanan"
-                            >
-                                <i className="fa-solid fa-magnifying-glass"></i>
-                            </button>
                         </form>
                     </div>
                 </div>

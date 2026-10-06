@@ -85,37 +85,38 @@ const Booking = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F4F7] py-4 sm:py-8 px-2.5 sm:px-6 lg:px-8 text-slate-800">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 items-start">
+    <div className="min-h-screen bg-[#F2F4F7] py-3 sm:py-8 px-3 sm:px-6 lg:px-8 text-slate-800">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-6 items-start">
 
-        {/* ================= SIDEBAR NAVIGASI KIRI ================= */}
-        <div className="md:col-span-4 lg:col-span-3 space-y-4 sm:space-y-6">
-          <div>
-            <h1 className="text-lg sm:text-xl font-bold text-slate-900 mb-1 sm:mb-2">Cek &amp; Pesan Layanan</h1>
+        {/* ================= SIDEBAR NAVIGASI ================= */}
+        <div className="md:col-span-4 lg:col-span-3 space-y-3 sm:space-y-6">
+          <div className="flex items-center justify-between md:block">
+            <h1 className="text-base sm:text-xl font-extrabold text-slate-900">
+              Cek &amp; Pesan Layanan
+            </h1>
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="flex items-center gap-2 text-slate-600 hover:text-sky-600 text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-slate-600 hover:text-[#0194F3] text-xs font-semibold transition-colors cursor-pointer"
             >
-              <i className="fa-solid fa-list-check"></i>
+              <i className="fa-solid fa-list-check text-xs"></i>
               <span>Semua Layanan</span>
             </button>
           </div>
 
           <div>
-            <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-2">Pilih Kategori</h2>
-            <nav className="flex md:flex-col gap-1.5 overflow-x-auto pb-1 md:pb-0">
+            <nav className="flex md:flex-col gap-2 overflow-x-auto pb-1 md:pb-0 no-scrollbar">
               {/* Antar-Jemput (Aktif) */}
               <button
                 type="button"
                 onClick={() => handleTabClick('airport')}
-                className={`flex-1 md:w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
+                className={`flex-1 md:w-full flex items-center justify-center md:justify-start gap-2 px-3.5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
                   activeTab === 'airport'
                     ? 'bg-[#0194F3] text-white shadow-xs'
-                    : 'bg-white md:bg-transparent text-slate-700 hover:bg-slate-200/60'
+                    : 'bg-white md:bg-transparent border border-slate-200 md:border-none text-slate-700 hover:bg-slate-200/60'
                 }`}
               >
-                <i className="fa-solid fa-plane-arrival text-sm sm:text-base"></i>
+                <i className="fa-solid fa-plane-arrival text-xs sm:text-base"></i>
                 <span>Antar-Jemput</span>
               </button>
 
@@ -123,13 +124,13 @@ const Booking = () => {
               <button
                 type="button"
                 onClick={() => handleTabClick('rental')}
-                className={`flex-1 md:w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
+                className={`flex-1 md:w-full flex items-center justify-center md:justify-start gap-2 px-3.5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
                   activeTab === 'rental'
                     ? 'bg-[#0194F3] text-white shadow-xs'
-                    : 'bg-white md:bg-transparent text-slate-700 hover:bg-slate-200/60'
+                    : 'bg-white md:bg-transparent border border-slate-200 md:border-none text-slate-700 hover:bg-slate-200/60'
                 }`}
               >
-                <i className="fa-solid fa-car text-sm sm:text-base text-sky-600"></i>
+                <i className="fa-solid fa-car text-xs sm:text-base text-sky-600"></i>
                 <span>Sewa Mobil</span>
               </button>
 
@@ -137,35 +138,35 @@ const Booking = () => {
               <button
                 type="button"
                 onClick={() => handleTabClick('tour')}
-                className={`flex-1 md:w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
+                className={`flex-1 md:w-full flex items-center justify-center md:justify-start gap-2 px-3.5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer ${
                   activeTab === 'tour'
                     ? 'bg-[#0194F3] text-white shadow-xs'
-                    : 'bg-white md:bg-transparent text-slate-700 hover:bg-slate-200/60'
+                    : 'bg-white md:bg-transparent border border-slate-200 md:border-none text-slate-700 hover:bg-slate-200/60'
                 }`}
               >
-                <i className="fa-solid fa-route text-sm sm:text-base text-amber-500"></i>
+                <i className="fa-solid fa-route text-xs sm:text-base text-amber-500"></i>
                 <span>Paket Wisata</span>
               </button>
             </nav>
           </div>
         </div>
 
-        {/* ================= KONTEN UTAMA KANAN ================= */}
+        {/* ================= KONTEN UTAMA ================= */}
         <div className="md:col-span-8 lg:col-span-9 space-y-3 sm:space-y-4">
 
           {/* BANNER BIRU INFORMASI */}
           {showInfoBanner && (
-            <div className="relative bg-[#0194F3] text-white rounded-xl p-3.5 sm:p-5 flex items-center justify-between gap-3 shadow-xs">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 bg-white/10 rounded-lg border border-white/20 shrink-0 items-center justify-center hidden sm:flex">
-                  <i className="fa-solid fa-shield-halved text-white text-xl"></i>
+            <div className="relative bg-[#0194F3] text-white rounded-xl p-3 sm:p-5 flex items-start justify-between gap-2.5 shadow-xs">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-white/10 rounded-lg border border-white/20 shrink-0 items-center justify-center hidden sm:flex">
+                  <i className="fa-solid fa-shield-halved text-white text-lg"></i>
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-xs sm:text-sm mb-0.5">
+                  <h3 className="font-extrabold text-xs sm:text-sm mb-0.5 leading-tight">
                     Pesan Layanan Transportasi Lombok Lebih Praktis
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-sky-100 leading-snug">
-                    Pilih rute dari <button onClick={() => navigate('/tarif')} className="underline font-bold hover:text-white">Daftar Tarif</button> atau lengkapi data pemesanan di bawah ini untuk reservasi instan.
+                  <p className="text-[11px] sm:text-xs text-sky-100 leading-normal">
+                    Pilih rute dari <button onClick={() => navigate('/tarif')} className="underline font-bold hover:text-white">Daftar Tarif</button> atau lengkapi data pemesanan di bawah ini.
                   </p>
                 </div>
               </div>
@@ -173,7 +174,7 @@ const Booking = () => {
               <button
                 type="button"
                 onClick={() => setShowInfoBanner(false)}
-                className="text-white/80 hover:text-white text-sm p-1 shrink-0 cursor-pointer self-start"
+                className="text-white/80 hover:text-white text-base p-1 shrink-0 cursor-pointer -mt-1 -mr-1"
               >
                 <i className="fa-solid fa-xmark"></i>
               </button>
@@ -181,16 +182,16 @@ const Booking = () => {
           )}
 
           {/* CARD UTAMA FORM PEMESANAN */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-6 shadow-xs">
-            <p className="text-xs text-slate-600 font-medium border-b border-slate-100 pb-3 mb-4">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-6 shadow-xs">
+            <p className="text-[11px] sm:text-xs text-slate-500 font-medium border-b border-slate-100 pb-2.5 mb-3.5">
               Isi formulir di bawah ini sesuai rute perjalanan Anda. Pastikan nomor WhatsApp yang dimasukkan aktif.
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-3.5">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
 
               {/* NAMA PEMESAN */}
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold text-slate-700">
+                <label className="text-[11px] sm:text-xs font-bold text-slate-700">
                   Nama Lengkap Pemesan *
                 </label>
                 <div className="relative flex items-center">
@@ -206,7 +207,7 @@ const Booking = () => {
                   {formData.custName && (
                     <button
                       type="button"
-                      className="absolute right-2.5 text-slate-400 hover:text-slate-600 text-sm p-1 cursor-pointer"
+                      className="absolute right-2.5 text-slate-400 hover:text-slate-600 text-base p-1 cursor-pointer"
                       onClick={() => handleClear('custName')}
                     >
                       &times;
@@ -216,10 +217,10 @@ const Booking = () => {
               </div>
 
               {/* FORM RUTE: PENJEMPUTAN, TUJUAN & TANGGAL JEMPUT */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                 {/* Penjemputan (From) */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-slate-700">
+                  <label className="text-[11px] sm:text-xs font-bold text-slate-700">
                     Penjemputan (From) *
                   </label>
                   <div className="relative flex items-center border border-slate-300 rounded-xl px-3 h-10 bg-slate-50">
@@ -238,7 +239,7 @@ const Booking = () => {
 
                 {/* Tujuan (To) */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-slate-700">
+                  <label className="text-[11px] sm:text-xs font-bold text-slate-700">
                     Tujuan (To) *
                   </label>
                   <div className="relative flex items-center border border-slate-300 rounded-xl px-3 h-10 bg-slate-50">
@@ -257,7 +258,7 @@ const Booking = () => {
 
                 {/* Tanggal Jemput */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-slate-700">
+                  <label className="text-[11px] sm:text-xs font-bold text-slate-700">
                     Tanggal Penjemputan *
                   </label>
                   <div className="relative flex items-center border border-slate-300 rounded-xl px-3 h-10 bg-white focus-within:border-[#0194F3]">
@@ -274,12 +275,12 @@ const Booking = () => {
                 </div>
               </div>
 
-              {/* INPUT TELEPON & WAKTU JEMPUT (SEJAJAR & PROPOSIONAL) */}
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+              {/* INPUT TELEPON & WAKTU JEMPUT */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 sm:gap-3 items-start">
 
-                {/* Mobile Number Group (2/3 Lebar / 8-Kolom) */}
-                <div className="sm:col-span-8 flex flex-col gap-1">
-                  <label className="text-xs font-bold text-slate-700">
+                {/* Mobile Number Group */}
+                <div className="sm:col-span-7 md:col-span-8 flex flex-col gap-1">
+                  <label className="text-[11px] sm:text-xs font-bold text-slate-700">
                     Nomor WhatsApp / HP *
                   </label>
                   <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden h-10 focus-within:border-[#0194F3] transition-colors">
@@ -308,7 +309,7 @@ const Booking = () => {
                       {formData.custWa && (
                         <button
                           type="button"
-                          className="absolute right-2 text-slate-400 hover:text-slate-600 text-sm p-1 cursor-pointer"
+                          className="absolute right-2 text-slate-400 hover:text-slate-600 text-base p-1 cursor-pointer"
                           onClick={() => handleClear('custWa')}
                         >
                           &times;
@@ -317,13 +318,13 @@ const Booking = () => {
                     </div>
                   </div>
                   <span className="text-[10px] text-slate-400">
-                    Nomor WhatsApp aktif untuk pengiriman bukti reservasi.
+                    Nomor WA aktif untuk bukti reservasi.
                   </span>
                 </div>
 
-                {/* Jam Penjemputan (1/3 Lebar / 4-Kolom) */}
-                <div className="sm:col-span-4 flex flex-col gap-1">
-                  <label className="text-xs font-bold text-slate-700">
+                {/* Jam Penjemputan */}
+                <div className="sm:col-span-5 md:col-span-4 flex flex-col gap-1">
+                  <label className="text-[11px] sm:text-xs font-bold text-slate-700">
                     Waktu (WITA) *
                   </label>
                   <input
@@ -338,8 +339,8 @@ const Booking = () => {
               </div>
 
               {/* ESTIMASI HARGA & TOMBOL ACTION */}
-              <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100">
-                <div className="w-full sm:w-auto text-left">
+              <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-slate-100">
+                <div className="text-left bg-sky-50/60 p-2.5 sm:p-0 rounded-xl sm:bg-transparent">
                   <span className="block text-[10px] sm:text-[11px] text-slate-500 font-medium">Estimasi Tarif Terpilih:</span>
                   <strong className="text-base sm:text-lg font-extrabold text-[#0194F3]">
                     {formData.price > 0
@@ -348,19 +349,19 @@ const Booking = () => {
                   </strong>
                 </div>
 
-                <div className="flex gap-2 w-full sm:w-auto justify-end">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   {!formData.pickupLoc && (
                     <button
                       type="button"
                       onClick={() => navigate('/tarif')}
-                      className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-[#0194F3] text-[#0194F3] hover:bg-sky-50 font-bold text-xs transition-colors cursor-pointer whitespace-nowrap"
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-[#0194F3] text-[#0194F3] hover:bg-sky-50 font-bold text-xs transition-colors cursor-pointer text-center"
                     >
                       Pilih Tarif Rute
                     </button>
                   )}
                   <button
                     type="submit"
-                    className="flex-1 sm:flex-none px-5 py-2.5 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer whitespace-nowrap flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-5 py-2.5 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
                   >
                     <span>Lanjutkan Pemesanan</span>
                     <i className="fa-solid fa-arrow-right text-xs"></i>

@@ -79,14 +79,14 @@ const Navbar = () => {
                     </NavLink>
                 </nav>
 
-                {/* Header Actions */}
-                <div className="flex items-center gap-2">
+                {/* Header Actions (Sembunyi di Mobile dengan class hidden sm:flex) */}
+                <div className="hidden sm:flex items-center gap-2">
                     <button
                         type="button"
                         onClick={() => navigate('/pesan')}
                         className="bg-[#0194F3] hover:bg-sky-600 text-white px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer flex items-center gap-2"
                     >
-                        <i className="fa-solid fa-[#0194F3] fa-paper-plane text-xs"></i>
+                        <i className="fa-solid fa-paper-plane text-xs"></i>
                         <span>Pesan Sekarang</span>
                     </button>
                 </div>
