@@ -3,11 +3,22 @@ import { getProfile, updateProfile } from '@/services/api';
 import AdminNavbar from '@/components/AdminNavbar';
 
 const AdminProfile = () => {
-    const currentUsername = localStorage.getItem('adminUser') || 'admin@dafatanihtransport.com';
+    // Membaca data user dari localStorage yang tersimpan sebagai JSON object
+    const getSavedAdmin = () => {
+        try {
+            const saved = localStorage.getItem('adminUser');
+            return saved ? JSON.parse(saved) : null;
+        } catch (e) {
+            return null;
+        }
+    };
+
+    const savedAdmin = getSavedAdmin();
+    const currentEmail = savedAdmin?.email || 'admin@dafatihtransport.com';
 
     const [formData, setFormData] = useState({
-        name: 'Rasman',
-        username: currentUsername,
+        name: savedAdmin?.name || '',
+        email: currentEmail,
         oldPassword: '',
         newPassword: '',
         confirmPassword: ''
@@ -17,21 +28,23 @@ const AdminProfile = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
-        // Muat data awal admin saat halaman dibuka
-        getProfile(currentUsername)
+        if (!currentEmail) return;
+
+        // Muat data profil terbaru dari backend
+        getProfile(currentEmail)
             .then((res) => {
                 if (res.data.success && res.data.data) {
                     setFormData((prev) => ({
                         ...prev,
-                        name: res.data.data.name || 'Rasman',
-                        username: res.data.data.username || res.data.data.email || currentUsername
+                        name: res.data.data.name || prev.name,
+                        email: res.data.data.email || currentEmail
                     }));
                 }
             })
             .catch((err) => {
                 console.error('Gagal mengambil data profil awal:', err);
             });
-    }, [currentUsername]);
+    }, [currentEmail]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -49,17 +62,23 @@ const AdminProfile = () => {
         setLoading(true);
         try {
             const res = await updateProfile({
-                currentUsername: localStorage.getItem('adminUser') || currentUsername,
+                currentEmail: currentEmail,
                 name: formData.name,
-                newUsername: formData.username,
+                newEmail: formData.email,
                 oldPassword: formData.oldPassword,
                 newPassword: formData.newPassword
             });
 
             if (res.data.success) {
                 setMessage({ type: 'success', text: 'Profil berhasil diperbarui!' });
-                // Simpan username/email baru ke localStorage agar request berikutnya valid
-                localStorage.setItem('adminUser', res.data.updatedUsername || formData.username);
+
+                // Update localStorage dengan data terbaru
+                const updatedUser = {
+                    ...savedAdmin,
+                    name: formData.name,
+                    email: res.data.updatedEmail || formData.email
+                };
+                localStorage.setItem('adminUser', JSON.stringify(updatedUser));
 
                 setFormData((prev) => ({
                     ...prev,
@@ -124,13 +143,13 @@ const AdminProfile = () => {
 
                             <div>
                                 <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                                    Email / Username Login
+                                    Email Admin
                                 </label>
                                 <input
-                                    type="text"
-                                    name="username"
+                                    type="email"
+                                    name="email"
                                     required
-                                    value={formData.username}
+                                    value={formData.email}
                                     onChange={handleChange}
                                     style={{ width: '100%', height: '38px', padding: '0 10px', borderRadius: '6px', border: '1.5px solid #cbd5e1', fontSize: '0.82rem', boxSizing: 'border-box' }}
                                 />

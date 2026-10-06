@@ -5,8 +5,9 @@ import { loginAdmin, registerAdmin } from '@/services/api';
 const Login = () => {
     const navigate = useNavigate();
     const [isRegister, setIsRegister] = useState(false);
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [name, setName] = useState(''); // Opsi tambahan nama saat registrasi
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -17,14 +18,15 @@ const Login = () => {
 
         try {
             if (isRegister) {
-                const res = await registerAdmin({ username, password });
+                const res = await registerAdmin({ name, email, password });
                 setMessage({ type: 'success', text: res.data.message || 'Registrasi berhasil! Silakan login.' });
                 setIsRegister(false);
+                setName('');
             } else {
-                const res = await loginAdmin({ username, password });
+                const res = await loginAdmin({ email, password });
                 if (res.data.success) {
                     localStorage.setItem('adminToken', res.data.token);
-                    localStorage.setItem('adminUser', res.data.username || username);
+                    localStorage.setItem('adminUser', JSON.stringify(res.data.data));
                     navigate('/admin/dashboard');
                 }
             }
@@ -52,13 +54,21 @@ const Login = () => {
                 )}
 
                 <form onSubmit={handleSubmit}>
+                    {isRegister && (
+                        <div style={{ marginBottom: '14px' }}>
+                            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>Nama Lengkap</label>
+                            <input type="text" placeholder="Masukkan nama" value={name} onChange={(e) => setName(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '0 10px', boxSizing: 'border-box' }} />
+                        </div>
+                    )}
+
                     <div style={{ marginBottom: '14px' }}>
-                        <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>Username</label>
-                        <input type="text" required value={username} onChange={(e) => setUsername(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '0 10px', boxSizing: 'border-box' }} />
+                        <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>Email</label>
+                        <input type="email" required placeholder="admin@dafatihtransport.com" value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '0 10px', boxSizing: 'border-box' }} />
                     </div>
+
                     <div style={{ marginBottom: '20px' }}>
                         <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>Password</label>
-                        <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '0 10px', boxSizing: 'border-box' }} />
+                        <input type="password" required placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '0 10px', boxSizing: 'border-box' }} />
                     </div>
 
                     <button type="submit" disabled={loading} style={{ width: '100%', height: '40px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}>

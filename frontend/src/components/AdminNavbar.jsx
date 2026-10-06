@@ -5,9 +5,26 @@ const AdminNavbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const adminUser = localStorage.getItem('adminUser') || 'Admin';
-    // Ambil Nama Pengelola yang tersimpan
-    const adminName = localStorage.getItem('adminUser') || 'Admin';
+
+    // Ambil & parse data admin dari localStorage
+    const getAdminData = () => {
+        try {
+            const saved = localStorage.getItem('adminUser');
+            if (!saved) return { name: 'Admin', email: '' };
+
+            // Jika tersimpan sebagai string biasa/email lama
+            if (!saved.startsWith('{')) {
+                return { name: saved, email: saved };
+            }
+
+            return JSON.parse(saved);
+        } catch (e) {
+            return { name: 'Admin', email: '' };
+        }
+    };
+
+    const adminData = getAdminData();
+    const displayName = adminData.name || adminData.email || 'Admin';
 
     const handleLogout = () => {
         localStorage.removeItem('adminToken');
@@ -252,7 +269,7 @@ const AdminNavbar = () => {
                     <div className="user-info-text">
                         <i className="fa-solid fa-user-gear" style={{ color: '#38bdf8' }}></i>
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {adminUser}
+                            {displayName}
                         </span>
                     </div>
                     <button className="btn-sidebar-logout" onClick={handleLogout}>
