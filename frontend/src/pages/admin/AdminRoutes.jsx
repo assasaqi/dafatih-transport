@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { getRoutes, createRoute, updateRoute, deleteRoute } from '@/services/api';
+import { getRoutes, createRoute, updateRoute, deleteRoute, API_BASE_URL } from '@/services/api';
 import AdminNavbar from '@/components/AdminNavbar';
 
 const AdminRoutes = () => {
@@ -9,15 +9,26 @@ const AdminRoutes = () => {
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({ pickup_location: '', dropoff_location: '', price: '' });
     const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
     const [activeDropdownId, setActiveDropdownId] = useState(null);
 
+    // State untuk Toast Notification
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
     const dropdownRef = useRef(null);
+
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => {
+            setToast({ show: false, message: '', type: 'success' });
+        }, 3500);
+    };
 
     const loadRoutes = () => {
         setLoading(true);
         getRoutes()
             .then((res) => {
-                if (res.data.success) setRoutes(res.data.data);
+                if (res.data?.success) setRoutes(res.data.data || []);
                 setLoading(false);
             })
             .catch(() => setLoading(false));
@@ -35,6 +46,17 @@ const AdminRoutes = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Helper URL Gambar Dinamis berdasarkan API_BASE_URL
+    const getImageUrl = (imageUrl) => {
+        if (!imageUrl) return 'https://placehold.co/120x80?text=No+Image';
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+            return imageUrl;
+        }
+
+        const baseUrl = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : 'http://localhost:5000';
+        return `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+    };
+
     const toggleDropdown = (id, e) => {
         e.stopPropagation();
         setActiveDropdownId(activeDropdownId === id ? null : id);
@@ -43,6 +65,8 @@ const AdminRoutes = () => {
     const handleOpenModal = (route = null) => {
         setActiveDropdownId(null);
         setImageFile(null);
+        setImagePreview(null);
+
         if (route) {
             setEditingId(route.id);
             setFormData({
@@ -50,11 +74,22 @@ const AdminRoutes = () => {
                 dropoff_location: route.dropoff_location,
                 price: route.price
             });
+            if (route.image_url) {
+                setImagePreview(getImageUrl(route.image_url));
+            }
         } else {
             setEditingId(null);
             setFormData({ pickup_location: '', dropoff_location: '', price: '' });
         }
         setModalOpen(true);
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -66,30 +101,54 @@ const AdminRoutes = () => {
         if (imageFile) submitData.append('image', imageFile);
 
         try {
-            if (editingId) await updateRoute(editingId, submitData);
-            else await createRoute(submitData);
+            if (editingId) {
+                await updateRoute(editingId, submitData);
+                showToast('Data rute berhasil diperbarui!', 'success');
+            } else {
+                await createRoute(submitData);
+                showToast('Rute baru berhasil ditambahkan!', 'success');
+            }
             setModalOpen(false);
             loadRoutes();
         } catch (err) {
-            alert('Gagal menyimpan rute.');
+            showToast('Gagal menyimpan rute. Silakan coba lagi.', 'error');
         }
     };
 
     const handleDelete = async (id) => {
         setActiveDropdownId(null);
-        if (window.confirm('Hapus rute ini?')) {
+        if (window.confirm('Apakah Anda yakin ingin menghapus rute ini?')) {
             try {
                 await deleteRoute(id);
+                showToast('Rute berhasil dihapus!', 'success');
                 loadRoutes();
             } catch (err) {
-                alert('Gagal menghapus rute.');
+                showToast('Gagal menghapus rute.', 'error');
             }
         }
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 text-slate-800 md:pl-60 transition-all">
+        <div className="min-h-screen bg-slate-100 text-slate-800 md:pl-60 transition-all relative">
             <AdminNavbar />
+
+            {/* Toast Notification Container */}
+            {toast.show && (
+                <div
+                    className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-xs sm:text-sm font-bold transition-all animate-bounce ${
+                        toast.type === 'success'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-rose-50 text-rose-800 border-rose-200'
+                    }`}
+                >
+                    <i
+                        className={`fa-solid ${
+                            toast.type === 'success' ? 'fa-circle-check text-emerald-500' : 'fa-circle-exclamation text-rose-500'
+                        } text-base`}
+                    ></i>
+                    <span>{toast.message}</span>
+                </div>
+            )}
 
             <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
                 {/* Header Bar */}
@@ -122,10 +181,10 @@ const AdminRoutes = () => {
                 ) : (
                     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs sm:text-sm border-collapse min-w-[500px]">
+                            <table className="w-full text-left text-xs sm:text-sm border-collapse min-w-[550px]">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
-                                        <th className="py-3 px-4 text-center w-16">Foto</th>
+                                        <th className="py-3 px-4 text-center w-28">Foto Rute</th>
                                         <th className="py-3 px-4">Penjemputan</th>
                                         <th className="py-3 px-4">Tujuan</th>
                                         <th className="py-3 px-4">Tarif</th>
@@ -142,29 +201,26 @@ const AdminRoutes = () => {
                                     ) : (
                                         routes.map((r) => (
                                             <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
-                                                <td className="py-2.5 px-4 text-center">
-                                                    <img
-                                                        src={
-                                                            r.image_url
-                                                                ? r.image_url.startsWith('http')
-                                                                    ? r.image_url
-                                                                    : `http://localhost:5000${r.image_url}`
-                                                                : 'https://placehold.co/60x40'
-                                                        }
-                                                        className="w-12 h-8 object-cover rounded-lg border border-slate-200 mx-auto"
-                                                        alt={r.pickup_location}
-                                                    />
+                                                {/* Foto Horizontal dengan Lebar Proporsional */}
+                                                <td className="py-3 px-4 text-center">
+                                                    <div className="w-20 h-12 rounded-lg overflow-hidden border border-slate-200 mx-auto bg-slate-50 shadow-2xs group relative">
+                                                        <img
+                                                            src={getImageUrl(r.image_url)}
+                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                            alt={r.pickup_location}
+                                                        />
+                                                    </div>
                                                 </td>
-                                                <td className="py-2.5 px-4 font-semibold text-slate-900 max-w-[140px] truncate" title={r.pickup_location}>
+                                                <td className="py-3 px-4 font-semibold text-slate-900 max-w-[140px] truncate" title={r.pickup_location}>
                                                     {r.pickup_location}
                                                 </td>
-                                                <td className="py-2.5 px-4 font-semibold text-slate-900 max-w-[140px] truncate" title={r.dropoff_location}>
+                                                <td className="py-3 px-4 font-semibold text-slate-900 max-w-[140px] truncate" title={r.dropoff_location}>
                                                     {r.dropoff_location}
                                                 </td>
-                                                <td className="py-2.5 px-4 font-extrabold text-[#0194F3]">
+                                                <td className="py-3 px-4 font-extrabold text-[#0194F3]">
                                                     Rp {Number(r.price).toLocaleString('id-ID')}
                                                 </td>
-                                                <td className="py-2.5 px-4 text-center relative">
+                                                <td className="py-3 px-4 text-center relative">
                                                     <div className="inline-block text-left" ref={activeDropdownId === r.id ? dropdownRef : null}>
                                                         <button
                                                             type="button"
@@ -269,10 +325,18 @@ const AdminRoutes = () => {
                                     <label className="block text-xs font-bold text-slate-700 mb-1">
                                         Gambar Rute (Opsional)
                                     </label>
+
+                                    {/* Preview Gambar Dalam Modal Form */}
+                                    {imagePreview && (
+                                        <div className="mb-2 relative w-full h-28 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                        </div>
+                                    )}
+
                                     <input
                                         type="file"
                                         accept="image/*"
-                                        onChange={(e) => setImageFile(e.target.files[0])}
+                                        onChange={handleImageChange}
                                         className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-50 file:text-[#0194F3] hover:file:bg-sky-100 cursor-pointer"
                                     />
                                 </div>

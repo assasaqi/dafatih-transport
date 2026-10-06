@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useBlog } from '@/context/BlogContext';
-import { getBlogs } from '@/services/api';
+import { getBlogs, API_BASE_URL } from '@/services/api';
 
 const Blog = () => {
     const { visibleCount, setVisibleCount } = useBlog();
@@ -64,19 +64,16 @@ const Blog = () => {
         setVisibleCount((prev) => (prev ?? getInitialLimit()) + getInitialLimit());
     };
 
-    // Helper URL Gambar Dinamis
+    // Helper URL Gambar Dinamis berdasarkan API_BASE_URL
     const getImageUrl = (imageUrl) => {
         if (!imageUrl) return 'https://placehold.co/400x250?text=Wisata+Lombok';
         if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
             return imageUrl;
         }
 
-        // Tentukan domain backend secara otomatis berdasarkan lingkungan
-        const baseUrl = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
-            ? 'https://dafatih-transport.rasmantech.web.id'
-            : 'http://localhost:5000';
-
-        return `${baseUrl}${imageUrl}`;
+        // Ambil domain dasar dari API_BASE_URL (misal: http://localhost:5000/api -> http://localhost:5000)
+        const baseUrl = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : 'http://localhost:5000';
+        return `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
     };
 
     // Format Tanggal Tampilan
@@ -126,7 +123,7 @@ const Blog = () => {
                 )}
 
                 {!isLoading && !error && displayedArticles.length > 0 && (
-                    /* Grid 4 Kolom (Mirip Ukuran Card Rute Traveloka) */
+                    /* Grid 4 Kolom */
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
                         {displayedArticles.map((article) => (
                             <article

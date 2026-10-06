@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRoutes } from '@/services/api';
+import { getRoutes, API_BASE_URL } from '@/services/api';
 import { useTariff } from '@/context/TariffContext';
 
 const Tariffs = () => {

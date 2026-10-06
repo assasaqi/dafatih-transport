@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getGalleries, createGallery, updateGallery, deleteGallery } from '@/services/api';
+import { getGalleries, createGallery, updateGallery, deleteGallery, API_BASE_URL } from '@/services/api';
 import AdminNavbar from '@/components/AdminNavbar';
 
 const AdminGallery = () => {
@@ -10,13 +10,24 @@ const AdminGallery = () => {
 
     const [formData, setFormData] = useState({ title: '', category: 'Destinasi' });
     const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
     const [activeDropdownId, setActiveDropdownId] = useState(null);
+
+    // State untuk Toast Notification
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => {
+            setToast({ show: false, message: '', type: 'success' });
+        }, 3500);
+    };
 
     const loadGalleries = () => {
         setLoading(true);
         getGalleries()
             .then((res) => {
-                if (res.data?.success) setGalleries(res.data.data);
+                if (res.data?.success) setGalleries(res.data.data || []);
                 setLoading(false);
             })
             .catch(() => setLoading(false));
@@ -37,6 +48,17 @@ const AdminGallery = () => {
         return () => document.removeEventListener('click', handleClickOutside);
     }, []);
 
+    // Helper URL Gambar Dinamis berdasarkan API_BASE_URL
+    const getImageUrl = (imageUrl) => {
+        if (!imageUrl) return 'https://placehold.co/120x80?text=No+Foto';
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+            return imageUrl;
+        }
+
+        const baseUrl = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : 'http://localhost:5000';
+        return `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+    };
+
     const toggleDropdown = (id, e) => {
         e.stopPropagation();
         setActiveDropdownId((prev) => (prev === id ? null : id));
@@ -45,12 +67,17 @@ const AdminGallery = () => {
     const handleOpenModal = (item = null) => {
         setActiveDropdownId(null);
         setImageFile(null);
+        setImagePreview(null);
+
         if (item) {
             setEditingId(item.id);
             setFormData({
                 title: item.title || '',
                 category: item.category || 'Destinasi'
             });
+            if (item.image_url) {
+                setImagePreview(getImageUrl(item.image_url));
+            }
         } else {
             setEditingId(null);
             setFormData({ title: '', category: 'Destinasi' });
@@ -62,13 +89,22 @@ const AdminGallery = () => {
         setModalOpen(false);
         setEditingId(null);
         setImageFile(null);
+        setImagePreview(null);
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!editingId && !imageFile) {
-            alert('Silakan pilih file gambar!');
+            showToast('Silakan pilih file gambar!', 'error');
             return;
         }
 
@@ -82,13 +118,15 @@ const AdminGallery = () => {
         try {
             if (editingId) {
                 await updateGallery(editingId, submitData);
+                showToast('Foto galeri berhasil diperbarui!', 'success');
             } else {
                 await createGallery(submitData);
+                showToast('Foto baru berhasil diunggah!', 'success');
             }
             handleCloseModal();
             loadGalleries();
         } catch (err) {
-            alert('Gagal menyimpan foto galeri.');
+            showToast('Gagal menyimpan foto galeri.', 'error');
         }
     };
 
@@ -97,16 +135,35 @@ const AdminGallery = () => {
         if (window.confirm('Hapus foto dari galeri ini?')) {
             try {
                 await deleteGallery(id);
+                showToast('Foto galeri berhasil dihapus!', 'success');
                 loadGalleries();
             } catch (err) {
-                alert('Gagal menghapus foto.');
+                showToast('Gagal menghapus foto.', 'error');
             }
         }
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 text-slate-800 md:pl-60 transition-all">
+        <div className="min-h-screen bg-slate-100 text-slate-800 md:pl-60 transition-all relative">
             <AdminNavbar />
+
+            {/* Toast Notification Container */}
+            {toast.show && (
+                <div
+                    className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-xs sm:text-sm font-bold transition-all animate-bounce ${
+                        toast.type === 'success'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-rose-50 text-rose-800 border-rose-200'
+                    }`}
+                >
+                    <i
+                        className={`fa-solid ${
+                            toast.type === 'success' ? 'fa-circle-check text-emerald-500' : 'fa-circle-exclamation text-rose-500'
+                        } text-base`}
+                    ></i>
+                    <span>{toast.message}</span>
+                </div>
+            )}
 
             <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
                 {/* Header Bar */}
@@ -139,10 +196,10 @@ const AdminGallery = () => {
                 ) : (
                     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs">
                         <div className="overflow-x-auto min-h-[220px] p-1">
-                            <table className="w-full text-left text-xs sm:text-sm border-collapse min-w-[450px]">
+                            <table className="w-full text-left text-xs sm:text-sm border-collapse min-w-[500px]">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
-                                        <th className="py-3 px-4 text-center w-16">Foto</th>
+                                        <th className="py-3 px-4 text-center w-28">Foto</th>
                                         <th className="py-3 px-4">Judul Foto / Keterangan</th>
                                         <th className="py-3 px-4 w-32">Kategori</th>
                                         <th className="py-3 px-4 text-center w-20">Aksi</th>
@@ -158,28 +215,25 @@ const AdminGallery = () => {
                                     ) : (
                                         galleries.map((item) => (
                                             <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                                                <td className="py-2.5 px-4 text-center">
-                                                    <img
-                                                        src={
-                                                            item.image_url
-                                                                ? item.image_url.startsWith('http')
-                                                                    ? item.image_url
-                                                                    : `http://localhost:5000${item.image_url}`
-                                                                : 'https://placehold.co/60x40?text=Foto'
-                                                        }
-                                                        className="w-12 h-8 object-cover rounded-lg border border-slate-200 mx-auto"
-                                                        alt={item.title}
-                                                    />
+                                                {/* Foto Galeri Lanskap Horizontal */}
+                                                <td className="py-3 px-4 text-center">
+                                                    <div className="w-20 h-12 rounded-lg overflow-hidden border border-slate-200 mx-auto bg-slate-50 shadow-2xs group relative">
+                                                        <img
+                                                            src={getImageUrl(item.image_url)}
+                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                            alt={item.title}
+                                                        />
+                                                    </div>
                                                 </td>
-                                                <td className="py-2.5 px-4 font-extrabold text-slate-900 max-w-[180px] sm:max-w-[220px] truncate" title={item.title}>
+                                                <td className="py-3 px-4 font-extrabold text-slate-900 max-w-[180px] sm:max-w-[220px] truncate" title={item.title}>
                                                     {item.title}
                                                 </td>
-                                                <td className="py-2.5 px-4">
+                                                <td className="py-3 px-4">
                                                     <span className="text-[11px] bg-sky-50 text-[#0194F3] px-2.5 py-1 rounded-lg font-bold inline-block whitespace-nowrap">
                                                         {item.category || 'Destinasi'}
                                                     </span>
                                                 </td>
-                                                <td className="py-2.5 px-4 text-center">
+                                                <td className="py-3 px-4 text-center">
                                                     <div className="dropdown-container relative inline-block text-left">
                                                         <button
                                                             type="button"
@@ -276,11 +330,19 @@ const AdminGallery = () => {
                                             </span>
                                         )}
                                     </label>
+
+                                    {/* Preview Gambar Dalam Modal Form */}
+                                    {imagePreview && (
+                                        <div className="mb-2 relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                                            <img src={imagePreview} alt="Preview Foto Galeri" className="w-full h-full object-cover" />
+                                        </div>
+                                    )}
+
                                     <input
                                         type="file"
                                         accept="image/*"
                                         required={!editingId}
-                                        onChange={(e) => setImageFile(e.target.files[0])}
+                                        onChange={handleImageChange}
                                         className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-50 file:text-[#0194F3] hover:file:bg-sky-100 cursor-pointer"
                                     />
                                 </div>

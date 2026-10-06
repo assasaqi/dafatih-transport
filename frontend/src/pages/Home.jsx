@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHome } from '@/context/HomeContext';
-import { getRoutes, getBlogs } from '@/services/api';
+import { getRoutes, getBlogs, API_BASE_URL } from '@/services/api';
 
 // Secara dinamis membaca semua berkas gambar dari folder /public/images/
 const localImagesModules = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp,avif}', {
@@ -18,7 +18,8 @@ const Home = () => {
     const navigate = useNavigate();
 
     const [currentSlide, setCurrentSlide] = useState(0);
-    const [heroSlides, setHeroSlides] = useState([]);
+    // Menginisialisasi heroSlides dari gambar lokal publik yang ditemukan
+    const [heroSlides, setHeroSlides] = useState(localImageUrls);
 
     const { searchQuery, setSearchQuery } = useHome();
 
@@ -50,17 +51,6 @@ const Home = () => {
     const todayStr = getLocalTodayString();
     const [travelDate, setTravelDate] = useState(todayStr);
     const [passengers, setPassengers] = useState('1');
-
-    // Inisialisasi Gambar Hero dari Folder Public Dinamis
-    useEffect(() => {
-        if (localImageUrls.length > 0) {
-            setHeroSlides(localImageUrls);
-        } else if (heroData.heroSlides && heroData.heroSlides.length > 0) {
-            setHeroSlides(heroData.heroSlides.map((s) => s.image));
-        } else {
-            setHeroSlides(['https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?q=80&w=1920']);
-        }
-    }, []);
 
     // Load Data Rute & Blog dari Backend
     useEffect(() => {
@@ -178,12 +168,16 @@ const Home = () => {
         });
     };
 
+    // Mengambil URL Gambar Dinamis berdasarkan base URL dari API
     const getImageUrl = (imageUrl) => {
         if (!imageUrl) return 'https://placehold.co/400x250?text=Transport+Lombok';
         if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
             return imageUrl;
         }
-        return `http://localhost:5000${imageUrl}`;
+
+        // Ambil domain dasar dari API_BASE_URL (misal: http://localhost:5000/api -> http://localhost:5000)
+        const baseUrl = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : 'http://localhost:5000';
+        return `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
     };
 
     const formatDisplayDate = (dateStr) => {
@@ -209,7 +203,7 @@ const Home = () => {
                                 key={index}
                                 src={imagePath}
                                 alt="Lombok Background"
-                                className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ease-in-out blur-sm scale-105 ${
+                                className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ease-in-out blur-xs scale-105 ${
                                     index === currentSlide ? 'opacity-100' : 'opacity-0'
                                 }`}
                                 style={{ imageRendering: 'auto' }}
@@ -339,6 +333,15 @@ const Home = () => {
                                     </select>
                                 </div>
                             </div>
+
+                            {/* Tombol Cari */}
+                            <button
+                                type="submit"
+                                className="w-full lg:w-auto h-full px-6 py-3 bg-[#0194F3] hover:bg-blue-600 text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <i className="fa-solid fa-magnifying-glass"></i>
+                                <span>Cari</span>
+                            </button>
                         </form>
                     </div>
                 </div>

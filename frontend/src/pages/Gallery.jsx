@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useGallery } from '@/context/GalleryContext';
-import { getGalleries } from '@/services/api';
+import { getGalleries, API_BASE_URL } from '@/services/api';
 
 const Gallery = () => {
     const { visibleCount, setVisibleCount } = useGallery();
@@ -59,13 +59,16 @@ const Gallery = () => {
         setVisibleCount((prev) => (prev ?? getInitialLimit()) + getInitialLimit());
     };
 
-    // Helper URL Gambar
+    // Helper URL Gambar Dinamis berdasarkan API_BASE_URL
     const getImageUrl = (imageUrl) => {
         if (!imageUrl) return 'https://placehold.co/400x300?text=Galeri+Lombok';
         if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
             return imageUrl;
         }
-        return `http://localhost:5000${imageUrl}`;
+
+        // Ambil domain dasar dari API_BASE_URL (misal: http://localhost:5000/api -> http://localhost:5000)
+        const baseUrl = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : 'http://localhost:5000';
+        return `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
     };
 
     return (

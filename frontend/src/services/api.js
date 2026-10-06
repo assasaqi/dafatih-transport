@@ -1,10 +1,13 @@
 import axios from 'axios';
 
+// Ekspor URL dasar API agar dapat digunakan di komponen React (seperti Home.jsx)
+export const API_BASE_URL = 'http://localhost:5000/api';
+// Untuk environment produksi, Anda dapat menggantinya ke:
+// export const API_BASE_URL = 'https://dafatih-transport.rasmantech.web.id/api';
+
 // 1. Inisialisasi Axios Instance
 const API = axios.create({
-    // Ganti dengan URL endpoint backend Express Anda jika berbeda
-        baseURL: 'https://dafatih-transport.rasmantech.web.id/api',
-        baseURL: 'http://localhost:5000/api',
+    baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     }
