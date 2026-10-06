@@ -7,7 +7,7 @@ const Login = () => {
     const [isRegister, setIsRegister] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [name, setName] = useState(''); // Opsi tambahan nama saat registrasi
+    const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -76,11 +76,11 @@ const Login = () => {
                     </button>
                 </form>
 
-                <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                {/* <div style={{ marginTop: '16px', textAlign: 'center' }}>
                     <button type="button" onClick={() => { setIsRegister(!isRegister); setMessage({ type: '', text: '' }); }} style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}>
                         {isRegister ? 'Sudah punya akun? Login di sini' : 'Belum punya akun? Daftar Admin'}
                     </button>
-                </div>
+                </div> */}
             </div>
         </div>
     );

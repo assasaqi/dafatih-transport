@@ -12,7 +12,6 @@ const AdminNavbar = () => {
             const saved = localStorage.getItem('adminUser');
             if (!saved) return { name: 'Admin', email: '' };
 
-            // Jika tersimpan sebagai string biasa/email lama
             if (!saved.startsWith('{')) {
                 return { name: saved, email: saved };
             }
@@ -35,7 +34,6 @@ const AdminNavbar = () => {
     const navItems = [
         { label: 'Dashboard', path: '/admin/dashboard', icon: 'fa-gauge' },
         { label: 'Pemesanan', path: '/admin/bookings', icon: 'fa-clipboard-list' },
-        // { label: 'Mobil', path: '/admin/vehicles', icon: 'fa-car' },
         { label: 'Rute & Tarif', path: '/admin/routes', icon: 'fa-route' },
         { label: 'Galeri', path: '/admin/galleries', icon: 'fa-images' },
         { label: 'Blog', path: '/admin/blogs', icon: 'fa-blog' },
@@ -44,220 +42,68 @@ const AdminNavbar = () => {
 
     return (
         <>
-            <style>{`
-        /* Spasi Konten Utama agar Tidak Tertutup Sidebar di Desktop */
-        body {
-          margin: 0;
-          padding-left: 240px;
-          transition: padding-left 0.3s ease;
-        }
-
-        /* Sidebar Style Desktop */
-        .admin-sidebar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 240px;
-          height: 100vh;
-          background: #0f172a;
-          color: #fff;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          z-index: 1200;
-          box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
-          box-sizing: border-box;
-          transition: transform 0.3s ease;
-        }
-
-        .sidebar-brand {
-          padding: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-bottom: 1px solid #1e293b;
-        }
-
-        .admin-logo {
-          font-size: 1.15rem;
-          font-weight: 800;
-          color: #38bdf8;
-          text-decoration: none;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .sidebar-nav-list {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          padding: 16px 12px;
-          flex-grow: 1;
-          overflow-y: auto;
-        }
-
-        .sidebar-nav-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 10px 14px;
-          border-radius: 8px;
-          text-decoration: none;
-          font-size: 0.85rem;
-          font-weight: 600;
-          transition: all 0.2s ease;
-        }
-
-        .sidebar-nav-item i {
-          width: 20px;
-          text-align: center;
-          font-size: 1rem;
-        }
-
-        .sidebar-user-footer {
-          padding: 16px;
-          background: #090d16;
-          border-top: 1px solid #1e293b;
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        .user-info-text {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          color: #cbd5e1;
-          font-size: 0.8rem;
-          font-weight: 600;
-        }
-
-        .btn-sidebar-logout {
-          width: 100%;
-          background: #ef4444;
-          color: #fff;
-          border: none;
-          padding: 8px;
-          border-radius: 6px;
-          font-size: 0.78rem;
-          font-weight: 700;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          transition: background 0.2s ease;
-        }
-
-        .btn-sidebar-logout:hover {
-          background: #dc2626;
-        }
-
-        /* Top Bar Mobile */
-        .mobile-header-bar {
-          display: none;
-          position: sticky;
-          top: 0;
-          left: 0;
-          width: 100%;
-          background: #0f172a;
-          color: #fff;
-          padding: 12px 16px;
-          justify-content: space-between;
-          align-items: center;
-          z-index: 1000;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-          box-sizing: border-box;
-        }
-
-        .mobile-toggle-btn {
-          background: transparent;
-          border: none;
-          color: #fff;
-          font-size: 1.3rem;
-          cursor: pointer;
-          padding: 4px;
-        }
-
-        .sidebar-overlay {
-          display: none;
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(2px);
-          z-index: 1150;
-        }
-
-        /* Breakpoint Mobile (< 768px) */
-        @media (max-width: 768px) {
-          body {
-            padding-left: 0 !important;
-          }
-
-          .mobile-header-bar {
-            display: flex;
-          }
-
-          .admin-sidebar {
-            transform: translateX(-100%);
-          }
-
-          .admin-sidebar.open {
-            transform: translateX(0);
-          }
-
-          .sidebar-overlay.open {
-            display: block;
-          }
-        }
-      `}</style>
-
-            {/* Header Tipis Mobile */}
-            <div className="mobile-header-bar">
-                <Link to="/admin/dashboard" className="admin-logo">
-                    Dafatih Admin
+            {/* Header Tipis Khusus Mobile */}
+            <div className="md:hidden sticky top-0 left-0 w-full bg-slate-900 text-white px-4 py-3 flex justify-between items-center z-40 shadow-md">
+                <Link to="/admin/dashboard" className="font-extrabold text-sky-400 text-base flex items-center gap-2">
+                    <i className="fa-solid fa-shield-halved text-sky-400"></i>
+                    <span>Dafatih Admin</span>
                 </Link>
                 <button
-                    className="mobile-toggle-btn"
+                    type="button"
+                    className="text-white text-xl p-1 cursor-pointer focus:outline-none"
                     onClick={() => setIsSidebarOpen(true)}
-                    aria-label="Open Sidebar"
+                    aria-label="Buka Menu Sidebar"
                 >
                     <i className="fa-solid fa-bars"></i>
                 </button>
             </div>
 
-            {/* Backdrop Gelap Mobile */}
-            <div
-                className={`sidebar-overlay ${isSidebarOpen ? 'open' : ''}`}
-                onClick={() => setIsSidebarOpen(false)}
-            />
+            {/* Backdrop Gelap saat Sidebar Terbuka di Mobile */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 md:hidden transition-opacity"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
 
-            {/* Sidebar Utama */}
-            <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''}`}>
+            {/* Sidebar Utama (Fixed di Desktop, Drawer di Mobile) */}
+            <aside
+                className={`fixed top-0 left-0 w-60 h-screen bg-slate-900 text-white flex flex-col justify-between z-50 shadow-xl transition-transform duration-300 ease-in-out md:translate-x-0 ${
+                    isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                }`}
+            >
                 <div>
-                    <div className="sidebar-brand">
-                        <Link to="/admin/dashboard" className="admin-logo">
-                            <i className="fa-solid fa-shield-halved" style={{ color: '#38bdf8' }}></i>
+                    {/* Brand Header */}
+                    <div className="p-5 flex items-center justify-between border-b border-slate-800">
+                        <Link to="/admin/dashboard" className="font-extrabold text-sky-400 text-lg flex items-center gap-2.5">
+                            <i className="fa-solid fa-shield-halved text-sky-400 text-xl"></i>
                             <span>Dafatih Admin</span>
                         </Link>
+                        <button
+                            type="button"
+                            className="md:hidden text-slate-400 hover:text-white text-lg p-1 cursor-pointer"
+                            onClick={() => setIsSidebarOpen(false)}
+                        >
+                            <i className="fa-solid fa-xmark"></i>
+                        </button>
                     </div>
 
-                    <nav className="sidebar-nav-list">
+                    {/* Navigasi Menu */}
+                    <nav className="flex flex-col gap-1 p-3 overflow-y-auto max-h-[calc(100vh-160px)]">
                         {navItems.map((item) => {
                             const isActive = location.pathname === item.path;
                             return (
                                 <Link
                                     key={item.path}
                                     to={item.path}
-                                    className="sidebar-nav-item"
                                     onClick={() => setIsSidebarOpen(false)}
-                                    style={{
-                                        color: isActive ? '#ffffff' : '#94a3b8',
-                                        background: isActive ? '#0284c7' : 'transparent',
-                                    }}
+                                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                                        isActive
+                                            ? 'bg-[#0194F3] text-white shadow-xs'
+                                            : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                                    }`}
                                 >
-                                    <i className={`fa-solid ${item.icon}`}></i>
+                                    <i className={`fa-solid ${item.icon} w-5 text-center text-sm`}></i>
                                     <span>{item.label}</span>
                                 </Link>
                             );
@@ -265,16 +111,22 @@ const AdminNavbar = () => {
                     </nav>
                 </div>
 
-                <div className="sidebar-user-footer">
-                    <div className="user-info-text">
-                        <i className="fa-solid fa-user-gear" style={{ color: '#38bdf8' }}></i>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {displayName}
-                        </span>
+                {/* Footer Profil & Logout */}
+                <div className="p-4 bg-slate-950 border-t border-slate-800 flex flex-col gap-3">
+                    <div className="flex items-center gap-2.5 text-slate-300 text-xs font-semibold">
+                        <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center shrink-0">
+                            <i className="fa-solid fa-user-gear text-sky-400 text-xs"></i>
+                        </div>
+                        <span className="truncate">{displayName}</span>
                     </div>
-                    <button className="btn-sidebar-logout" onClick={handleLogout}>
+
+                    <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+                    >
                         <i className="fa-solid fa-right-from-bracket"></i>
-                        Logout
+                        <span>Logout</span>
                     </button>
                 </div>
             </aside>
