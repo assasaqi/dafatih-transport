@@ -16,8 +16,6 @@ const app = express();
 const allowedOrigins = [
     'https://dafatih-transport.rasmantech.web.id',
     'http://dafatih-transport.rasmantech.web.id',
-    'https://dev.dafatihtransport.com',
-    'http://dev.dafatihtransport.com',
     'http://localhost:5173',
     'http://localhost:3000'
 ];
