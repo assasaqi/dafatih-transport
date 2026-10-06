@@ -171,13 +171,12 @@ const Home = () => {
     // Mengambil URL Gambar Dinamis berdasarkan base URL dari API
     const getImageUrl = (imageUrl) => {
         if (!imageUrl) return 'https://placehold.co/400x250?text=Transport+Lombok';
-        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-            return imageUrl;
+        let fullUrl = imageUrl;
+        if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+            const baseUrl = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : 'http://localhost:5000';
+            fullUrl = `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
         }
-
-        // Ambil domain dasar dari API_BASE_URL (misal: http://localhost:5000/api -> http://localhost:5000)
-        const baseUrl = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : 'http://localhost:5000';
-        return `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+        return encodeURI(fullUrl);
     };
 
     const formatDisplayDate = (dateStr) => {
@@ -203,7 +202,8 @@ const Home = () => {
                                 key={index}
                                 src={imagePath}
                                 alt="Lombok Background"
-                                className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ease-in-out blur-xs scale-105 ${
+                                translate="no"
+                                className={`notranslate absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ease-in-out blur-xs scale-105 ${
                                     index === currentSlide ? 'opacity-100' : 'opacity-0'
                                 }`}
                                 style={{ imageRendering: 'auto' }}
@@ -411,7 +411,8 @@ const Home = () => {
                                             <img
                                                 src={getImageUrl(route.image_url)}
                                                 alt={`${route.pickup_location} - ${route.dropoff_location}`}
-                                                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                                                translate="no"
+                                                className="notranslate w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                                                 loading="lazy"
                                             />
                                         </div>
