@@ -5,11 +5,22 @@ import { getRoutes, getBlogs } from '@/services/api';
 
 import heroData from '@/data/hero.json';
 
+// Secara dinamis membaca semua berkas gambar dari folder /public/images/
+const localImagesModules = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp,avif}', {
+    eager: true,
+    import: 'default'
+});
+
+// Mengubah objek modul menjadi array string URL gambar publik
+const localImageUrls = Object.keys(localImagesModules).map((filePath) =>
+    filePath.replace('/public', '')
+);
+
 const Home = () => {
     const navigate = useNavigate();
 
     const [currentSlide, setCurrentSlide] = useState(0);
-    const slides = heroData.heroSlides || [];
+    const [heroSlides, setHeroSlides] = useState([]);
 
     const { searchQuery, setSearchQuery } = useHome();
 
@@ -30,7 +41,6 @@ const Home = () => {
     const [showLeftBtn, setShowLeftBtn] = useState(false);
     const [showRightBtn, setShowRightBtn] = useState(true);
 
-    // Dapatkan tanggal hari ini dalam format YYYY-MM-DD berbasis zona waktu lokal
     const getLocalTodayString = () => {
         const today = new Date();
         const year = today.getFullYear();
@@ -43,6 +53,18 @@ const Home = () => {
     const [travelDate, setTravelDate] = useState(todayStr);
     const [passengers, setPassengers] = useState('1');
 
+    // Inisialisasi Gambar Hero dari Folder Public Dinamis
+    useEffect(() => {
+        if (localImageUrls.length > 0) {
+            setHeroSlides(localImageUrls);
+        } else if (heroData.heroSlides && heroData.heroSlides.length > 0) {
+            setHeroSlides(heroData.heroSlides.map((s) => s.image));
+        } else {
+            setHeroSlides(['https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?q=80&w=1920']);
+        }
+    }, []);
+
+    // Load Data Rute & Blog dari Backend
     useEffect(() => {
         Promise.all([getRoutes(), getBlogs()])
             .then(([routesRes, blogsRes]) => {
@@ -57,17 +79,16 @@ const Home = () => {
             });
     }, []);
 
-    // Slideshow Hero Background
+    // Slideshow Background Otomatis Berganti Setiap 5 Detik
     useEffect(() => {
-        if (slides.length <= 1) return;
+        if (heroSlides.length <= 1) return;
         const timer = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % slides.length);
+            setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
         }, 5000);
 
         return () => clearInterval(timer);
-    }, [slides.length]);
+    }, [heroSlides.length]);
 
-    // Handler klik tab kategori
     const handleTabClick = (tabKey) => {
         if (tabKey === 'rental' || tabKey === 'tour') {
             navigate('/not-found');
@@ -120,7 +141,6 @@ const Home = () => {
 
     const filteredRoutes = getFilteredRoutes();
 
-    // Fungsi untuk memperbarui status visibilitas tombol slide
     const updateScrollButtons = () => {
         if (sliderRef.current) {
             const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
@@ -129,12 +149,10 @@ const Home = () => {
         }
     };
 
-    // Update status tombol saat data rute selesai dimuat
     useEffect(() => {
         updateScrollButtons();
     }, [filteredRoutes]);
 
-    // Fungsi Scroll Manual (Geser persis 1 kartu tanpa looping)
     const scrollSlider = (direction) => {
         if (sliderRef.current) {
             const container = sliderRef.current;
@@ -170,7 +188,6 @@ const Home = () => {
         return `http://localhost:5000${imageUrl}`;
     };
 
-    // Format Tanggal Tampilan
     const formatDisplayDate = (dateStr) => {
         if (!dateStr) return '';
         const dateObj = new Date(dateStr);
@@ -183,30 +200,38 @@ const Home = () => {
 
     return (
         <div className="bg-[#F2F4F7] text-slate-800 min-h-screen">
-            {/* HERO SECTION */}
-            <section className="relative min-h-[480px] md:min-h-[520px] flex items-center justify-center px-4 py-10 md:py-16 overflow-hidden">
-                {/* Background Slideshow */}
+            {/* HERO SECTION DENGAN TAG IMG TAJAM & TAJAN */}
+            <section className="relative min-h-[480px] md:min-h-[520px] flex items-center justify-center px-4 py-12 md:py-20 overflow-hidden bg-slate-900">
+
+                {/* Render Slideshow Gambar dengan Elemen <img> untuk Resolusi Maksimal */}
                 <div className="absolute inset-0 z-0">
-                    {slides.map((slide, index) => (
-                        <div
-                            key={index}
-                            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
-                                index === currentSlide ? 'opacity-100' : 'opacity-0'
-                            }`}
-                            style={{ backgroundImage: `url('${slide.image}')` }}
-                        />
-                    ))}
-                    <div className="absolute inset-0 bg-slate-900/50" />
+                    {heroSlides.length > 0 ? (
+                        heroSlides.map((imagePath, index) => (
+                            <img
+                                key={index}
+                                src={imagePath}
+                                alt="Lombok Background"
+                                className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ease-in-out blur-sm scale-105 ${
+                                    index === currentSlide ? 'opacity-100' : 'opacity-0'
+                                }`}
+                                style={{ imageRendering: 'auto' }}
+                            />
+                        ))
+                    ) : (
+                        <div className="absolute inset-0 bg-slate-800" />
+                    )}
+                    {/* Dark Overlay agar Teks & Form tetap terlihat kontras */}
+                    <div className="absolute inset-0 bg-slate-950/45 backdrop-brightness-95" />
                 </div>
 
                 {/* Hero Content */}
                 <div className="relative z-10 w-full max-w-6xl mx-auto">
-                    <h1 className="text-center text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold mb-6 drop-shadow-md tracking-tight leading-snug">
+                    <h1 className="text-center text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-8 drop-shadow-lg tracking-tight leading-snug">
                         Pilihan Terbaik Jelajahi Keindahan Lombok
                     </h1>
 
-                    {/* Floating Search Card ala Traveloka */}
-                    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-2xl">
+                    {/* Floating Search Card */}
+                    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-2xl border border-white/20">
                         {/* Tab Kategori Layanan */}
                         <div className="flex gap-2 border-b border-slate-200 pb-3.5 mb-5 overflow-x-auto">
                             <button
@@ -343,10 +368,9 @@ const Home = () => {
                     </div>
                 )}
 
-                {/* SLIDER KONTEN DENGAN TOMBOL NAVIGASI DYNAMIC */}
+                {/* SLIDER RUTE PERJALANAN */}
                 {!isLoading && !error && filteredRoutes.length > 0 && (
                     <div className="relative group/slider">
-                        {/* Tombol Navigasi Kiri (Hanya muncul jika bukan di posisi paling awal) */}
                         {showLeftBtn && (
                             <button
                                 type="button"
@@ -358,7 +382,6 @@ const Home = () => {
                             </button>
                         )}
 
-                        {/* Tombol Navigasi Kanan (Hanya muncul jika belum di posisi paling akhir) */}
                         {showRightBtn && (
                             <button
                                 type="button"
@@ -370,7 +393,6 @@ const Home = () => {
                             </button>
                         )}
 
-                        {/* Slider Card Horizontal */}
                         <div
                             ref={sliderRef}
                             onScroll={updateScrollButtons}
@@ -384,17 +406,15 @@ const Home = () => {
                                     className="snap-start shrink-0 w-[260px] sm:w-[280px] lg:w-[calc(25%-15px)] group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 border border-slate-200/80 cursor-pointer flex flex-col justify-between"
                                 >
                                     <div>
-                                        {/* Wrapper Gambar */}
                                         <div className="relative h-40 sm:h-44 overflow-hidden bg-slate-100">
                                             <img
                                                 src={getImageUrl(route.image_url)}
                                                 alt={`${route.pickup_location} - ${route.dropoff_location}`}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                                                 loading="lazy"
                                             />
                                         </div>
 
-                                        {/* Detail Informasi Card */}
                                         <div className="p-3.5 sm:p-4">
                                             <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#0194F3] transition-colors line-clamp-1 mb-1">
                                                 {route.pickup_location} - {route.dropoff_location}
