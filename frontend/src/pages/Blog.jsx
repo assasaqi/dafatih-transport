@@ -24,8 +24,14 @@ const Blog = () => {
         getBlogs()
             .then((res) => {
                 if (isMounted) {
-                    if (res.data?.success) {
-                        setArticles(res.data.data || []);
+                    // Penanganan fleksibel untuk format array langsung maupun objek wrapper
+                    const blogData = Array.isArray(res.data)
+                        ? res.data
+                        : (res.data?.data || res.data?.blogs || []);
+
+                    if (Array.isArray(blogData)) {
+                        setArticles(blogData);
+                        setError('');
                     } else {
                         setError('Gagal memuat artikel blog.');
                     }
@@ -48,23 +54,29 @@ const Blog = () => {
     const currentLimit = visibleCount ?? getInitialLimit();
 
     const displayedArticles = useMemo(
-        () => articles.slice(0, currentLimit),
+        () => (Array.isArray(articles) ? articles.slice(0, currentLimit) : []),
         [articles, currentLimit]
     );
 
-    const hasMore = currentLimit < articles.length;
+    const hasMore = currentLimit < (articles?.length || 0);
 
     const loadMore = () => {
         setVisibleCount((prev) => (prev ?? getInitialLimit()) + getInitialLimit());
     };
 
-    // Helper URL Gambar
+    // Helper URL Gambar Dinamis
     const getImageUrl = (imageUrl) => {
         if (!imageUrl) return 'https://placehold.co/400x250?text=Wisata+Lombok';
         if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
             return imageUrl;
         }
-        return `http://localhost:5000${imageUrl}`;
+
+        // Tentukan domain backend secara otomatis berdasarkan lingkungan
+        const baseUrl = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+            ? 'https://dafatih-transport.rasmantech.web.id'
+            : 'http://localhost:5000';
+
+        return `${baseUrl}${imageUrl}`;
     };
 
     // Format Tanggal Tampilan
@@ -150,7 +162,7 @@ const Blog = () => {
 
                                         {/* Ringkasan */}
                                         <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                                            {article.excerpt || article.content?.substring(0, 80) + '...'}
+                                            {article.excerpt || (article.content ? article.content.substring(0, 80) + '...' : '')}
                                         </p>
                                     </div>
                                 </div>
