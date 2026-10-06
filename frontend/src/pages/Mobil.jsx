@@ -45,16 +45,24 @@ const Mobil = () => {
         });
     };
 
-    // Helper URL Gambar Dinamis berdasarkan API_BASE_URL
-    const getImageUrl = (imageUrl) => {
+    // Helper URL Gambar Dinamis: Menggunakan domain aktif browser jika API_BASE_URL tidak tersedia
+    const getImageUrl = (car) => {
+        const imageUrl = typeof car === 'string' ? car : car?.image_url || car?.image || car?.image_path || '';
         if (!imageUrl) return 'https://placehold.co/400x250?text=Armada+Mobil';
+
         if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-            return imageUrl;
+            return encodeURI(imageUrl);
         }
 
-        // Ambil domain dasar dari API_BASE_URL (misal: http://localhost:5000/api -> http://localhost:5000)
-        const baseUrl = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : 'http://localhost:5000';
-        return `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+        let baseUrl = '';
+        if (API_BASE_URL) {
+            baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
+        } else if (typeof window !== 'undefined') {
+            baseUrl = window.location.origin;
+        }
+
+        const fullUrl = `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+        return encodeURI(fullUrl);
     };
 
     return (
@@ -102,10 +110,11 @@ const Mobil = () => {
                                     {/* Gambar Ukuran Proporsional */}
                                     <div className="relative h-40 sm:h-44 overflow-hidden bg-slate-100">
                                         <img
-                                            src={getImageUrl(car.image_url)}
+                                            src={getImageUrl(car)}
                                             alt={car.name}
+                                            translate="no"
                                             loading="lazy"
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            className="notranslate w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                         />
                                         <span className="absolute top-2.5 left-2.5 bg-slate-900/80 backdrop-blur-xs text-white text-[9px] font-extrabold px-2 py-0.5 rounded-md tracking-wider uppercase">
                                             {car.category || 'MPV'}

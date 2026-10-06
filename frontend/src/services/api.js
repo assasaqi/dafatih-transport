@@ -1,11 +1,25 @@
 import axios from 'axios';
 
-// Ekspor URL dasar API agar dapat digunakan di komponen React (seperti Home.jsx)
-export const API_BASE_URL = 'http://localhost:5000/api';
-// Untuk environment produksi, Anda dapat menggantinya ke:
-// export const API_BASE_URL = 'https://dafatih-transport.rasmantech.web.id/api';
+// 1. Penentuan Base URL Dinamis (Mendukung Environment Variable Vite)
+export const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL ||
+    (process.env.NODE_ENV === 'production'
+        ? 'https://dafatih-transport.rasmantech.web.id/api'
+        : 'http://localhost:5000/api');
 
-// 1. Inisialisasi Axios Instance
+// 2. Helper URL Gambar Global (Menghapus '/api' untuk membentuk domain utama server)
+export const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return 'https://placehold.co/120x80?text=No+Image';
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('blob:')) {
+        return imageUrl;
+    }
+
+    const baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
+    const cleanPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+    return `${baseUrl}${cleanPath}`;
+};
+
+// 3. Inisialisasi Axios Instance
 const API = axios.create({
     baseURL: API_BASE_URL,
     headers: {
@@ -13,10 +27,10 @@ const API = axios.create({
     }
 });
 
-// 2. Interceptor: Menyisipkan Token Authorization Secara Otomatis
+// 4. Interceptor: Menyisipkan Token Authorization Secara Otomatis
 API.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token'); // Mengambil token login
+        const token = localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -35,13 +49,20 @@ export const updateProfile = (data) => API.put('/profile', data);
 export const loginAdmin = (data) => API.post('/login', data);
 export const registerAdmin = (data) => API.post('/register', data);
 
-// Vehicle API
+// Vehicle API (Mendukung Upload File Gambar)
 export const getVehicles = () => API.get('/vehicles');
+export const createVehicle = (formData) => API.post('/vehicles', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+});
 
-// Route & Tarif API
+// Route & Tarif API (Mendukung Upload File Gambar)
 export const getRoutes = () => API.get('/routes');
-export const createRoute = (data) => API.post('/routes', data);
-export const updateRoute = (id, data) => API.put(`/routes/${id}`, data);
+export const createRoute = (formData) => API.post('/routes', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+});
+export const updateRoute = (id, formData) => API.put(`/routes/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+});
 export const deleteRoute = (id) => API.delete(`/routes/${id}`);
 
 // Booking API

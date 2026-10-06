@@ -168,14 +168,23 @@ const Home = () => {
         });
     };
 
-    // Mengambil URL Gambar Dinamis berdasarkan base URL dari API
-    const getImageUrl = (imageUrl) => {
+    // Helper URL Gambar Dinamis: Menggunakan domain aktif browser jika API_BASE_URL tidak tersedia
+    const getImageUrl = (route) => {
+        const imageUrl = route?.image_url || route?.image || route?.image_path || '';
         if (!imageUrl) return 'https://placehold.co/400x250?text=Transport+Lombok';
-        let fullUrl = imageUrl;
-        if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
-            const baseUrl = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : 'http://localhost:5000';
-            fullUrl = `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+            return encodeURI(imageUrl);
         }
+
+        let baseUrl = '';
+        if (API_BASE_URL) {
+            baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
+        } else if (typeof window !== 'undefined') {
+            baseUrl = window.location.origin;
+        }
+
+        const fullUrl = `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
         return encodeURI(fullUrl);
     };
 
@@ -191,10 +200,10 @@ const Home = () => {
 
     return (
         <div className="bg-[#F2F4F7] text-slate-800 min-h-screen">
-            {/* HERO SECTION DENGAN TAG IMG TAJAM & TAJAN */}
+            {/* HERO SECTION DENGAN TAG IMG TAJAM */}
             <section className="relative min-h-[480px] md:min-h-[520px] flex items-center justify-center px-4 py-12 md:py-20 overflow-hidden bg-slate-900">
 
-                {/* Render Slideshow Gambar dengan Elemen <img> untuk Resolusi Maksimal */}
+                {/* Render Slideshow Gambar */}
                 <div className="absolute inset-0 z-0">
                     {heroSlides.length > 0 ? (
                         heroSlides.map((imagePath, index) => (
@@ -409,7 +418,7 @@ const Home = () => {
                                     <div>
                                         <div className="relative h-40 sm:h-44 overflow-hidden bg-slate-100">
                                             <img
-                                                src={getImageUrl(route.image_url)}
+                                                src={getImageUrl(route)}
                                                 alt={`${route.pickup_location} - ${route.dropoff_location}`}
                                                 translate="no"
                                                 className="notranslate w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"

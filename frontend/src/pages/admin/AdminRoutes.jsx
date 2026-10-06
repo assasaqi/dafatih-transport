@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { getRoutes, createRoute, updateRoute, deleteRoute, API_BASE_URL } from '@/services/api';
+import { getRoutes, createRoute, updateRoute, deleteRoute, getImageUrl } from '@/services/api';
 import AdminNavbar from '@/components/AdminNavbar';
 
 const AdminRoutes = () => {
@@ -12,10 +12,11 @@ const AdminRoutes = () => {
     const [imagePreview, setImagePreview] = useState(null);
     const [activeDropdownId, setActiveDropdownId] = useState(null);
 
-    // State untuk Toast Notification
+    // State Toast Notification
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
     const dropdownRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
@@ -46,17 +47,6 @@ const AdminRoutes = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Helper URL Gambar Dinamis berdasarkan API_BASE_URL
-    const getImageUrl = (imageUrl) => {
-        if (!imageUrl) return 'https://placehold.co/120x80?text=No+Image';
-        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-            return imageUrl;
-        }
-
-        const baseUrl = API_BASE_URL ? API_BASE_URL.replace(/\/api\/?$/, '') : 'http://localhost:5000';
-        return `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
-    };
-
     const toggleDropdown = (id, e) => {
         e.stopPropagation();
         setActiveDropdownId(activeDropdownId === id ? null : id);
@@ -66,13 +56,14 @@ const AdminRoutes = () => {
         setActiveDropdownId(null);
         setImageFile(null);
         setImagePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
 
         if (route) {
             setEditingId(route.id);
             setFormData({
-                pickup_location: route.pickup_location,
-                dropoff_location: route.dropoff_location,
-                price: route.price
+                pickup_location: route.pickup_location || '',
+                dropoff_location: route.dropoff_location || '',
+                price: route.price || ''
             });
             if (route.image_url) {
                 setImagePreview(getImageUrl(route.image_url));
@@ -94,11 +85,16 @@ const AdminRoutes = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         const submitData = new FormData();
         submitData.append('pickup_location', formData.pickup_location);
         submitData.append('dropoff_location', formData.dropoff_location);
         submitData.append('price', formData.price);
-        if (imageFile) submitData.append('image', imageFile);
+
+        // Tambahkan berkas gambar jika dipilih oleh pengguna
+        if (imageFile) {
+            submitData.append('image', imageFile);
+        }
 
         try {
             if (editingId) {
@@ -111,6 +107,7 @@ const AdminRoutes = () => {
             setModalOpen(false);
             loadRoutes();
         } catch (err) {
+            console.error('Submit error:', err);
             showToast('Gagal menyimpan rute. Silakan coba lagi.', 'error');
         }
     };
@@ -201,7 +198,6 @@ const AdminRoutes = () => {
                                     ) : (
                                         routes.map((r) => (
                                             <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
-                                                {/* Foto Horizontal dengan Lebar Proporsional */}
                                                 <td className="py-3 px-4 text-center">
                                                     <div className="w-20 h-12 rounded-lg overflow-hidden border border-slate-200 mx-auto bg-slate-50 shadow-2xs group relative">
                                                         <img
@@ -334,6 +330,7 @@ const AdminRoutes = () => {
                                     )}
 
                                     <input
+                                        ref={fileInputRef}
                                         type="file"
                                         accept="image/*"
                                         onChange={handleImageChange}
