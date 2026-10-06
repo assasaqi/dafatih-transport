@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
-// Impot Koneksi Database MySQL & Rute Utama
+// Import Koneksi Database MySQL & Rute Utama
 const db = require('./config/db');
 const apiRoutes = require('./routes/apiRoutes');
 
@@ -13,12 +13,25 @@ const app = express();
 // 1. Middlewares Global
 // ==========================================
 // Mengizinkan Cross-Origin Resource Sharing dari Frontend React
+const allowedOrigins = [
+    'https://dafatih-transport.rasmantech.web.id',
+    'http://dafatih-transport.rasmantech.web.id',
+    'https://dev.dafatihtransport.com',
+    'http://dev.dafatihtransport.com',
+    'http://localhost:5173',
+    'http://localhost:3000'
+];
+
 app.use(cors({
-    origin: [
-        'https://dev.dafatihtransport.com',
-        'http://dev.dafatihtransport.com',
-        'http://localhost:5173'
-    ],
+    origin: function (origin, callback) {
+        // Izinkan request tanpa origin (seperti curl, mobile app, atau browser direct load)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            return callback(null, true);
+        } else {
+            return callback(null, true); // Setel true jika ingin mengizinkan semua origin di produksi
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
@@ -28,8 +41,13 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Menyediakan akses statis publik ke folder penyimpanan file gambar terunggah
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Menyediakan akses statis publik ke folder penyimpanan file gambar terunggah dengan Header CORS Statis
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+    setHeaders: (res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    }
+}));
 
 // ==========================================
 // 2. Main API Routes
