@@ -3,9 +3,6 @@
 @tailwind utilities;
 
 /* Kode CSS global Anda di bawahnya jika ada */
-
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300..900;1,300..900&display=swap');
-
 :root {
     --primary: #0284c7;
     --primary-dark: #0369a1;
@@ -30,8 +27,7 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
-    scroll-behavior: smooth;
+      scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
 }
 
