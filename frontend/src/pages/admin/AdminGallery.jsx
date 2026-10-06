@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getGalleries, createGallery, updateGallery, deleteGallery } from '@/services/api';
 import AdminNavbar from '@/components/AdminNavbar';
 
@@ -11,8 +11,6 @@ const AdminGallery = () => {
     const [formData, setFormData] = useState({ title: '', category: 'Destinasi' });
     const [imageFile, setImageFile] = useState(null);
     const [activeDropdownId, setActiveDropdownId] = useState(null);
-
-    const containerRef = useRef(null);
 
     const loadGalleries = () => {
         setLoading(true);
@@ -28,14 +26,15 @@ const AdminGallery = () => {
         loadGalleries();
     }, []);
 
+    // Tutup dropdown saat pengguna mengklik area di luar dropdown
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (!event.target.closest('.dropdown-wrapper')) {
+            if (!event.target.closest('.dropdown-container')) {
                 setActiveDropdownId(null);
             }
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
     }, []);
 
     const toggleDropdown = (id, e) => {
@@ -106,296 +105,107 @@ const AdminGallery = () => {
     };
 
     return (
-        <>
-            <style>{`
-        .admin-container {
-          padding: 24px 5%;
-          max-width: 1200px;
-          margin: 0 auto;
-          box-sizing: border-box;
-        }
-
-        .admin-header-bar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 24px;
-          gap: 16px;
-        }
-
-        .admin-title-area h2 {
-          font-size: 1.35rem;
-          font-weight: 800;
-          color: #0f172a;
-          margin: 0;
-        }
-
-        .admin-title-area p {
-          font-size: 0.82rem;
-          color: #64748b;
-          margin: 4px 0 0 0;
-        }
-
-        .btn-add-primary {
-          background: #0284c7;
-          color: #fff;
-          border: none;
-          padding: 10px 18px;
-          border-radius: 8px;
-          font-weight: 700;
-          font-size: 0.82rem;
-          cursor: pointer;
-          white-space: nowrap;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);
-          transition: background 0.2s;
-        }
-
-        .btn-add-primary:hover {
-          background: #0369a1;
-        }
-
-        .table-card-wrapper {
-          background: #fff;
-          border-radius: 12px;
-          border: 1px solid #e2e8f0;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-
-        .table-responsive {
-          width: 100%;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-          padding-bottom: 60px;
-          margin-bottom: -60px;
-        }
-
-        .admin-table {
-          width: 100%;
-          border-collapse: collapse;
-          text-align: left;
-          font-size: 0.82rem;
-          min-width: 480px;
-        }
-
-        .admin-table th {
-          background: #f8fafc;
-          padding: 12px 14px;
-          border-bottom: 1.5px solid #e2e8f0;
-          color: #475569;
-          font-weight: 700;
-          font-size: 0.75rem;
-          text-transform: uppercase;
-          letter-spacing: 0.03em;
-          white-space: nowrap;
-        }
-
-        .admin-table td {
-          padding: 10px 14px;
-          border-bottom: 1px solid #f1f5f9;
-          color: #1e293b;
-          vertical-align: middle;
-          white-space: nowrap;
-        }
-
-        .cell-truncate {
-          max-width: 180px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .admin-table tbody tr:hover {
-          background-color: #f8fafc;
-        }
-
-        .gallery-img-thumb {
-          width: 46px;
-          height: 32px;
-          object-fit: cover;
-          border-radius: 6px;
-          border: 1px solid #e2e8f0;
-          display: block;
-          margin: 0 auto;
-        }
-
-        .dropdown-wrapper {
-          position: relative;
-          display: inline-block;
-        }
-
-        .btn-dropdown-toggle {
-          background: #f1f5f9;
-          border: 1px solid #cbd5e1;
-          color: #334155;
-          width: 32px;
-          height: 32px;
-          border-radius: 6px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .btn-dropdown-toggle:hover {
-          background: #e2e8f0;
-          color: #0f172a;
-        }
-
-        .dropdown-menu-list {
-          position: absolute;
-          right: 0;
-          top: 36px;
-          background: #ffffff;
-          border: 1px solid #cbd5e1;
-          border-radius: 8px;
-          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
-          min-width: 120px;
-          z-index: 999;
-          overflow: hidden;
-          padding: 4px 0;
-        }
-
-        .dropdown-item-btn {
-          width: 100%;
-          text-align: left;
-          background: none;
-          border: none;
-          padding: 8px 12px;
-          font-size: 0.78rem;
-          font-weight: 600;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          transition: background 0.15s;
-        }
-
-        .dropdown-item-btn.edit {
-          color: #d97706;
-        }
-
-        .dropdown-item-btn.edit:hover {
-          background: #fef3c7;
-        }
-
-        .dropdown-item-btn.delete {
-          color: #dc2626;
-        }
-
-        .dropdown-item-btn.delete:hover {
-          background: #fee2e2;
-        }
-
-        @media (max-width: 640px) {
-          .admin-header-bar {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .btn-add-primary {
-            width: 100%;
-            justify-content: center;
-          }
-
-          .admin-container {
-            padding: 16px 3%;
-          }
-
-          .cell-truncate {
-            max-width: 110px;
-          }
-        }
-      `}</style>
-
+        <div className="min-h-screen bg-slate-100 text-slate-800 md:pl-60 transition-all">
             <AdminNavbar />
 
-            <div className="admin-container" ref={containerRef}>
-                <div className="admin-header-bar">
-                    <div className="admin-title-area">
-                        <h2>Kelola Galeri Foto</h2>
-                        <p>Unggah dan edit foto kegiatan serta destinasi wisata Lombok.</p>
+            <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+                {/* Header Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80">
+                    <div>
+                        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                            Kelola Galeri Foto
+                        </h2>
+                        <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                            Unggah dan edit foto kegiatan serta destinasi wisata Pulau Lombok.
+                        </p>
                     </div>
-                    <button className="btn-add-primary" onClick={() => handleOpenModal()}>
-                        <i className="fa-solid fa-plus"></i> Tambah Foto Baru
+
+                    <button
+                        type="button"
+                        onClick={() => handleOpenModal()}
+                        className="bg-[#0194F3] hover:bg-sky-600 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap self-start sm:self-auto"
+                    >
+                        <i className="fa-solid fa-plus text-xs"></i>
+                        <span>Tambah Foto Baru</span>
                     </button>
                 </div>
 
+                {/* Content Table / Loading State */}
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: '50px 20px', color: '#64748b' }}>
-                        <i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '8px', fontSize: '1.2rem' }}></i> Memuat galeri...
+                    <div className="text-center py-16 text-slate-500 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+                        <i className="fa-solid fa-spinner fa-spin text-xl text-[#0194F3] mr-2"></i>
+                        <span className="text-xs font-semibold">Memuat galeri...</span>
                     </div>
                 ) : (
-                    <div className="table-card-wrapper">
-                        <div className="table-responsive">
-                            <table className="admin-table">
+                    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+                        <div className="overflow-x-auto min-h-[220px] p-1">
+                            <table className="w-full text-left text-xs sm:text-sm border-collapse min-w-[450px]">
                                 <thead>
-                                    <tr>
-                                        <th style={{ width: '55px', textAlign: 'center' }}>Foto</th>
-                                        <th>Judul Foto / Keterangan</th>
-                                        <th style={{ width: '140px' }}>Kategori</th>
-                                        <th style={{ textAlign: 'center', width: '60px' }}>Aksi</th>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
+                                        <th className="py-3 px-4 text-center w-16">Foto</th>
+                                        <th className="py-3 px-4">Judul Foto / Keterangan</th>
+                                        <th className="py-3 px-4 w-32">Kategori</th>
+                                        <th className="py-3 px-4 text-center w-20">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-slate-100 font-medium">
                                     {galleries.length === 0 ? (
                                         <tr>
-                                            <td colSpan="4" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>
+                                            <td colSpan="4" className="text-center py-12 text-slate-400">
                                                 Belum ada foto galeri yang ditambahkan.
                                             </td>
                                         </tr>
                                     ) : (
                                         galleries.map((item) => (
-                                            <tr key={item.id}>
-                                                <td style={{ textAlign: 'center' }}>
+                                            <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                                                <td className="py-2.5 px-4 text-center">
                                                     <img
-                                                        src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://localhost:5000${item.image_url}`) : 'https://placehold.co/60x40?text=Foto'}
-                                                        className="gallery-img-thumb"
+                                                        src={
+                                                            item.image_url
+                                                                ? item.image_url.startsWith('http')
+                                                                    ? item.image_url
+                                                                    : `http://localhost:5000${item.image_url}`
+                                                                : 'https://placehold.co/60x40?text=Foto'
+                                                        }
+                                                        className="w-12 h-8 object-cover rounded-lg border border-slate-200 mx-auto"
                                                         alt={item.title}
                                                     />
                                                 </td>
-                                                <td style={{ fontWeight: 700, color: '#0f172a' }} className="cell-truncate" title={item.title}>
+                                                <td className="py-2.5 px-4 font-extrabold text-slate-900 max-w-[180px] sm:max-w-[220px] truncate" title={item.title}>
                                                     {item.title}
                                                 </td>
-                                                <td>
-                                                    <span style={{ fontSize: '0.72rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '5px', fontWeight: 700 }}>
+                                                <td className="py-2.5 px-4">
+                                                    <span className="text-[11px] bg-sky-50 text-[#0194F3] px-2.5 py-1 rounded-lg font-bold inline-block whitespace-nowrap">
                                                         {item.category || 'Destinasi'}
                                                     </span>
                                                 </td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                    <div className="dropdown-wrapper">
+                                                <td className="py-2.5 px-4 text-center">
+                                                    <div className="dropdown-container relative inline-block text-left">
                                                         <button
-                                                            className="btn-dropdown-toggle"
+                                                            type="button"
                                                             onClick={(e) => toggleDropdown(item.id, e)}
-                                                            aria-label="Opsi"
+                                                            className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
                                                         >
-                                                            <i className="fa-solid fa-ellipsis-vertical"></i>
+                                                            <i className="fa-solid fa-ellipsis-vertical text-xs pointer-events-none"></i>
                                                         </button>
 
                                                         {activeDropdownId === item.id && (
-                                                            <div className="dropdown-menu-list">
+                                                            <div className="absolute right-0 sm:right-0 mt-1 w-32 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50">
                                                                 <button
                                                                     type="button"
-                                                                    className="dropdown-item-btn edit"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleOpenModal(item);
-                                                                    }}
+                                                                    onClick={() => handleOpenModal(item)}
+                                                                    className="w-full text-left px-3.5 py-2 text-xs font-bold text-amber-600 hover:bg-amber-50 flex items-center gap-2 cursor-pointer transition-colors"
                                                                 >
-                                                                    <i className="fa-solid fa-pen-to-square"></i> Edit
+                                                                    <i className="fa-solid fa-pen-to-square"></i>
+                                                                    <span>Edit</span>
                                                                 </button>
                                                                 <button
                                                                     type="button"
-                                                                    className="dropdown-item-btn delete"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleDelete(item.id);
-                                                                    }}
+                                                                    onClick={() => handleDelete(item.id)}
+                                                                    className="w-full text-left px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
                                                                 >
-                                                                    <i className="fa-solid fa-trash"></i> Hapus
+                                                                    <i className="fa-solid fa-trash"></i>
+                                                                    <span>Hapus</span>
                                                                 </button>
                                                             </div>
                                                         )}
@@ -412,60 +222,80 @@ const AdminGallery = () => {
 
                 {/* Modal Form Tambah/Edit Foto */}
                 {modalOpen && (
-                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300, padding: '16px' }}>
-                        <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', width: '100%', maxWidth: '420px', boxSizing: 'border-box', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}>
-                            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.15rem', color: '#0f172a', fontWeight: 800 }}>
-                                {editingId ? 'Edit Foto Galeri' : 'Tambah Foto Galeri'}
-                            </h3>
-                            <form onSubmit={handleSubmit}>
-                                <div style={{ marginBottom: '14px' }}>
-                                    <label style={{ fontSize: '0.78rem', fontWeight: 700, display: 'block', marginBottom: '6px', color: '#334155' }}>Judul Foto / Keterangan</label>
+                    <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md shadow-xl border border-slate-200">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                                <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+                                    {editingId ? 'Edit Foto Galeri' : 'Tambah Foto Galeri'}
+                                </h3>
+                                <button
+                                    type="button"
+                                    onClick={handleCloseModal}
+                                    className="text-slate-400 hover:text-slate-600 text-base p-1 cursor-pointer"
+                                >
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSubmit} className="space-y-3.5">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                                        Judul Foto / Keterangan *
+                                    </label>
                                     <input
                                         type="text"
                                         required
                                         value={formData.title}
                                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                        style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '6px', border: '1.5px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.85rem' }}
+                                        placeholder="Contoh: Keindahan Pantai Kuta Lombok"
+                                        className="w-full h-10 px-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] transition-colors"
                                     />
                                 </div>
 
-                                <div style={{ marginBottom: '14px' }}>
-                                    <label style={{ fontSize: '0.78rem', fontWeight: 700, display: 'block', marginBottom: '6px', color: '#334155' }}>Kategori</label>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                                        Kategori *
+                                    </label>
                                     <select
                                         value={formData.category}
                                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                        style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '6px', border: '1.5px solid #cbd5e1', boxSizing: 'border-box', fontSize: '0.85rem' }}
+                                        className="w-full h-10 px-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] transition-colors bg-white"
                                     >
                                         <option value="Destinasi">Destinasi Wisata</option>
-                                        <option value="Armada">Armada & Layanan</option>
+                                        <option value="Armada">Armada &amp; Layanan</option>
                                         <option value="Aktivitas">Aktivitas Pelanggan</option>
                                     </select>
                                 </div>
 
-                                <div style={{ marginBottom: '20px' }}>
-                                    <label style={{ fontSize: '0.78rem', fontWeight: 700, display: 'block', marginBottom: '6px', color: '#334155' }}>
-                                        Upload Berkas Gambar {editingId && <span style={{ fontWeight: 400, color: '#64748b' }}>(Biarkan kosong jika tidak diubah)</span>}
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                                        Upload Berkas Gambar{' '}
+                                        {editingId && (
+                                            <span className="font-normal text-slate-400">
+                                                (Biarkan kosong jika tidak diubah)
+                                            </span>
+                                        )}
                                     </label>
                                     <input
                                         type="file"
                                         accept="image/*"
                                         required={!editingId}
                                         onChange={(e) => setImageFile(e.target.files[0])}
-                                        style={{ width: '100%', fontSize: '0.8rem' }}
+                                        className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-50 file:text-[#0194F3] hover:file:bg-sky-100 cursor-pointer"
                                     />
                                 </div>
 
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                                     <button
                                         type="button"
                                         onClick={handleCloseModal}
-                                        style={{ background: '#94a3b8', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}
+                                        className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                                     >
                                         Batal
                                     </button>
                                     <button
                                         type="submit"
-                                        style={{ background: '#0284c7', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}
+                                        className="px-4 py-2 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
                                     >
                                         {editingId ? 'Simpan Perubahan' : 'Unggah Foto'}
                                     </button>
@@ -474,8 +304,8 @@ const AdminGallery = () => {
                         </div>
                     </div>
                 )}
-            </div>
-        </>
+            </main>
+        </div>
     );
 };
 
