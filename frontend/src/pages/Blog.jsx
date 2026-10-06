@@ -18,7 +18,7 @@ const Blog = () => {
         // Ambil data artikel dari database MySQL
         getBlogs()
             .then((res) => {
-                if (res.data.success) {
+                if (res.data?.success) {
                     setArticles(res.data.data);
                 }
                 setIsLoading(false);
@@ -48,78 +48,81 @@ const Blog = () => {
     };
 
     return (
-        <>
-            <style>{`
-        .page-view { display: block; }
-        .page-banner-compact { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 18px 5% 14px; text-align: center; }
-        .page-banner-compact h1 { font-size: clamp(1.1rem, 2vw + 0.4rem, 1.35rem); font-weight: 800; margin-bottom: 2px; }
-        .page-banner-compact p { color: #f1f5f9; font-size: clamp(0.75rem, 0.8vw + 0.3rem, 0.82rem); max-width: 550px; margin: 0 auto; opacity: 0.9; }
-        .section { padding: 20px 5%; max-width: 1200px; margin: 0 auto; }
-        .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-items: stretch; }
-        .blog-card { background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); display: flex; flex-direction: column; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-        .blog-card:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08); }
-        .blog-card-img { height: 160px; overflow: hidden; background: #f1f5f9; }
-        .blog-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s ease; }
-        .blog-card:hover .blog-card-img img { transform: scale(1.05); }
-        .blog-body { padding: 14px 16px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
-        .blog-body h3 { font-size: 0.98rem; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; line-height: 1.35; }
-        .blog-body p { font-size: 0.8rem; color: #64748b; line-height: 1.5; margin: 0 0 12px 0; }
-        .status-box { text-align: center; padding: 40px; color: #64748b; }
-        .btn-load-more { padding: 8px 20px; border-radius: 30px; border: 1px solid #0284c7; background-color: transparent; color: #0284c7; font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease; }
-        .btn-load-more:hover { background-color: #0284c7; color: #ffffff; }
-        @media (max-width: 768px) {
-          .section { padding: 14px 4%; }
-          .blog-grid { grid-template-columns: 1fr; gap: 12px; }
-        }
-      `}</style>
+        <div className="min-h-screen bg-slate-50 text-slate-800">
+            {/* Banner Compact */}
+            <div className="bg-gradient-to-b from-slate-900 to-slate-800 text-white px-5 py-6 sm:py-8 text-center">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-1 tracking-tight">
+                    Panduan &amp; Tips Wisata Lombok
+                </h1>
+                <p className="text-slate-200 text-xs sm:text-sm max-w-xl mx-auto opacity-90">
+                    Artikel dan informasi menarik seputar destinasi impian Anda di Pulau Lombok.
+                </p>
+            </div>
 
-            <div className="page-view">
-                <div className="page-banner-compact">
-                    <h1>Panduan & Tips Wisata Lombok</h1>
-                    <p>Artikel dan informasi menarik seputar destinasi impian Anda di Pulau Lombok.</p>
-                </div>
+            {/* Main Section */}
+            <section className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+                {isLoading && (
+                    <div className="text-center py-12 text-slate-500">
+                        <i className="fa-solid fa-spinner fa-spin mr-2"></i>
+                        Memuat artikel blog...
+                    </div>
+                )}
 
-                <section className="section">
-                    {isLoading && (
-                        <div className="status-box">
-                            <i className="fa-solid fa-spinner fa-spin" style={{ marginRight: '8px' }}></i>
-                            Memuat artikel blog...
-                        </div>
-                    )}
-                    {error && <div className="status-box" style={{ color: 'red' }}>{error}</div>}
+                {error && (
+                    <div className="text-center py-8 text-red-500 font-semibold">
+                        {error}
+                    </div>
+                )}
 
-                    {!isLoading && !error && displayedArticles.length > 0 && (
-                        <div className="blog-grid">
-                            {displayedArticles.map((article) => (
-                                <div key={article.id} className="blog-card">
-                                    <div className="blog-card-img">
-                                        <img
-                                            src={getImageUrl(article.image_url)}
-                                            alt={article.title}
-                                            loading="lazy"
-                                        />
-                                    </div>
-                                    <div className="blog-body">
-                                        <div>
-                                            <h3>{article.title}</h3>
-                                            <p>{article.excerpt || article.content?.substring(0, 100) + '...'}</p>
-                                        </div>
+                {!isLoading && !error && displayedArticles.length === 0 && (
+                    <div className="text-center py-12 text-slate-400">
+                        Belum ada artikel blog yang tersedia.
+                    </div>
+                )}
+
+                {!isLoading && !error && displayedArticles.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                        {displayedArticles.map((article) => (
+                            <div
+                                key={article.id}
+                                className="group bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col"
+                            >
+                                <div className="h-40 sm:h-44 overflow-hidden bg-slate-100">
+                                    <img
+                                        src={getImageUrl(article.image_url)}
+                                        alt={article.title}
+                                        loading="lazy"
+                                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                    />
+                                </div>
+                                <div className="p-4 flex flex-col flex-grow justify-between">
+                                    <div>
+                                        <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-2 line-clamp-2 leading-snug">
+                                            {article.title}
+                                        </h3>
+                                        <p className="text-xs sm:text-sm text-slate-600 line-clamp-3 leading-relaxed mb-3">
+                                            {article.excerpt || article.content?.substring(0, 100) + '...'}
+                                        </p>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            </div>
+                        ))}
+                    </div>
+                )}
 
-                    {hasMore && (
-                        <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                            <button className="btn-load-more" onClick={loadMore}>
-                                Tampilkan Lebih Banyak
-                            </button>
-                        </div>
-                    )}
-                </section>
-            </div>
-        </>
+                {hasMore && (
+                    <div className="mt-8 text-center">
+                        <button
+                            type="button"
+                            className="px-6 py-2.5 rounded-full border border-sky-600 text-sky-600 hover:bg-sky-600 hover:text-white font-semibold text-xs sm:text-sm transition-colors duration-200 cursor-pointer"
+                            onClick={loadMore}
+                        >
+                            Tampilkan Lebih Banyak
+                        </button>
+                    </div>
+                )}
+            </section>
+        </div>
     );
 };
 

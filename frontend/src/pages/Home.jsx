@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHome } from '@/context/HomeContext';
-import { getRoutes } from '@/services/api';
+import { getRoutes, getBlogs } from '@/services/api';
 
 import heroData from '@/data/hero.json';
 
@@ -19,8 +19,27 @@ const Home = () => {
     } = useHome();
 
     const [routes, setRoutes] = useState([]);
+    const [blogs, setBlogs] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+
+    // State Form Pencarian Hero
+    const [activeTab, setActiveTab] = useState('airport');
+    const [pickupInput, setPickupInput] = useState('');
+    const [dropoffInput, setDropoffInput] = useState('');
+
+    // Dapatkan tanggal hari ini dalam format YYYY-MM-DD berbasis zona waktu lokal
+    const getLocalTodayString = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const todayStr = getLocalTodayString();
+    const [travelDate, setTravelDate] = useState(todayStr);
+    const [passengers, setPassengers] = useState('1');
 
     const getInitialLimit = () => (window.innerWidth <= 768 ? 3 : 6);
 
@@ -29,17 +48,15 @@ const Home = () => {
             setVisibleCount(getInitialLimit());
         }
 
-        // Ambil data rute dari database MySQL
-        getRoutes()
-            .then((res) => {
-                if (res.data.success) {
-                    setRoutes(res.data.data);
-                }
+        Promise.all([getRoutes(), getBlogs()])
+            .then(([routesRes, blogsRes]) => {
+                if (routesRes.data?.success) setRoutes(routesRes.data.data);
+                if (blogsRes.data?.success) setBlogs(blogsRes.data.data.slice(0, 3));
                 setIsLoading(false);
             })
             .catch((err) => {
-                console.error('Gagal mengambil data rute:', err);
-                setError('Gagal memuat rute perjalanan.');
+                console.error('Gagal mengambil data:', err);
+                setError('Gagal memuat data perjalanan.');
                 setIsLoading(false);
             });
     }, [visibleCount, setVisibleCount]);
@@ -53,16 +70,52 @@ const Home = () => {
         return () => clearInterval(timer);
     }, [slides.length]);
 
-    // Filter rute berdasarkan pencarian
+    // Handler klik tab kategori
+    const handleTabClick = (tabKey) => {
+        if (tabKey === 'rental' || tabKey === 'tour') {
+            navigate('/not-found');
+        } else {
+            setActiveTab(tabKey);
+        }
+    };
+
+    const handleHeroSearchSubmit = (e) => {
+        e.preventDefault();
+
+        // Jika tab aktif bukan airport, alihkan ke notfound
+        if (activeTab === 'rental' || activeTab === 'tour') {
+            navigate('/not-found');
+            return;
+        }
+
+        const queryCombined = `${pickupInput} ${dropoffInput}`.trim();
+        setSearchQuery(queryCombined);
+
+        const routesSection = document.getElementById('routes-section');
+        if (routesSection) {
+            routesSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     const getFilteredRoutes = () => {
         let routesList = [...routes];
 
-        if (searchQuery.trim() !== '') {
+        if (pickupInput.trim() !== '' || dropoffInput.trim() !== '') {
+            const p = pickupInput.toLowerCase().trim();
+            const d = dropoffInput.toLowerCase().trim();
+            routesList = routesList.filter((r) => {
+                const pickLoc = (r.pickup_location || '').toLowerCase();
+                const dropLoc = (r.dropoff_location || '').toLowerCase();
+                const matchPickup = p === '' || pickLoc.includes(p);
+                const matchDrop = d === '' || dropLoc.includes(d);
+                return matchPickup && matchDrop;
+            });
+        } else if (searchQuery.trim() !== '') {
             const q = searchQuery.toLowerCase();
             routesList = routesList.filter((r) => {
+                const pickLoc = (r.pickup_location || '').toLowerCase();
                 const dropLoc = (r.dropoff_location || '').toLowerCase();
-                const pickupLoc = (r.pickup_location || '').toLowerCase();
-                return dropLoc.includes(q) || pickupLoc.includes(q);
+                return pickLoc.includes(q) || dropLoc.includes(q);
             });
         }
 
@@ -73,24 +126,21 @@ const Home = () => {
     const currentLimit = visibleCount ?? getInitialLimit();
     const displayedRoutes = filteredRoutes.slice(0, currentLimit);
 
-    const handleSearchChange = (e) => {
-        setSearchQuery(e.target.value);
-        setVisibleCount(getInitialLimit());
-    };
-
     const handleSelectRoute = (route) => {
         navigate('/pesan', {
             state: {
                 pickup: route.pickup_location,
                 drop: route.dropoff_location,
-                price: Number(route.price)
+                price: Number(route.price),
+                date: travelDate,
+                passengers: passengers,
+                carType: route.car_type || route.vehicle_name || 'Standar'
             }
         });
     };
 
-    // Helper untuk merender URL Gambar dengan benar
     const getImageUrl = (imageUrl) => {
-        if (!imageUrl) return 'https://placehold.co/300x200?text=Rute+Lombok';
+        if (!imageUrl) return 'https://placehold.co/400x250?text=Transport+Lombok';
         if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
             return imageUrl;
         }
@@ -98,139 +148,226 @@ const Home = () => {
     };
 
     return (
-        <>
-            <style>{`
-        .page-view { display: block; }
-        .hero-section { position: relative; overflow: hidden; min-height: 360px; display: flex; align-items: center; border-radius: 0 0 16px 16px; }
-        .hero-bg-slideshow { position: absolute; inset: 0; z-index: 1; }
-        .hero-slide { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.2s ease-in-out; }
-        .hero-slide.active { opacity: 1; }
-        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(15, 23, 42, 0.65) 0%, rgba(15, 23, 42, 0.85) 100%); }
-        .hero-content-wrapper { position: relative; z-index: 2; color: #fff; text-align: center; margin: 0 auto; padding: 30px 20px 24px; }
-        .google-reviews-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.95); color: #0f172a; padding: 6px 14px; border-radius: 30px; font-size: 0.78rem; font-weight: 700; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); text-decoration: none; margin-bottom: 14px; }
-        .google-stars { color: #f59e0b; display: flex; gap: 2px; font-size: 0.75rem; }
-        .section { padding: 24px 5%; max-width: 1200px; margin: 0 auto; }
-        .sub-section-title h2 { font-size: 1.15rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .controls-container { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
-        .search-box-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
-        .search-box-wrapper i.fa-search { position: absolute; left: 12px; color: #94a3b8; font-size: 0.75rem; pointer-events: none; }
-        .search-input { width: 100%; height: 36px; padding: 0 30px 0 32px; border-radius: 20px; border: 1.5px solid #e2e8f0; background: #ffffff; font-size: 0.78rem; color: #334155; outline: none; }
+        <div className="bg-slate-50 text-slate-800 min-h-screen">
+            {/* HERO SECTION */}
+            <section className="relative min-h-[480px] md:min-h-[520px] flex items-center justify-center px-4 py-10 md:py-16 overflow-hidden">
+                {/* Background Slideshow */}
+                <div className="absolute inset-0 z-0">
+                    {slides.map((slide, index) => (
+                        <div
+                            key={index}
+                            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+                                index === currentSlide ? 'opacity-100' : 'opacity-0'
+                            }`}
+                            style={{ backgroundImage: `url('${slide.image}')` }}
+                        />
+                    ))}
+                    <div className="absolute inset-0 bg-slate-900/50" />
+                </div>
 
-        .tour-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-        .tour-card { background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #f1f5f9; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column; }
+                {/* Hero Content */}
+                <div className="relative z-10 w-full max-w-6xl mx-auto">
+                    <h1 className="text-center text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold mb-6 drop-shadow-md tracking-tight leading-snug">
+                        Pilihan Terbaik Jelajahi Keindahan Lombok
+                    </h1>
 
-        /* Gambar Kartu Rute */
-        .tour-card-img { position: relative; height: 150px; overflow: hidden; background: #f1f5f9; }
-        .tour-card-img img { width: 100%; height: 100%; object-fit: cover; }
-        .tour-price-tag { position: absolute; bottom: 10px; right: 10px; background: rgba(15, 23, 42, 0.85); color: #fff; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.82rem; }
-
-        .tour-card-body { padding: 14px 16px; display: flex; flex-direction: column; flex-grow: 1; }
-        .btn-submit { width: 100%; padding: 8px 14px; border: none; border-radius: 6px; background-color: #0284c7; color: #fff; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
-        .status-box { text-align: center; padding: 40px; color: #64748b; }
-      `}</style>
-
-            <div className="page-view home-page">
-                {/* Hero Section */}
-                <section className="hero-section">
-                    <div className="hero-bg-slideshow">
-                        {slides.map((slide, index) => (
-                            <div
-                                key={index}
-                                className={`hero-slide ${index === currentSlide ? 'active' : ''}`}
-                                style={{ backgroundImage: `url('${slide.image}')` }}
-                            />
-                        ))}
-                        <div className="hero-overlay" />
-                    </div>
-
-                    <div className="container hero-content-wrapper">
-                        <a
-                            href={heroData.heroData?.googleMapsUrl || "https://maps.google.com"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="google-reviews-badge"
-                        >
-                            <i className="fa-brands fa-google" style={{ color: '#4285F4' }}></i>
-                            <span>5.0 Rating</span>
-                            <div className="google-stars">
-                                <i className="fa-solid fa-star"></i>
-                                <i className="fa-solid fa-star"></i>
-                                <i className="fa-solid fa-star"></i>
-                                <i className="fa-solid fa-star"></i>
-                                <i className="fa-solid fa-star"></i>
-                            </div>
-                        </a>
-
-                        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '8px' }}>
-                            {heroData.heroData?.title || 'Layanan Antar-Jemput Lombok Terbaik'}
-                        </h1>
-                        <p style={{ fontSize: '0.9rem', maxWidth: '600px', margin: '0 auto 14px', opacity: 0.9 }}>
-                            {heroData.heroData?.subtitle || 'Spesialis antar-jemput bandara dan destinasi wisata Lombok.'}
-                        </p>
-                    </div>
-                </section>
-
-                {/* Section Pilihan Rute Penjemputan */}
-                <section className="section container">
-                    <div className="sub-section-title" style={{ marginBottom: '18px', textAlign: 'center' }}>
-                        <h2>
-                            <i className="fa-solid fa-route" style={{ color: '#0284c7' }}></i>
-                            Pilihan Rute Penjemputan Populer
-                        </h2>
-                    </div>
-
-                    <div className="controls-container">
-                        <div className="search-box-wrapper">
-                            <i className="fa-solid fa-magnifying-glass fa-search"></i>
-                            <input
-                                type="text"
-                                className="search-input"
-                                placeholder="Cari rute penjemputan atau tujuan..."
-                                value={searchQuery}
-                                onChange={handleSearchChange}
-                            />
+                    {/* Floating Search Card ala Traveloka */}
+                    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-2xl">
+                        {/* Tab Kategori Layanan */}
+                        <div className="flex gap-2 border-b border-slate-200 pb-3.5 mb-5 overflow-x-auto">
+                            <button
+                                type="button"
+                                className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-colors cursor-pointer ${
+                                    activeTab === 'airport'
+                                        ? 'bg-sky-600 text-white'
+                                        : 'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                }`}
+                                onClick={() => handleTabClick('airport')}
+                            >
+                                <i className="fa-solid fa-plane-arrival"></i> Antar-Jemput
+                            </button>
+                            <button
+                                type="button"
+                                className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-colors cursor-pointer ${
+                                    activeTab === 'rental'
+                                        ? 'bg-sky-600 text-white'
+                                        : 'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                }`}
+                                onClick={() => handleTabClick('rental')}
+                            >
+                                <i className="fa-solid fa-car"></i> Sewa Mobil
+                            </button>
+                            <button
+                                type="button"
+                                className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-colors cursor-pointer ${
+                                    activeTab === 'tour'
+                                        ? 'bg-sky-600 text-white'
+                                        : 'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                }`}
+                                onClick={() => handleTabClick('tour')}
+                            >
+                                <i className="fa-solid fa-route"></i> Paket Tour Lombok
+                            </button>
                         </div>
+
+                        {/* Form Grid Responsive */}
+                        <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.5fr_1.5fr_1.2fr_1fr_auto] gap-3 items-center" onSubmit={handleHeroSearchSubmit}>
+                            {/* Lokasi Penjemputan */}
+                            <div className="border border-slate-300 rounded-xl p-2.5 bg-white flex flex-col focus-within:border-sky-600 transition-colors">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                    Lokasi Penjemputan
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <i className="fa-solid fa-location-dot text-sky-600 text-sm"></i>
+                                    <input
+                                        type="text"
+                                        className="w-full text-xs sm:text-sm font-semibold text-slate-900 outline-none bg-transparent placeholder-slate-400"
+                                        placeholder="Dari mana? (mis: Bandara Lombok)"
+                                        value={pickupInput}
+                                        onChange={(e) => setPickupInput(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Lokasi Tujuan */}
+                            <div className="border border-slate-300 rounded-xl p-2.5 bg-white flex flex-col focus-within:border-sky-600 transition-colors">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                    Lokasi Tujuan
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <i className="fa-solid fa-location-arrow text-sky-600 text-sm"></i>
+                                    <input
+                                        type="text"
+                                        className="w-full text-xs sm:text-sm font-semibold text-slate-900 outline-none bg-transparent placeholder-slate-400"
+                                        placeholder="Ke mana? (mis: Kuta Mandalika)"
+                                        value={dropoffInput}
+                                        onChange={(e) => setDropoffInput(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Tanggal Perjalanan */}
+                            <div className="border border-slate-300 rounded-xl p-2.5 bg-white flex flex-col focus-within:border-sky-600 transition-colors">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                    Tanggal Perjalanan
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <i className="fa-solid fa-calendar-days text-sky-600 text-sm"></i>
+                                    <input
+                                        type="date"
+                                        min={todayStr}
+                                        className="w-full text-xs sm:text-sm font-semibold text-slate-900 outline-none bg-transparent"
+                                        value={travelDate}
+                                        onChange={(e) => setTravelDate(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Jumlah Penumpang (1-4) */}
+                            <div className="border border-slate-300 rounded-xl p-2.5 bg-white flex flex-col focus-within:border-sky-600 transition-colors">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                    Jumlah Penumpang
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <i className="fa-solid fa-user-group text-sky-600 text-sm"></i>
+                                    <select
+                                        className="w-full text-xs sm:text-sm font-semibold text-slate-900 outline-none bg-transparent cursor-pointer"
+                                        value={passengers}
+                                        onChange={(e) => setPassengers(e.target.value)}
+                                    >
+                                        <option value="1">1 Orang</option>
+                                        <option value="2">2 Orang</option>
+                                        <option value="3">3 Orang</option>
+                                        <option value="4">4 Orang (Maksimal)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Tombol Cari */}
+                            <button
+                                type="submit"
+                                className="bg-sky-600 hover:bg-sky-700 text-white w-full lg:w-13 h-12 rounded-xl flex items-center justify-center text-lg font-bold transition-colors shadow-md sm:col-span-2 lg:col-span-1 cursor-pointer"
+                                title="Cari Perjalanan"
+                            >
+                                <i className="fa-solid fa-magnifying-glass"></i>
+                            </button>
+                        </form>
                     </div>
+                </div>
+            </section>
 
-                    {isLoading && <div className="status-box"><i className="fa-solid fa-spinner fa-spin"></i> Memuat rute...</div>}
-                    {error && <div className="status-box" style={{ color: 'red' }}>{error}</div>}
+            {/* SECTION HASIL RUTE */}
+            <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10 md:py-14" id="routes-section">
+                <div className="text-center mb-8">
+                    <span className="text-xs font-extrabold text-sky-600 uppercase tracking-wider block mb-1">
+                        Rute Pilihan
+                    </span>
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                        {pickupInput || dropoffInput ? 'Hasil Pencarian Perjalanan' : 'Pilihan Rute Penjemputan Populer'}
+                    </h2>
+                </div>
 
-                    {!isLoading && !error && displayedRoutes.length > 0 && (
-                        <div className="tour-cards-grid">
-                            {displayedRoutes.map((route) => (
-                                <div key={route.id} className="tour-card">
-                                    {/* KARTU GAMBAR RUTE */}
-                                    <div className="tour-card-img">
-                                        <img
-                                            src={getImageUrl(route.image_url)}
-                                            alt={route.dropoff_location || 'Rute Lombok'}
-                                            loading="lazy"
-                                        />
-                                        <span className="tour-price-tag">
-                                            Rp {Number(route.price).toLocaleString('id-ID')}
-                                        </span>
-                                    </div>
+                {isLoading && (
+                    <div className="text-center py-10 text-slate-500">
+                        <i className="fa-solid fa-spinner fa-spin mr-2"></i> Memuat rute...
+                    </div>
+                )}
 
-                                    <div className="tour-card-body">
-                                        <span style={{ color: '#0284c7', fontSize: '0.78rem', fontWeight: 600, marginBottom: '6px' }}>
+                {error && <div className="text-center py-6 text-red-500">{error}</div>}
+
+                {!isLoading && !error && displayedRoutes.length === 0 && (
+                    <div className="text-center py-10 text-slate-400">
+                        Rute perjalanan yang Anda cari tidak ditemukan.
+                    </div>
+                )}
+
+                {!isLoading && !error && displayedRoutes.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {displayedRoutes.map((route) => (
+                            <div key={route.id} className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                                <div className="relative h-40 bg-slate-200">
+                                    <img
+                                        src={getImageUrl(route.image_url)}
+                                        alt={route.dropoff_location || 'Rute Lombok'}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                    />
+                                    <span className="absolute bottom-2.5 right-2.5 bg-slate-900/90 text-white px-3 py-1 rounded-lg font-extrabold text-xs sm:text-sm">
+                                        Rp {Number(route.price).toLocaleString('id-ID')}
+                                    </span>
+                                </div>
+
+                                <div className="p-4 flex flex-col flex-grow">
+                                    <div className="flex justify-between items-center mb-1.5">
+                                        <span className="text-sky-600 text-xs font-bold flex items-center gap-1">
                                             <i className="fa-solid fa-location-dot"></i> Transfer Area
                                         </span>
-                                        <h4 style={{ fontSize: '1rem', marginBottom: '12px' }}>
-                                            {route.pickup_location} ➔ {route.dropoff_location}
-                                        </h4>
-
-                                        <button className="btn-submit" onClick={() => handleSelectRoute(route)}>
-                                            <i className="fa-solid fa-car"></i>
-                                            <span>Pesan Rute Ini</span>
-                                        </button>
+                                        {(route.car_type || route.vehicle_name) && (
+                                            <span className="text-[11px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded font-bold">
+                                                {route.car_type || route.vehicle_name}
+                                            </span>
+                                        )}
                                     </div>
+
+                                    <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mb-4">
+                                        {route.pickup_location} ➔ {route.dropoff_location}
+                                    </h4>
+
+                                    <button
+                                        type="button"
+                                        className="w-full mt-auto py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                                        onClick={() => handleSelectRoute(route)}
+                                    >
+                                        <i className="fa-solid fa-car-side"></i>
+                                        <span>Pesan Rute Ini</span>
+                                    </button>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-            </div>
-        </>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </section>
+        </div>
     );
 };
 
