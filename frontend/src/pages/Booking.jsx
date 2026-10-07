@@ -189,35 +189,82 @@ const Booking = () => {
 
             <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
 
-              {/* NAMA PEMESAN */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] sm:text-xs font-bold text-slate-700">
-                  Nama Lengkap Pemesan *
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    type="text"
-                    name="custName"
-                    required
-                    placeholder="Contoh: Budi Santoso"
-                    value={formData.custName}
-                    onChange={handleChange}
-                    className="w-full h-10 px-3 pr-8 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] transition-colors"
-                  />
-                  {formData.custName && (
-                    <button
-                      type="button"
-                      className="absolute right-2.5 text-slate-400 hover:text-slate-600 text-base p-1 cursor-pointer"
-                      onClick={() => handleClear('custName')}
-                    >
-                      &times;
-                    </button>
-                  )}
+              {/* BARIS 1: NAMA PEMESAN & NOMOR WHATSAPP */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+
+                {/* Nama Pemesan */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] sm:text-xs font-bold text-slate-700">
+                    Nama Lengkap Pemesan *
+                  </label>
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      name="custName"
+                      required
+                      placeholder="Contoh: Budi Santoso"
+                      value={formData.custName}
+                      onChange={handleChange}
+                      className="w-full h-10 px-3 pr-8 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] transition-colors"
+                    />
+                    {formData.custName && (
+                      <button
+                        type="button"
+                        className="absolute right-2.5 text-slate-400 hover:text-slate-600 text-base p-1 cursor-pointer"
+                        onClick={() => handleClear('custName')}
+                      >
+                        &times;
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {/* Nomor WhatsApp / HP */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] sm:text-xs font-bold text-slate-700">
+                    Nomor WhatsApp / HP *
+                  </label>
+                  <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden h-10 focus-within:border-[#0194F3] transition-colors bg-white">
+                    <select
+                      name="countryCode"
+                      value={formData.countryCode}
+                      onChange={handleChange}
+                      className="h-full bg-slate-50 border-r border-slate-300 px-2 text-xs font-bold text-slate-700 outline-none cursor-pointer shrink-0"
+                    >
+                      {countriesData.countries?.map((c, i) => (
+                        <option key={i} value={c.code}>
+                          {c.flag} +{c.code}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="relative flex-1 flex items-center h-full">
+                      <input
+                        type="tel"
+                        name="custWa"
+                        required
+                        placeholder="8123456789"
+                        value={formData.custWa}
+                        onChange={handleChange}
+                        className="w-full h-full px-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none bg-transparent"
+                      />
+                      {formData.custWa && (
+                        <button
+                          type="button"
+                          className="absolute right-2 text-slate-400 hover:text-slate-600 text-base p-1 cursor-pointer"
+                          onClick={() => handleClear('custWa')}
+                        >
+                          &times;
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
-              {/* FORM RUTE: PENJEMPUTAN, TUJUAN & TANGGAL JEMPUT */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+              {/* BARIS 2: RUTE (PENJEMPUTAN & TUJUAN) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+
                 {/* Penjemputan (From) */}
                 <div className="flex flex-col gap-1">
                   <label className="text-[11px] sm:text-xs font-bold text-slate-700">
@@ -256,12 +303,17 @@ const Booking = () => {
                   </div>
                 </div>
 
-                {/* Tanggal Jemput */}
+              </div>
+
+              {/* BARIS 3: WAKTU PENJEMPUTAN (TANGGAL & JAM) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+
+                {/* Tanggal Penjemputan */}
                 <div className="flex flex-col gap-1">
                   <label className="text-[11px] sm:text-xs font-bold text-slate-700">
                     Tanggal Penjemputan *
                   </label>
-                  <div className="relative flex items-center border border-slate-300 rounded-xl px-3 h-10 bg-white focus-within:border-[#0194F3]">
+                  <div className="relative flex items-center border border-slate-300 rounded-xl px-3 h-10 bg-white focus-within:border-[#0194F3] transition-colors">
                     <input
                       type="date"
                       name="pickupDate"
@@ -273,69 +325,24 @@ const Booking = () => {
                     />
                   </div>
                 </div>
-              </div>
-
-              {/* INPUT TELEPON & WAKTU JEMPUT */}
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 sm:gap-3 items-start">
-
-                {/* Mobile Number Group */}
-                <div className="sm:col-span-7 md:col-span-8 flex flex-col gap-1">
-                  <label className="text-[11px] sm:text-xs font-bold text-slate-700">
-                    Nomor WhatsApp / HP *
-                  </label>
-                  <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden h-10 focus-within:border-[#0194F3] transition-colors">
-                    <select
-                      name="countryCode"
-                      value={formData.countryCode}
-                      onChange={handleChange}
-                      className="h-full bg-slate-50 border-r border-slate-300 px-2 text-xs font-bold text-slate-700 outline-none cursor-pointer shrink-0"
-                    >
-                      {countriesData.countries?.map((c, i) => (
-                        <option key={i} value={c.code}>
-                          {c.flag} +{c.code}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="relative flex-1 flex items-center h-full">
-                      <input
-                        type="tel"
-                        name="custWa"
-                        required
-                        placeholder="8123456789"
-                        value={formData.custWa}
-                        onChange={handleChange}
-                        className="w-full h-full px-3 text-xs font-medium text-slate-900 outline-none bg-transparent"
-                      />
-                      {formData.custWa && (
-                        <button
-                          type="button"
-                          className="absolute right-2 text-slate-400 hover:text-slate-600 text-base p-1 cursor-pointer"
-                          onClick={() => handleClear('custWa')}
-                        >
-                          &times;
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-slate-400">
-                    Nomor WA aktif untuk bukti reservasi.
-                  </span>
-                </div>
 
                 {/* Jam Penjemputan */}
-                <div className="sm:col-span-5 md:col-span-4 flex flex-col gap-1">
+                <div className="flex flex-col gap-1">
                   <label className="text-[11px] sm:text-xs font-bold text-slate-700">
-                    Waktu (WITA) *
+                    Waktu Penjemputan (WITA) *
                   </label>
-                  <input
-                    type="time"
-                    name="pickupTime"
-                    required
-                    value={formData.pickupTime}
-                    onChange={handleChange}
-                    className="w-full h-10 px-3 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 outline-none focus:border-[#0194F3] transition-colors"
-                  />
+                  <div className="relative flex items-center border border-slate-300 rounded-xl px-3 h-10 bg-white focus-within:border-[#0194F3] transition-colors">
+                    <input
+                      type="time"
+                      name="pickupTime"
+                      required
+                      value={formData.pickupTime}
+                      onChange={handleChange}
+                      className="w-full text-xs font-semibold text-slate-800 outline-none bg-transparent"
+                    />
+                  </div>
                 </div>
+
               </div>
 
               {/* ESTIMASI HARGA & TOMBOL ACTION */}
