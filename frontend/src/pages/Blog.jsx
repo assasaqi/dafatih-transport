@@ -24,7 +24,6 @@ const Blog = () => {
         getBlogs()
             .then((res) => {
                 if (isMounted) {
-                    // Penanganan fleksibel untuk format array langsung maupun objek wrapper
                     const blogData = Array.isArray(res.data)
                         ? res.data
                         : (res.data?.data || res.data?.blogs || []);
@@ -64,7 +63,7 @@ const Blog = () => {
         setVisibleCount((prev) => (prev ?? getInitialLimit()) + getInitialLimit());
     };
 
-    // Helper URL Gambar Dinamis: Menggunakan domain aktif browser jika API_BASE_URL tidak tersedia
+    // Helper URL Gambar Dinamis
     const getImageUrl = (article) => {
         const imageUrl = article?.image_url || article?.image || article?.image_path || '';
         if (!imageUrl) return 'https://placehold.co/400x250?text=Wisata+Lombok';
@@ -73,7 +72,6 @@ const Blog = () => {
             return encodeURI(imageUrl);
         }
 
-        // Tentukan domain dasar dari API_BASE_URL atau window.location.origin (bukan hardcode localhost)
         let baseUrl = '';
         if (API_BASE_URL) {
             baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
@@ -99,7 +97,8 @@ const Blog = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#F2F4F7] text-slate-800">
+        /* TAMBAHKAN 'pt-20 sm:pt-24' PADA ELEMENT DI BAWAH INI */
+        <div className="min-h-screen bg-[#F2F4F7] text-slate-800 pt-20 sm:pt-24">
             {/* Banner Compact Ala Traveloka */}
             <div className="bg-[#0194F3] text-white px-5 py-6 sm:py-8 text-center shadow-xs">
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-1 tracking-tight">

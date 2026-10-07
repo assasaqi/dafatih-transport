@@ -64,15 +64,15 @@ const Footer = () => {
                     </h4>
                     <ul className="space-y-2 text-xs">
                         <li>
-                            <Link to="/" className="text-slate-400 hover:text-[#0194F3] transition-colors">
+                            {/* <Link to="/" className="text-slate-400 hover:text-[#0194F3] transition-colors">
                                 Beranda
-                            </Link>
+                            </Link> */}
                         </li>
-                        <li>
+                        {/* <li>
                             <Link to="/tarif" className="text-slate-400 hover:text-[#0194F3] transition-colors">
                                 Daftar Tarif
                             </Link>
-                        </li>
+                        </li> */}
                         <li>
                             <Link to="/galeri" className="text-slate-400 hover:text-[#0194F3] transition-colors">
                                 Galeri

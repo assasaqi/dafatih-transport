@@ -254,7 +254,7 @@ const Booking = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F2F4F7] py-3 sm:py-8 px-3 sm:px-6 lg:px-8 text-slate-800">
+    <div className="min-h-screen bg-[#F2F4F7] py-3 sm:py-8 px-3 sm:px-6 lg:px-8 text-slate-800 pt-20 sm:pt-24">
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-6 items-start">
 
         {/* ================= SIDEBAR NAVIGASI ================= */}

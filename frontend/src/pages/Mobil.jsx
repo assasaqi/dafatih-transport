@@ -66,7 +66,7 @@ const Mobil = () => {
     };
 
     return (
-        <div className="w-full min-h-screen bg-[#F2F4F7] text-slate-800">
+        <div className="w-full min-h-screen bg-[#F2F4F7] text-slate-800 pt-20 sm:pt-24">
             {/* Banner Compact Ala Traveloka */}
             <div className="bg-[#0194F3] text-white px-5 py-6 sm:py-8 text-center shadow-xs">
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-1 tracking-tight">
