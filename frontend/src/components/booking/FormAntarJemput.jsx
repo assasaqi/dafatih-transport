@@ -53,6 +53,7 @@ const FormAntarJemput = ({ onOpenModal }) => {
   const hoursList = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const minutesList = ['00', '15', '30', '45'];
 
+  // 1. Memuat data rute dari API
   useEffect(() => {
     getRoutes()
       .then((res) => {
@@ -63,31 +64,36 @@ const FormAntarJemput = ({ onOpenModal }) => {
       .catch((err) => console.error('Gagal memuat rute:', err));
   }, []);
 
-  // HANYA MENERIMA DATA DARI PAGE TARIF ATAU HOME CARD ANTAR-JEMPUT
+  // 2. Menerima data dari Page Tarif atau Card Home Antar-Jemput
   useEffect(() => {
     if (location.state) {
       const stateData = location.state;
 
-      // Filter ketat: Abaikan jika data dari Sewa Mobil atau Paket Tour
+      // Filter ketat: Abaikan jika data dikirim dari Sewa Mobil atau Paket Tour
       const isRentalData = stateData.jenisLayanan === 'Sewa Mobil' || !!stateData.carType || !!stateData.namaArmada;
       const isTourData = stateData.jenisLayanan === 'Paket Tour' || !!stateData.packageTour || !!stateData.packageName;
 
       if (isRentalData || isTourData) {
-        return; // ABAIKAN KELUAR
+        return;
       }
+
+      const incomingPickup = stateData.pickupLoc || stateData.pickup || '';
+      const incomingDrop = stateData.dropLoc || stateData.dropoff || stateData.drop || '';
+      const incomingPrice = Number(stateData.price || stateData.harga || 0);
 
       setFormData((prev) => ({
         ...prev,
         jenisLayanan: 'Antar-Jemput',
-        pickupLoc: stateData.pickup || stateData.pickupLoc || prev.pickupLoc,
-        dropLoc: stateData.dropoff || stateData.drop || stateData.dropLoc || prev.dropLoc,
-        price: Number(stateData.price || stateData.harga || prev.price || 0),
+        pickupLoc: incomingPickup || prev.pickupLoc,
+        dropLoc: incomingDrop || prev.dropLoc,
+        price: incomingPrice > 0 ? incomingPrice : prev.price,
         pickupDate: stateData.date || stateData.travelDate || prev.pickupDate,
         passengers: stateData.passengers || prev.passengers
       }));
     }
   }, [location.state]);
 
+  // Sync jam & menit lokal ketika pickupTime terisi
   useEffect(() => {
     if (formData.pickupTime) {
       const [h, m] = formData.pickupTime.split(':');
@@ -96,6 +102,7 @@ const FormAntarJemput = ({ onOpenModal }) => {
     }
   }, [formData.pickupTime]);
 
+  // Click Outside Handler untuk popover
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (pickupRef.current && !pickupRef.current.contains(e.target)) setIsPickupOpen(false);
@@ -107,14 +114,15 @@ const FormAntarJemput = ({ onOpenModal }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-const handleResetForm = () => {
-  setFormData(initialForm);
-  setSelectedHour('08');
-  setSelectedMinute('00');
-  // HAPUS ATAU HILANGKAN BARIS INI:
-  // navigate(location.pathname, { replace: true, state: {} });
-};
+  // Reset Form Handler
+  const handleResetForm = () => {
+    setFormData(initialForm);
+    setSelectedHour('08');
+    setSelectedMinute('00');
+    navigate(location.pathname, { replace: true, state: {} });
+  };
 
+  // Daftar Lokasi Penjemputan Unik dari API
   const uniquePickupLocations = Array.from(
     new Set([
       ...routes.map((r) => r.pickup_location).filter(Boolean),
@@ -122,10 +130,11 @@ const handleResetForm = () => {
     ].filter(Boolean))
   );
 
+  // Daftar Lokasi Tujuan Unik Sesuai Penjemputan
   const availableDropoffLocations = Array.from(
     new Set([
       ...routes
-        .filter((r) => !formData.pickupLoc || (r.pickup_location || '').toLowerCase() === formData.pickupLoc.toLowerCase())
+        .filter((r) => !formData.pickupLoc || (r.pickup_location || '').toLowerCase().trim() === (formData.pickupLoc || '').toLowerCase().trim())
         .map((r) => r.dropoff_location)
         .filter(Boolean),
       formData.dropLoc
@@ -135,19 +144,19 @@ const handleResetForm = () => {
   const updatePriceAndDropoff = (pickup, drop) => {
     const matchRoute = routes.find(
       (r) =>
-        (r.pickup_location || '').toLowerCase() === (pickup || '').toLowerCase() &&
-        (r.dropoff_location || '').toLowerCase() === (drop || '').toLowerCase()
+        (r.pickup_location || '').toLowerCase().trim() === (pickup || '').toLowerCase().trim() &&
+        (r.dropoff_location || '').toLowerCase().trim() === (drop || '').toLowerCase().trim()
     );
     return matchRoute ? Number(matchRoute.price) : 0;
   };
 
   const handleSelectPickup = (selectedPickup) => {
     const matchingRoutes = routes.filter(
-      (r) => (r.pickup_location || '').toLowerCase() === selectedPickup.toLowerCase()
+      (r) => (r.pickup_location || '').toLowerCase().trim() === selectedPickup.toLowerCase().trim()
     );
 
     const isCurrentDropValid = matchingRoutes.some(
-      (r) => (r.dropoff_location || '').toLowerCase() === (formData.dropLoc || '').toLowerCase()
+      (r) => (r.dropoff_location || '').toLowerCase().trim() === (formData.dropLoc || '').toLowerCase().trim()
     );
 
     const newDrop = isCurrentDropValid
@@ -176,6 +185,7 @@ const handleResetForm = () => {
     setIsDropoffOpen(false);
   };
 
+  // Logika pembuatan hari kalender
   const generateCalendarDays = () => {
     const year = currentCalendarMonth.getFullYear();
     const month = currentCalendarMonth.getMonth();

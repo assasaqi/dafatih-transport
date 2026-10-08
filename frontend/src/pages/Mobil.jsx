@@ -35,12 +35,15 @@ const Mobil = () => {
         };
     }, []);
 
+    // PERBAIKAN: Kirim state yang ditandai khusus untuk Form Sewa Mobil
     const handleSelectCar = (car) => {
         navigate('/pesan', {
             state: {
-                pickup: 'Sewa Mobil ' + car.name,
-                drop: 'Area Lombok',
-                price: Number(car.price_per_day)
+                jenisLayanan: 'Sewa Mobil',
+                carType: car.name,
+                namaArmada: car.name,
+                price: Number(car.price_per_day || 0),
+                location: 'Area Lombok'
             }
         });
     };

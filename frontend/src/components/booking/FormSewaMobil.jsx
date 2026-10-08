@@ -49,13 +49,13 @@ const FormSewaMobil = ({ onOpenModal }) => {
 
   // HANYA MENERIMA DATA DARI PAGE MOBIL / CARD MOBIL HOME
   useEffect(() => {
-    if (location.state) {
+    if (location.state && Object.keys(location.state).length > 0) {
       const stateData = location.state;
 
       const isRentalData = stateData.jenisLayanan === 'Sewa Mobil' || !!stateData.carType || !!stateData.namaArmada || !!stateData.duration;
 
       if (!isRentalData) {
-        return; // ABAIKAN JIKA BUKAN DARI MOBIL
+        return; // ABAIKAN JIKA BUKAN DATA SEWA MOBIL
       }
 
       setFormData((prev) => ({
@@ -88,13 +88,12 @@ const FormSewaMobil = ({ onOpenModal }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-const handleResetForm = () => {
-  setFormData(initialForm);
-  setSelectedHour('08');
-  setSelectedMinute('00');
-  // HAPUS ATAU HILANGKAN BARIS INI:
-  // navigate(location.pathname, { replace: true, state: {} });
-};
+  // DIUBAH: Hanya mereset state lokal tanpa navigasi router / redirect
+  const handleResetForm = () => {
+    setFormData(initialForm);
+    setSelectedHour('08');
+    setSelectedMinute('00');
+  };
 
   const generateCalendarDays = () => {
     const year = currentCalendarMonth.getFullYear();

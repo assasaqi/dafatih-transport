@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ModalSummary from '@/components/ModalSummary';
-import FormAntarJemput from '@/components/booking/FormAntarJemput';
-import FormSewaMobil from '@/components/booking/FormSewaMobil';
-import FormPaketTour from '@/components/booking/FormPaketTour';
+import FormAntarJemput from "@/components/booking/FormAntarJemput";
+import FormSewaMobil from "@/components/booking/FormSewaMobil";
+import FormPaketTour from "@/components/booking/FormPaketTour";
 
 const Booking = () => {
   const location = useLocation();
@@ -15,23 +15,26 @@ const Booking = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalFormData, setModalFormData] = useState(null);
 
-  // DETEKSI OTOMATIS TAB HANYA JIKA ADA DATA NAVIGASI DARI HALAMAN LAIN
-  useEffect(() => {
-    if (location.state && Object.keys(location.state).length > 0) {
-      const stateData = location.state;
-      const isRental = stateData.jenisLayanan === 'Sewa Mobil' || !!stateData.carType || !!stateData.namaArmada;
-      const isTour = stateData.jenisLayanan === 'Paket Tour' || !!stateData.packageTour || !!stateData.packageName;
-      const isAirport = stateData.jenisLayanan === 'Antar-Jemput' || !!stateData.dropoff || !!stateData.drop || !!stateData.dropLoc;
+  // DETEKSI OTOMATIS TAB HANYA JIKA ADA DATA NAVIGASI DARI LUAR
+// src/pages/Booking.jsx
 
-      if (isTour) {
-        setActiveTab('tour');
-      } else if (isRental) {
-        setActiveTab('rental');
-      } else if (isAirport) {
-        setActiveTab('airport');
-      }
+useEffect(() => {
+  // Hanya proses jika location.state ada dan tidak kosong
+  if (location.state && Object.keys(location.state).length > 0) {
+    const stateData = location.state;
+
+    const isRental = stateData.jenisLayanan === 'Sewa Mobil' || !!stateData.carType || !!stateData.namaArmada;
+    const isTour = stateData.jenisLayanan === 'Paket Tour' || !!stateData.packageTour || !!stateData.packageName;
+
+    if (isTour) {
+      setActiveTab('tour');
+    } else if (isRental) {
+      setActiveTab('rental');
+    } else if (stateData.pickup || stateData.pickupLoc || stateData.dropoff || stateData.dropLoc) {
+      setActiveTab('airport');
     }
-  }, [location.state]);
+  }
+}, [location.state]);
 
   const handleOpenModal = (data) => {
     setModalFormData(data);
@@ -130,9 +133,8 @@ const Booking = () => {
           </div>
         </div>
 
-        {/* KONTEN UTAMA */}
+        {/* AREA KONTEN UTAMA */}
         <div className="md:col-span-8 lg:col-span-9 space-y-3 sm:space-y-4">
-
           {showInfoBanner && (
             <div className="relative bg-[#0194F3] text-white rounded-xl p-3 sm:p-5 flex items-start justify-between gap-2.5 shadow-xs">
               <div className="flex items-start gap-3">
@@ -141,14 +143,13 @@ const Booking = () => {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-xs sm:text-sm mb-0.5 leading-tight">
-                    Pesan Layanan Transportasi &amp; Wisata Lombok Lebih Praktis
+                    Pesan Layanan Transportasi &amp; Wisata Lombok
                   </h3>
                   <p className="text-[11px] sm:text-xs text-sky-100 leading-normal">
-                    Lengkapi data pemesanan di bawah ini atau pilih rute dari <button type="button" onClick={() => navigate('/tarif')} className="underline font-bold hover:text-white">Daftar Tarif</button> / <button type="button" onClick={() => navigate('/mobil')} className="underline font-bold hover:text-white">Daftar Mobil</button>.
+                    Lengkapi formulir pemesanan di bawah ini atau pilih dari <button type="button" onClick={() => navigate('/tarif')} className="underline font-bold hover:text-white">Daftar Tarif</button>.
                   </p>
                 </div>
               </div>
-
               <button
                 type="button"
                 onClick={() => setShowInfoBanner(false)}
@@ -159,16 +160,15 @@ const Booking = () => {
             </div>
           )}
 
-          {/* FORM SESUAI TAB AKTIF */}
+          {/* RENDER FORM SESUAI TAB AKTIF (Tanpa meneruskan locationState yang memicu re-render salah) */}
           {activeTab === 'airport' && <FormAntarJemput onOpenModal={handleOpenModal} />}
           {activeTab === 'rental' && <FormSewaMobil onOpenModal={handleOpenModal} />}
           {activeTab === 'tour' && <FormPaketTour onOpenModal={handleOpenModal} />}
-
         </div>
 
       </div>
 
-      {showModal && modalFormData && (
+      {showModal && (
         <ModalSummary
           formData={modalFormData}
           onClose={() => setShowModal(false)}

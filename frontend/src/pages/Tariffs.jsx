@@ -65,20 +65,21 @@ const Tariffs = () => {
     }, []);
 
     // FIX: Kirim data dengan properti key yang konsisten ke /pesan
-    const handleSelectTariff = (route) => {
-        navigate('/pesan', {
-            state: {
-                jenisLayanan: 'Antar-Jemput',
-                pickup: route.pickup_location,
-                drop: route.dropoff_location,
-                dropoff: route.dropoff_location,
-                price: Number(route.price || 0),
-                date: travelDate,
-                passengers: passengers,
-                carType: route.car_type || route.vehicle_name || 'Standar'
-            }
-        });
-    };
+const handleSelectTariff = (route) => {
+    navigate('/pesan', {
+        state: {
+            jenisLayanan: 'Antar-Jemput',
+            pickupLoc: route.pickup_location,
+            dropLoc: route.dropoff_location,
+            pickup: route.pickup_location,
+            drop: route.dropoff_location,
+            dropoff: route.dropoff_location,
+            price: Number(route.price || 0),
+            date: travelDate,
+            passengers: passengers
+        }
+    });
+};
 
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
