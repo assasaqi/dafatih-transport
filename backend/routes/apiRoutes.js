@@ -29,10 +29,12 @@ router.put('/routes/:id', upload.single('image'), routeController.updateRoute);
 router.delete('/routes/:id', routeController.deleteRoute);
 
 // =========================================
-// 3. Vehicle / Armada Routes
+// 3. Vehicle / Armada Routes (CRUD Lengkap + Upload)
 // =========================================
 router.get('/vehicles', vehicleController.getAllVehicles);
 router.post('/vehicles', upload.single('image'), vehicleController.createVehicle);
+router.put('/vehicles/:id', upload.single('image'), vehicleController.updateVehicle);
+router.delete('/vehicles/:id', vehicleController.deleteVehicle);
 
 // =========================================
 // 4. Booking Routes

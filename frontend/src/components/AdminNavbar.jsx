@@ -28,12 +28,15 @@ const AdminNavbar = () => {
     const handleLogout = () => {
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminUser');
+        localStorage.removeItem('token');
         navigate('/admin/login');
     };
 
+    // Daftar Menu Navigasi Admin (Termasuk Kelola Armada Mobil)
     const navItems = [
         { label: 'Dashboard', path: '/admin/dashboard', icon: 'fa-gauge' },
         { label: 'Pemesanan', path: '/admin/bookings', icon: 'fa-clipboard-list' },
+        { label: 'Armada Mobil', path: '/admin/vehicles', icon: 'fa-car' },
         { label: 'Rute & Tarif', path: '/admin/routes', icon: 'fa-route' },
         { label: 'Galeri', path: '/admin/galleries', icon: 'fa-images' },
         { label: 'Blog', path: '/admin/blogs', icon: 'fa-blog' },

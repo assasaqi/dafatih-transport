@@ -2,93 +2,113 @@ import axios from 'axios';
 
 // 1. Penentuan Base URL Dinamis (Mendukung Environment Variable Vite)
 export const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    (process.env.NODE_ENV === 'production'
-        ? 'https://dafatih-transport.rasmantech.web.id/api'
-        : 'http://localhost:5000/api');
+  import.meta.env.VITE_API_BASE_URL ||
+  (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production'
+    ? 'https://dafatih-transport.rasmantech.web.id/api'
+    : 'http://localhost:5000/api');
 
 // 2. Helper URL Gambar Global (Menghapus '/api' untuk membentuk domain utama server)
 export const getImageUrl = (imageUrl) => {
-    if (!imageUrl) return 'https://placehold.co/120x80?text=No+Image';
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://') || imageUrl.startsWith('blob:')) {
-        return imageUrl;
-    }
+  if (!imageUrl) return 'https://placehold.co/400x250?text=No+Image';
 
-    const baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
-    const cleanPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
-    return `${baseUrl}${cleanPath}`;
+  // Jika parameter berupa objek (seperti objek car/vehicle/route)
+  const path = typeof imageUrl === 'string'
+    ? imageUrl
+    : imageUrl?.image_url || imageUrl?.image || imageUrl?.image_path || '';
+
+  if (!path) return 'https://placehold.co/400x250?text=No+Image';
+
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:')) {
+    return encodeURI(path);
+  }
+
+  const baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return encodeURI(`${baseUrl}${cleanPath}`);
 };
 
 // 3. Inisialisasi Axios Instance
 const API = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    }
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 // 4. Interceptor: Menyisipkan Token Authorization Secara Otomatis
 API.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => Promise.reject(error)
+  (config) => {
+    const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
 );
 
 // ==========================================
 // API ENDPOINTS
 // ==========================================
 
-// Admin Auth & Profile API
-export const getProfile = (email) => API.get(`/profile?email=${email}`);
+// --- Admin Auth & Profile API ---
+export const getProfile = (email) => API.get(`/profile${email ? `?email=${email}` : ''}`);
 export const updateProfile = (data) => API.put('/profile', data);
 export const loginAdmin = (data) => API.post('/login', data);
 export const registerAdmin = (data) => API.post('/register', data);
 
-// Vehicle API (Mendukung Upload File Gambar)
+// --- Vehicle / Armada API (CRUD Lengkap) ---
 export const getVehicles = () => API.get('/vehicles');
-export const createVehicle = (formData) => API.post('/vehicles', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-});
+export const createVehicle = (formData) =>
+  API.post('/vehicles', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+export const updateVehicle = (id, formData) =>
+  API.put(`/vehicles/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+export const deleteVehicle = (id) => API.delete(`/vehicles/${id}`);
 
-// Route & Tarif API (Mendukung Upload File Gambar)
+// --- Route & Tarif API (CRUD Lengkap) ---
 export const getRoutes = () => API.get('/routes');
-export const createRoute = (formData) => API.post('/routes', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-});
-export const updateRoute = (id, formData) => API.put(`/routes/${id}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-});
+export const createRoute = (formData) =>
+  API.post('/routes', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+export const updateRoute = (id, formData) =>
+  API.put(`/routes/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 export const deleteRoute = (id) => API.delete(`/routes/${id}`);
 
-// Booking API
+// --- Booking API ---
 export const getBookings = () => API.get('/bookings');
 export const createBooking = (bookingData) => API.post('/bookings', bookingData);
 export const updateBookingStatus = (id, status) => API.put(`/bookings/${id}/status`, { status });
 export const deleteBooking = (id) => API.delete(`/bookings/${id}`);
 
-// Gallery API (Mendukung Upload File Gambar)
+// --- Gallery API ---
 export const getGalleries = () => API.get('/galleries');
-export const createGallery = (formData) => API.post('/galleries', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-});
-export const updateGallery = (id, formData) => API.put(`/galleries/${id}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-});
+export const createGallery = (formData) =>
+  API.post('/galleries', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+export const updateGallery = (id, formData) =>
+  API.put(`/galleries/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 export const deleteGallery = (id) => API.delete(`/galleries/${id}`);
 
-// Blog API (Mendukung Upload File Gambar)
+// --- Blog API ---
 export const getBlogs = () => API.get('/blogs');
-export const createBlog = (formData) => API.post('/blogs', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-});
-export const updateBlog = (id, formData) => API.put(`/blogs/${id}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-});
+export const createBlog = (formData) =>
+  API.post('/blogs', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+export const updateBlog = (id, formData) =>
+  API.put(`/blogs/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 export const deleteBlog = (id) => API.delete(`/blogs/${id}`);
 
 export default API;

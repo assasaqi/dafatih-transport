@@ -7,7 +7,7 @@ import Tariffs from '@/pages/Tariffs';
 import Booking from '@/pages/Booking';
 import Gallery from '@/pages/Gallery';
 import Blog from '@/pages/Blog';
-import Mobil from '@/pages/Mobil';
+import Vehicles from '@/pages/Vehicles'; // Diselaraskan menggunakan nama Vehicles
 import NotFound from '@/pages/NotFound';
 
 // Impor Halaman Admin & Proteksi Route
@@ -15,10 +15,11 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Login from '@/pages/admin/Login';
 import Dashboard from '@/pages/admin/Dashboard';
 import AdminRoutes from '@/pages/admin/AdminRoutes';
+import AdminVehicles from '@/pages/admin/AdminVehicles'; // Impor Halaman Kelola Armada Admin
 import AdminBookings from '@/pages/admin/AdminBookings';
 import AdminGallery from '@/pages/admin/AdminGallery';
 import AdminBlog from '@/pages/admin/AdminBlog';
-import AdminProfile from '@/pages/admin/AdminProfile'; // <-- IMPOR INI YANG MENGATASI ERROR
+import AdminProfile from '@/pages/admin/AdminProfile';
 
 export default function AppRouter() {
     return (
@@ -29,7 +30,7 @@ export default function AppRouter() {
             <Route path="/pesan" element={<Booking />} />
             <Route path="/galeri" element={<Gallery />} />
             <Route path="/blog" element={<Blog />} />
-            <Route path="/mobil" element={<Mobil />} />
+            <Route path="/mobil" element={<Vehicles />} />
 
             {/* Rute Admin Auth */}
             <Route path="/admin/login" element={<Login />} />
@@ -48,6 +49,14 @@ export default function AppRouter() {
                 element={
                     <ProtectedRoute>
                         <AdminRoutes />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/admin/vehicles"
+                element={
+                    <ProtectedRoute>
+                        <AdminVehicles />
                     </ProtectedRoute>
                 }
             />
