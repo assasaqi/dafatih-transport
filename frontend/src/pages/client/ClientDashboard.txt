@@ -1,0 +1,697 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import ClientNavbar from '@/components/client/ClientNavbar';
+import { useHome } from '@/context/HomeContext';
+import { getRoutes } from '@/services/api';
+import RouteCard from '@/components/cards/RouteCard';
+
+// Impor komponen sub-halaman portal client
+import Booking from '@/pages/client/Booking';
+import Tariffs from '@/pages/client/Tariffs';
+import Vehicles from '@/pages/client/Vehicles';
+
+// Membaca berkas gambar secara dinamis dari folder /public/images/
+const localImagesModules = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp,avif}', {
+  eager: true,
+  import: 'default'
+});
+
+const localImageUrls = Object.keys(localImagesModules).map((filePath) =>
+  filePath.replace('/public', '')
+);
+
+const ClientDashboard = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { searchQuery } = useHome();
+
+  // Membaca tab aktif secara otomatis dari query string URL (?tab=orders / ?tab=booking / dsb)
+  const searchParams = new URLSearchParams(location.search);
+  const activeTab = searchParams.get('tab') || 'home';
+
+  // State User Portal
+  const [clientUser, setClientUser] = useState(null);
+
+  // State Hero & Data
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [heroSlides, setHeroSlides] = useState(localImageUrls);
+  const [routes, setRoutes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Tab Pencarian Hero: 'airport', 'rental', 'tour'
+  const [heroSearchTab, setHeroSearchTab] = useState('airport');
+
+  // State Form Pencarian Hero (Antar-Jemput)
+  const [pickupInput, setPickupInput] = useState('');
+  const [dropoffInput, setDropoffInput] = useState('');
+  const [travelDate, setTravelDate] = useState('');
+  const [passengers, setPassengers] = useState('');
+
+  // State Form Pencarian Hero (Sewa Mobil)
+  const [rentalLocation, setRentalLocation] = useState('');
+  const [rentalStartDate, setRentalStartDate] = useState('');
+  const [rentalDuration, setRentalDuration] = useState('');
+
+  // State Popover / Dropdown Open
+  const [isPickupOpen, setIsPickupOpen] = useState(false);
+  const [isDropoffOpen, setIsDropoffOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isPassengerOpen, setIsPassengerOpen] = useState(false);
+
+  const [isRentalLocOpen, setIsRentalLocOpen] = useState(false);
+  const [isRentalCalOpen, setIsRentalCalOpen] = useState(false);
+  const [isRentalDurOpen, setIsRentalDurOpen] = useState(false);
+
+  // Ref Dropdown & Slider
+  const pickupRef = useRef(null);
+  const dropoffRef = useRef(null);
+  const calendarRef = useRef(null);
+  const passengerRef = useRef(null);
+  const rentalLocRef = useRef(null);
+  const rentalCalRef = useRef(null);
+  const rentalDurRef = useRef(null);
+  const sliderRef = useRef(null);
+
+  const [showLeftBtn, setShowLeftBtn] = useState(false);
+  const [showRightBtn, setShowRightBtn] = useState(true);
+
+  const formatDateToISO = (dateObj) => {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayObj = new Date();
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(
+    new Date(todayObj.getFullYear(), todayObj.getMonth(), 1)
+  );
+
+  // Ambil data User dari localStorage
+  useEffect(() => {
+    const savedUser = localStorage.getItem('clientUser');
+    if (!savedUser) {
+      navigate('/login');
+      return;
+    }
+    try {
+      setClientUser(JSON.parse(savedUser));
+    } catch (e) {
+      setClientUser({ name: 'Juliadi' });
+    }
+  }, [navigate]);
+
+  // Load Data Rute Perjalanan
+  useEffect(() => {
+    getRoutes()
+      .then((routesRes) => {
+        if (routesRes.data?.success && Array.isArray(routesRes.data.data)) {
+          setRoutes(routesRes.data.data);
+        }
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error('Gagal mengambil data rute:', err);
+        setError('Gagal memuat rute perjalanan.');
+        setIsLoading(false);
+      });
+  }, []);
+
+  // Click Outside Handler Dropdown
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (pickupRef.current && !pickupRef.current.contains(e.target)) setIsPickupOpen(false);
+      if (dropoffRef.current && !dropoffRef.current.contains(e.target)) setIsDropoffOpen(false);
+      if (calendarRef.current && !calendarRef.current.contains(e.target)) setIsCalendarOpen(false);
+      if (passengerRef.current && !passengerRef.current.contains(e.target)) setIsPassengerOpen(false);
+      if (rentalLocRef.current && !rentalLocRef.current.contains(e.target)) setIsRentalLocOpen(false);
+      if (rentalCalRef.current && !rentalCalRef.current.contains(e.target)) setIsRentalCalOpen(false);
+      if (rentalDurRef.current && !rentalDurRef.current.contains(e.target)) setIsRentalDurOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Timer Background Slideshow
+  useEffect(() => {
+    if (heroSlides.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [heroSlides.length]);
+
+  const uniquePickupLocations = Array.from(
+    new Set(routes.map((r) => r.pickup_location).filter(Boolean))
+  );
+
+  const availableDropoffLocations = Array.from(
+    new Set(
+      routes
+        .filter((r) => !pickupInput || r.pickup_location === pickupInput)
+        .map((r) => r.dropoff_location)
+        .filter(Boolean)
+    )
+  );
+
+  const handleSelectPickup = (selectedPickup) => {
+    setPickupInput(selectedPickup);
+    setIsPickupOpen(false);
+    const matchingRoutes = routes.filter((r) => r.pickup_location === selectedPickup);
+    if (matchingRoutes.length > 0) {
+      setDropoffInput(matchingRoutes[0].dropoff_location || '');
+    } else {
+      setDropoffInput('');
+    }
+  };
+
+  const generateCalendarDays = () => {
+    const year = currentCalendarMonth.getFullYear();
+    const month = currentCalendarMonth.getMonth();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const days = [];
+    for (let i = 0; i < firstDayOfMonth; i++) days.push(null);
+    for (let d = 1; d <= daysInMonth; d++) days.push(new Date(year, month, d));
+    return days;
+  };
+
+  const calendarDays = generateCalendarDays();
+
+  const handleHeroSearchSubmit = (e) => {
+    e.preventDefault();
+    navigate('/client/dashboard?tab=booking');
+  };
+
+  const handleRentalSearchSubmit = (e) => {
+    e.preventDefault();
+    navigate('/client/dashboard?tab=vehicles');
+  };
+
+  const handleWAConsultation = () => {
+    const phoneNumber = '6287757004214';
+    const message = encodeURIComponent('Halo Dafatih Transport, saya pelanggan ingin konsultasi mengenai Paket Wisata Lombok.');
+    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+  };
+
+  const filteredRoutes = routes.filter((r) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (r.pickup_location || '').toLowerCase().includes(q) ||
+      (r.dropoff_location || '').toLowerCase().includes(q)
+    );
+  });
+
+  const updateScrollButtons = () => {
+    if (sliderRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
+      setShowLeftBtn(scrollLeft > 5);
+      setShowRightBtn(scrollLeft + clientWidth < scrollWidth - 5);
+    }
+  };
+
+  const scrollSlider = (direction) => {
+    if (sliderRef.current) {
+      const container = sliderRef.current;
+      const cardWidth = container.firstElementChild?.clientWidth || 280;
+      const gap = 16;
+      container.scrollBy({
+        left: direction === 'next' ? cardWidth + gap : -(cardWidth + gap),
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleSelectRoute = (route) => {
+    navigate('/client/dashboard?tab=booking');
+  };
+
+  const formatDisplayDate = (dateStr) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    if (!y || !m || !d) return dateStr;
+    const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
+    return dateObj.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F2F4F7] text-slate-800">
+      {/* 1. Client Navbar Utama */}
+      <ClientNavbar />
+
+      {/* 2. Main Container */}
+      <main className="pt-16 sm:pt-20 pb-12">
+
+        {/* HERO SLIDESHOW SECTION (Tampil hanya pada Tab Beranda Portal) */}
+        {activeTab === 'home' && (
+          <section className="relative min-h-[440px] md:min-h-[500px] flex items-center justify-center px-4 py-10 md:py-16 bg-slate-900 mb-8">
+            <div className="absolute inset-0 z-0 overflow-hidden">
+              {heroSlides.length > 0 ? (
+                heroSlides.map((imagePath, index) => (
+                  <img
+                    key={index}
+                    src={imagePath}
+                    alt="Lombok Background"
+                    translate="no"
+                    className={`notranslate absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ease-in-out blur-xs scale-105 ${
+                      index === currentSlide ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
+                ))
+              ) : (
+                <div className="absolute inset-0 bg-slate-800" />
+              )}
+              <div className="absolute inset-0 bg-slate-950/50 backdrop-brightness-95" />
+            </div>
+
+            <div className="relative z-10 w-full max-w-6xl mx-auto">
+              <div className="text-center mb-6">
+                <span className="inline-block px-3 py-1 rounded-full bg-[#0194F3]/20 text-[#0194F3] border border-[#0194F3]/40 text-xs font-bold uppercase tracking-wider mb-2 backdrop-blur-md">
+                  Portal Pelanggan
+                </span>
+                <h1 className="text-white text-2xl sm:text-3xl md:text-4xl font-extrabold drop-shadow-lg tracking-tight">
+                  Selamat Datang, {clientUser?.name || 'Juliadi'}!
+                </h1>
+                <p className="text-slate-300 text-xs sm:text-sm mt-1 max-w-xl mx-auto font-medium">
+                  Cari rute perjalanan, lakukan pemesanan cepat, atau sewa armada favorit Anda.
+                </p>
+              </div>
+
+              {/* Card Pencarian Melayang */}
+              <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-2xl border border-white/20 relative z-20">
+                {/* Tab Pilihan Layanan */}
+                <div className="flex gap-2 border-b border-slate-200 pb-3.5 mb-5 overflow-x-auto">
+                  <button
+                    type="button"
+                    className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-colors cursor-pointer ${
+                      heroSearchTab === 'airport'
+                        ? 'bg-[#0194F3] text-white'
+                        : 'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                    onClick={() => setHeroSearchTab('airport')}
+                  >
+                    <i className="fa-solid fa-plane-arrival"></i> Antar-Jemput
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-colors cursor-pointer ${
+                      heroSearchTab === 'rental'
+                        ? 'bg-[#0194F3] text-white'
+                        : 'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                    onClick={() => setHeroSearchTab('rental')}
+                  >
+                    <i className="fa-solid fa-car"></i> Sewa Mobil
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-colors cursor-pointer ${
+                      heroSearchTab === 'tour'
+                        ? 'bg-[#0194F3] text-white'
+                        : 'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                    onClick={() => setHeroSearchTab('tour')}
+                  >
+                    <i className="fa-solid fa-route"></i> Paket Tour Lombok
+                  </button>
+                </div>
+
+                {/* Form Antar-Jemput */}
+                {heroSearchTab === 'airport' && (
+                  <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.5fr_1.5fr_1.2fr_1fr_auto] gap-3 items-center" onSubmit={handleHeroSearchSubmit}>
+                    <div className="relative" ref={pickupRef}>
+                      <div
+                        onClick={() => {
+                          setIsPickupOpen(!isPickupOpen);
+                          setIsDropoffOpen(false);
+                          setIsCalendarOpen(false);
+                          setIsPassengerOpen(false);
+                        }}
+                        className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
+                          isPickupOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
+                        }`}
+                      >
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Lokasi Penjemputan
+                        </span>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <i className="fa-solid fa-location-dot text-[#0194F3] text-sm shrink-0"></i>
+                            <span className={`text-xs sm:text-sm font-semibold truncate ${pickupInput ? 'text-slate-900' : 'text-slate-400'}`}>
+                              {pickupInput || 'Pilih Penjemputan'}
+                            </span>
+                          </div>
+                          <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform ${isPickupOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
+                        </div>
+                      </div>
+
+                      {isPickupOpen && (
+                        <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden">
+                          <div className="max-h-56 overflow-y-auto py-1">
+                            {uniquePickupLocations.map((loc, idx) => (
+                              <div
+                                key={idx}
+                                onClick={() => handleSelectPickup(loc)}
+                                className="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-sky-50 transition-colors"
+                              >
+                                {loc}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="relative" ref={dropoffRef}>
+                      <div
+                        onClick={() => {
+                          setIsDropoffOpen(!isDropoffOpen);
+                          setIsPickupOpen(false);
+                          setIsCalendarOpen(false);
+                          setIsPassengerOpen(false);
+                        }}
+                        className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
+                          isDropoffOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
+                        }`}
+                      >
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Lokasi Tujuan
+                        </span>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <i className="fa-solid fa-location-arrow text-[#0194F3] text-sm shrink-0"></i>
+                            <span className={`text-xs sm:text-sm font-semibold truncate ${dropoffInput ? 'text-slate-900' : 'text-slate-400'}`}>
+                              {dropoffInput || 'Pilih Tujuan'}
+                            </span>
+                          </div>
+                          <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform ${isDropoffOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
+                        </div>
+                      </div>
+
+                      {isDropoffOpen && (
+                        <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden">
+                          <div className="max-h-56 overflow-y-auto py-1">
+                            {availableDropoffLocations.map((loc, idx) => (
+                              <div
+                                key={idx}
+                                onClick={() => {
+                                  setDropoffInput(loc);
+                                  setIsDropoffOpen(false);
+                                }}
+                                className="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-sky-50 transition-colors"
+                              >
+                                {loc}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="relative" ref={calendarRef}>
+                      <div
+                        onClick={() => {
+                          setIsCalendarOpen(!isCalendarOpen);
+                          setIsPickupOpen(false);
+                          setIsDropoffOpen(false);
+                          setIsPassengerOpen(false);
+                        }}
+                        className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
+                          isCalendarOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
+                        }`}
+                      >
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Tanggal Perjalanan
+                        </span>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <i className="fa-solid fa-calendar-days text-[#0194F3] text-sm shrink-0"></i>
+                            <span className={`text-xs sm:text-sm font-semibold truncate ${travelDate ? 'text-slate-900' : 'text-slate-400'}`}>
+                              {travelDate ? formatDisplayDate(travelDate) : 'Pilih Tanggal'}
+                            </span>
+                          </div>
+                          <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform ${isCalendarOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
+                        </div>
+                      </div>
+
+                      {isCalendarOpen && (
+                        <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[60] p-4">
+                          <div className="grid grid-cols-7 gap-1 text-center">
+                            {calendarDays.map((dateObj, idx) => {
+                              if (!dateObj) return <div key={idx} className="h-8" />;
+                              const isoStr = formatDateToISO(dateObj);
+                              return (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => {
+                                    setTravelDate(isoStr);
+                                    setIsCalendarOpen(false);
+                                  }}
+                                  className={`h-8 rounded-lg text-xs font-bold ${
+                                    travelDate === isoStr ? 'bg-[#0194F3] text-white' : 'hover:bg-sky-50'
+                                  }`}
+                                >
+                                  {dateObj.getDate()}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="relative" ref={passengerRef}>
+                      <div
+                        onClick={() => {
+                          setIsPassengerOpen(!isPassengerOpen);
+                          setIsPickupOpen(false);
+                          setIsDropoffOpen(false);
+                          setIsCalendarOpen(false);
+                        }}
+                        className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
+                          isPassengerOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
+                        }`}
+                      >
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Jumlah Penumpang
+                        </span>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <i className="fa-solid fa-user-group text-[#0194F3] text-sm shrink-0"></i>
+                            <span className={`text-xs sm:text-sm font-semibold truncate ${passengers ? 'text-slate-900' : 'text-slate-400'}`}>
+                              {passengers ? `${passengers} Orang` : 'Pilih Penumpang'}
+                            </span>
+                          </div>
+                          <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform ${isPassengerOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
+                        </div>
+                      </div>
+
+                      {isPassengerOpen && (
+                        <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden py-1">
+                          {['1', '2', '3', '4'].map((num) => (
+                            <div
+                              key={num}
+                              onClick={() => {
+                                setPassengers(num);
+                                setIsPassengerOpen(false);
+                              }}
+                              className="px-3 py-2 text-xs font-semibold cursor-pointer hover:bg-sky-50"
+                            >
+                              {num} Orang
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full lg:w-auto h-full px-6 py-3 bg-[#0194F3] hover:bg-sky-600 text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <i className="fa-solid fa-magnifying-glass"></i>
+                      <span>Cari</span>
+                    </button>
+                  </form>
+                )}
+
+                {/* Form Sewa Mobil */}
+                {heroSearchTab === 'rental' && (
+                  <form className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-[2fr_1.5fr_1.5fr_auto] gap-3 items-center" onSubmit={handleRentalSearchSubmit}>
+                    <div className="relative" ref={rentalLocRef}>
+                      <div
+                        onClick={() => setIsRentalLocOpen(!isRentalLocOpen)}
+                        className="border border-slate-300 rounded-xl p-2.5 bg-white flex flex-col cursor-pointer"
+                      >
+                        <span className="text-[10px] font-bold text-slate-500 uppercase mb-1">Lokasi Rental</span>
+                        <div className="flex items-center gap-2">
+                          <i className="fa-solid fa-location-dot text-[#0194F3]"></i>
+                          <span className="text-xs sm:text-sm font-semibold">{rentalLocation || 'Pilih Lokasi Rental'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="relative" ref={rentalCalRef}>
+                      <div
+                        onClick={() => setIsRentalCalOpen(!isRentalCalOpen)}
+                        className="border border-slate-300 rounded-xl p-2.5 bg-white flex flex-col cursor-pointer"
+                      >
+                        <span className="text-[10px] font-bold text-slate-500 uppercase mb-1">Mulai Rental</span>
+                        <div className="flex items-center gap-2">
+                          <i className="fa-solid fa-calendar-days text-[#0194F3]"></i>
+                          <span className="text-xs sm:text-sm font-semibold">{rentalStartDate ? formatDisplayDate(rentalStartDate) : 'Pilih Tanggal'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="relative" ref={rentalDurRef}>
+                      <div
+                        onClick={() => setIsRentalDurOpen(!isRentalDurOpen)}
+                        className="border border-slate-300 rounded-xl p-2.5 bg-white flex flex-col cursor-pointer"
+                      >
+                        <span className="text-[10px] font-bold text-slate-500 uppercase mb-1">Durasi Rental</span>
+                        <div className="flex items-center gap-2">
+                          <i className="fa-solid fa-clock text-[#0194F3]"></i>
+                          <span className="text-xs sm:text-sm font-semibold">{rentalDuration ? `${rentalDuration} Hari` : 'Pilih Durasi'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full lg:w-auto px-6 py-3 bg-[#0194F3] hover:bg-sky-600 text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
+                    >
+                      <i className="fa-solid fa-magnifying-glass"></i>
+                      <span>Cari</span>
+                    </button>
+                  </form>
+                )}
+
+                {/* Paket Tour Info */}
+                {heroSearchTab === 'tour' && (
+                  <div className="py-6 text-center flex flex-col items-center justify-center">
+                    <h3 className="text-base font-bold text-slate-900 mb-1">Daftar Paket Wisata Lombok</h3>
+                    <p className="text-xs text-slate-500 mb-4">Konsultasikan rencana liburan keluarga &amp; rombongan Anda langsung bersama customer service kami.</p>
+                    <button
+                      type="button"
+                      onClick={handleWAConsultation}
+                      className="px-5 py-2.5 bg-[#0194F3] text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer"
+                    >
+                      <i className="fa-brands fa-whatsapp text-sm"></i>
+                      <span>Konsultasi Paket Tour via WA</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* 3. Render Konten Dinamis Berdasarkan Tab Aktif */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {activeTab === 'home' && (
+            <section className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-xs mb-8">
+              <div className="mb-4">
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900">Rute Penjemputan Populer</h2>
+                <p className="text-xs text-slate-500">Pilihan rute perjalanan Lombok favorit untuk pesanan antar-jemput.</p>
+              </div>
+
+              {!isLoading && !error && filteredRoutes.length > 0 && (
+                <div className="relative group/slider">
+                  {showLeftBtn && (
+                    <button
+                      type="button"
+                      onClick={() => scrollSlider('prev')}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center cursor-pointer"
+                    >
+                      <i className="fa-solid fa-chevron-left text-xs"></i>
+                    </button>
+                  )}
+
+                  {showRightBtn && (
+                    <button
+                      type="button"
+                      onClick={() => scrollSlider('next')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/95 text-slate-800 shadow-lg border border-slate-200 flex items-center justify-center cursor-pointer"
+                    >
+                      <i className="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                  )}
+
+                  {/* SLIDER RUTE DENGAN SCROLLBAR DISEMBUNYIKAN */}
+                  <div
+                    ref={sliderRef}
+                    onScroll={updateScrollButtons}
+                    className="flex gap-4 overflow-x-auto scroll-smooth pb-1 pt-1 px-1 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]"
+                  >
+                    {filteredRoutes.map((route) => (
+                      <RouteCard
+                        key={route.id}
+                        route={route}
+                        travelDate={travelDate}
+                        onSelectRoute={handleSelectRoute}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {activeTab === 'orders' && (
+            <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-xs">
+              <h2 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+                <i className="fa-solid fa-clock-rotate-left text-[#0194F3]"></i>
+                <span>Riwayat Pemesanan</span>
+              </h2>
+              <p className="text-xs text-slate-500 mb-4">Daftar tiket &amp; reservasi aktif Anda.</p>
+
+              <div className="bg-slate-50 rounded-xl p-8 text-center border border-dashed border-slate-200">
+                <div className="w-12 h-12 bg-sky-100 text-[#0194F3] rounded-full flex items-center justify-center mx-auto mb-3 text-lg">
+                  <i className="fa-solid fa-ticket"></i>
+                </div>
+                <p className="text-xs sm:text-sm font-semibold text-slate-600 mb-3">
+                  Belum ada pesanan aktif. Mulai reservasi perjalanan Anda sekarang!
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate('/client/dashboard?tab=booking')}
+                  className="px-4 py-2 bg-[#0194F3] text-white rounded-xl text-xs font-bold hover:bg-sky-600 transition-colors cursor-pointer"
+                >
+                  Pesan Layanan Sekarang
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'booking' && (
+            <div className="bg-white rounded-2xl p-2 sm:p-4 border border-slate-200/80 shadow-xs">
+              <Booking />
+            </div>
+          )}
+
+          {activeTab === 'tariffs' && (
+            <div className="bg-white rounded-2xl p-2 sm:p-4 border border-slate-200/80 shadow-xs">
+              <Tariffs />
+            </div>
+          )}
+
+          {activeTab === 'vehicles' && (
+            <div className="bg-white rounded-2xl p-2 sm:p-4 border border-slate-200/80 shadow-xs">
+              <Vehicles />
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default ClientDashboard;
