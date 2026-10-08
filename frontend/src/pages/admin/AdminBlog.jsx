@@ -170,7 +170,7 @@ const AdminBlogs = () => {
                                                         />
                                                     </div>
                                                 </td>
-                                                <td className="py-3 px-4 font-extrabold text-slate-900 max-w-[200px] truncate" title={b.title}>
+                                                <td className="py-3 px-4 font-bold text-slate-900 max-w-[200px] truncate" title={b.title}>
                                                     {b.title}
                                                 </td>
                                                 <td className="py-3 px-4 text-slate-500 max-w-[240px] truncate" title={b.content}>

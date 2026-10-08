@@ -185,7 +185,7 @@ const AdminGallery = () => {
                                                         />
                                                     </div>
                                                 </td>
-                                                <td className="py-3 px-4 font-extrabold text-slate-900 max-w-[180px] sm:max-w-[220px] truncate" title={item.title}>
+                                                <td className="py-3 px-4 font-bold text-slate-900 max-w-[180px] sm:max-w-[220px] truncate" title={item.title}>
                                                     {item.title}
                                                 </td>
                                                 <td className="py-3 px-4">

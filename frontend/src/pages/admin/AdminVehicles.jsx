@@ -179,7 +179,7 @@ const AdminVehicles = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 flex items-center gap-2">
-                <i className="fa-solid fa-car text-[#0194F3]"></i>
+                <i className="fa-solid text-[#0194F3]"></i>
                 <span>Kelola Armada Mobil</span>
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">

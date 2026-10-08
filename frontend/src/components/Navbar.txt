@@ -36,6 +36,8 @@ const Navbar = () => {
     }
 
     // Tentukan logo mana yang akan ditampilkan
+    // Jika halaman Home & belum discroll: logoImg
+    // Jika halaman Home & discroll ATAU berada di halaman lain: logo2Img
     const currentLogo = isHomePage && !isScrolled ? logoImg : logo2Img;
 
     return (
@@ -118,23 +120,15 @@ const Navbar = () => {
                     </NavLink>
                 </nav>
 
-                {/* Header Actions Desktop: Tombol Login & Daftar */}
+                {/* Header Actions Desktop */}
                 <div className="hidden md:flex items-center gap-2">
                     <button
                         type="button"
-                        onClick={() => navigate('/login')}
-                        className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 hover:text-[#0194F3] hover:bg-slate-100/80 transition-all cursor-pointer flex items-center gap-1.5"
+                        onClick={() => navigate('/pesan')}
+                        className="bg-[#0194F3] hover:bg-sky-600 text-white px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer flex items-center gap-2"
                     >
-                        <i className="fa-solid fa-right-to-bracket text-xs"></i>
-                        <span>Login</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => navigate('/register')}
-                        className="bg-[#0194F3] hover:bg-sky-600 text-white px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
-                    >
-                        <i className="fa-solid fa-user-plus text-xs"></i>
-                        <span>Daftar</span>
+                        <i className="fa-solid fa-paper-plane text-xs"></i>
+                        <span>Pesan Sekarang</span>
                     </button>
                 </div>
 
@@ -206,29 +200,17 @@ const Navbar = () => {
                         </NavLink>
                     </div>
 
-                    {/* Tombol Action Mobile */}
-                    <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                    <div className="pt-2 border-t border-slate-100">
                         <button
                             type="button"
                             onClick={() => {
                                 setIsMobileMenuOpen(false);
-                                navigate('/login');
+                                navigate('/pesan');
                             }}
-                            className="flex-1 border border-slate-300 text-slate-700 hover:bg-slate-50 py-2.5 rounded-xl text-sm font-bold transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer"
+                            className="w-full bg-[#0194F3] hover:bg-sky-600 text-white py-2.5 rounded-xl text-sm font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                         >
-                            <i className="fa-solid fa-right-to-bracket text-xs"></i>
-                            <span>Login</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setIsMobileMenuOpen(false);
-                                navigate('/register');
-                            }}
-                            className="flex-1 bg-[#0194F3] hover:bg-sky-600 text-white py-2.5 rounded-xl text-sm font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-                        >
-                            <i className="fa-solid fa-user-plus text-xs"></i>
-                            <span>Daftar</span>
+                            <i className="fa-solid fa-paper-plane text-xs"></i>
+                            <span>Pesan Sekarang</span>
                         </button>
                     </div>
                 </div>
