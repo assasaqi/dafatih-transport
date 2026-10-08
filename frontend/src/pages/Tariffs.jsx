@@ -23,8 +23,8 @@ const Tariffs = () => {
 
     // State filter lokal dari pencarian Home
     const pickupFilter = initialFilter.pickup || '';
-    const dropoffFilter = initialFilter.dropoff || '';
-    const travelDate = initialFilter.travelDate || '';
+    const dropoffFilter = initialFilter.dropoff || initialFilter.drop || '';
+    const travelDate = initialFilter.travelDate || initialFilter.date || '';
     const passengers = initialFilter.passengers || '';
 
     const getInitialLimit = useCallback(() => (window.innerWidth <= 768 ? 4 : 8), []);
@@ -64,10 +64,13 @@ const Tariffs = () => {
         };
     }, []);
 
+    // FIX: Kirim data dengan properti key yang konsisten ke /pesan
     const handleSelectTariff = (route) => {
         navigate('/pesan', {
             state: {
+                jenisLayanan: 'Antar-Jemput',
                 pickup: route.pickup_location,
+                drop: route.dropoff_location,
                 dropoff: route.dropoff_location,
                 price: Number(route.price || 0),
                 date: travelDate,
@@ -89,7 +92,7 @@ const Tariffs = () => {
         navigate(location.pathname, { replace: true, state: {} });
     };
 
-    // 3. Memoize filter pencarian rute gabungan (pencarian teks + state dari Home.jsx)
+    // 3. Memoize filter pencarian rute gabungan
     const filteredRoutes = useMemo(() => {
         let list = [...routes];
 
@@ -98,8 +101,8 @@ const Tariffs = () => {
             const p = pickupFilter.toLowerCase().trim();
             const d = dropoffFilter.toLowerCase().trim();
             list = list.filter((r) => {
-                const pickLoc = (r.pickup_location || '').toLowerCase();
-                const dropLoc = (r.dropoff_location || '').toLowerCase();
+                const pickLoc = (r.pickup_location || '').toLowerCase().trim();
+                const dropLoc = (r.dropoff_location || '').toLowerCase().trim();
                 const matchPickup = !p || pickLoc.includes(p);
                 const matchDrop = !d || dropLoc.includes(d);
                 return matchPickup && matchDrop;
@@ -108,7 +111,7 @@ const Tariffs = () => {
 
         // Filter tambahan berdasarkan kata kunci pada search bar lokal
         if (searchQuery.trim()) {
-            const q = searchQuery.toLowerCase();
+            const q = searchQuery.toLowerCase().trim();
             list = list.filter((r) => {
                 const dropLoc = (r.dropoff_location || '').toLowerCase();
                 const pickupLoc = (r.pickup_location || '').toLowerCase();
@@ -127,8 +130,8 @@ const Tariffs = () => {
     const hasMore = currentLimit < filteredRoutes.length;
 
     return (
-        <div className="w-full overflow-x-hidden min-h-screen bg-[#F2F4F7] text-slate-800">
-            {/* Banner Compact Ala Traveloka */}
+        <div className="w-full overflow-x-hidden min-h-screen bg-[#F2F4F7] text-slate-800 pt-20 sm:pt-24">
+            {/* Banner Compact */}
             <div className="bg-[#0194F3] text-white px-5 py-6 sm:py-8 text-center shadow-xs">
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-1 tracking-tight">
                     Daftar Tarif Layanan Transportasi Lombok
@@ -238,6 +241,10 @@ const Tariffs = () => {
                                     </div>
                                     <button
                                         type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSelectTariff(route);
+                                        }}
                                         className="bg-[#0194F3] group-hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
                                     >
                                         <span>Pesan</span>
