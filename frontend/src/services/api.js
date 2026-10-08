@@ -38,7 +38,7 @@ const API = axios.create({
 // 4. Interceptor: Menyisipkan Token Authorization Secara Otomatis
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token') || localStorage.getItem('adminToken') || localStorage.getItem('clientToken');
+    const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -56,11 +56,6 @@ export const getProfile = (email) => API.get(`/profile${email ? `?email=${email}
 export const updateProfile = (data) => API.put('/profile', data);
 export const loginAdmin = (data) => API.post('/login', data);
 export const registerAdmin = (data) => API.post('/register', data);
-
-// --- Client Auth API ---
-export const loginClient = (data) => API.post('/client/login', data);
-export const registerClient = (data) => API.post('/client/register', data);
-export const getClientProfile = () => API.get('/client/profile');
 
 // --- Vehicle / Armada API (CRUD Lengkap) ---
 export const getVehicles = () => API.get('/vehicles');

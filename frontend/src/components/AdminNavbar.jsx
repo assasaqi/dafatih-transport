@@ -29,7 +29,7 @@ const AdminNavbar = () => {
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminUser');
         localStorage.removeItem('token');
-        navigate('/login');
+        navigate('/admin/login');
     };
 
     // Daftar Menu Navigasi Admin (Termasuk Kelola Armada Mobil)
