@@ -9,16 +9,16 @@ const Gallery = () => {
     const [error, setError] = useState('');
     const [selectedImage, setSelectedImage] = useState(null);
 
-    const getInitialLimit = useCallback(() => (window.innerWidth <= 768 ? 4 : 8), []);
+    const getInitialLimit = useCallback(() => (window.innerWidth <= 768 ? 6 : 12), []);
 
-    // 1. Inisialisasi limit saat mount
+    // Inisialisasi limit saat mount
     useEffect(() => {
         if (visibleCount === null) {
             setVisibleCount(getInitialLimit());
         }
     }, [visibleCount, setVisibleCount, getInitialLimit]);
 
-    // 2. Fetch data API hanya 1 kali
+    // Fetch data API
     useEffect(() => {
         let isMounted = true;
 
@@ -59,10 +59,10 @@ const Gallery = () => {
         setVisibleCount((prev) => (prev ?? getInitialLimit()) + getInitialLimit());
     };
 
-    // Helper URL Gambar Dinamis: Menggunakan domain aktif browser jika API_BASE_URL tidak tersedia
+    // Helper URL Gambar Dinamis
     const getImageUrl = (item) => {
         const imageUrl = typeof item === 'string' ? item : item?.image_url || item?.image || item?.image_path || '';
-        if (!imageUrl) return 'https://placehold.co/400x300?text=Galeri+Lombok';
+        if (!imageUrl) return 'https://placehold.co/600x450?text=Galeri+Lombok';
 
         if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
             return encodeURI(imageUrl);
@@ -80,137 +80,122 @@ const Gallery = () => {
     };
 
     return (
-        <div className="w-full min-h-screen bg-[#F2F4F7] text-slate-800 pt-20 sm:pt-24">
-            {/* Banner Compact Ala Traveloka */}
-            <div className="bg-[#0194F3] text-white px-5 py-6 sm:py-8 text-center shadow-xs">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-1 tracking-tight">
-                    Galeri Momen Wisatawan Lombok
-                </h1>
-                <p className="text-sky-100 text-xs sm:text-sm max-w-xl mx-auto font-medium">
-                    Dokumentasi kebahagiaan para tamu selama menikmati layanan antar-jemput dan perjalanan wisata bersama kami.
-                </p>
-            </div>
+        <div className="w-full min-h-screen bg-[#F2F4F7] text-slate-800 pt-24 sm:pt-28 pb-16">
+            {/* Main Content Section */}
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
 
-            {/* Main Section */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+                {/* Judul Halaman Rata Kiri */}
+                <div className="mb-6">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                        Galeri
+                    </h1>
+                </div>
+
                 {isLoading && (
-                    <div className="text-center py-12 text-slate-500">
-                        <i className="fa-solid fa-spinner fa-spin mr-2 text-[#0194F3]"></i>
-                        Memuat galeri foto...
+                    <div className="text-center py-20 text-slate-500">
+                        <i className="fa-solid fa-spinner fa-spin text-2xl text-[#0194F3] mb-3 block"></i>
+                        <span className="text-xs font-semibold">Memuat galeri foto...</span>
                     </div>
                 )}
 
                 {error && (
-                    <div className="text-center py-8 text-red-500 font-semibold">
+                    <div className="text-center py-16 text-rose-500 text-xs font-bold">
                         {error}
                     </div>
                 )}
 
                 {!isLoading && !error && displayedItems.length === 0 && (
-                    <div className="text-center py-12 text-slate-400">
-                        Belum ada foto galeri yang tersedia.
+                    <div className="text-center py-20 text-slate-400 text-xs font-medium">
+                        Belum ada koleksi foto galeri yang tersedia.
                     </div>
                 )}
 
                 {!isLoading && !error && displayedItems.length > 0 && (
-                    /* Grid 4 Kolom Seragam dengan Card Traveloka */
+                    /* Grid Gallery dengan Judul di Dalam Foto */
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
                         {displayedItems.map((item) => (
                             <div
                                 key={item.id}
                                 onClick={() => setSelectedImage(item)}
-                                className="group bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                                className="group relative bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer h-60 sm:h-64"
                             >
-                                <div>
-                                    {/* Wrapper Foto + Overlay Hover */}
-                                    <div className="relative h-44 sm:h-48 overflow-hidden bg-slate-100">
-                                        <img
-                                            src={getImageUrl(item)}
-                                            alt={item.title}
-                                            translate="no"
-                                            loading="lazy"
-                                            className="notranslate w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                        />
-                                        <span className="absolute top-2.5 left-2.5 bg-slate-900/80 backdrop-blur-xs text-white text-[9px] font-extrabold px-2.5 py-1 rounded-md tracking-wider uppercase flex items-center gap-1.5">
-                                            <i className="fa-solid fa-camera text-amber-400"></i>
-                                            {item.category || 'MOMEN TAMU'}
-                                        </span>
+                                {/* Foto Utama */}
+                                <img
+                                    src={getImageUrl(item)}
+                                    alt={item.title || 'Foto Galeri'}
+                                    translate="no"
+                                    loading="lazy"
+                                    className="notranslate w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                />
 
-                                        {/* Overlay Hover Efek Zoom */}
-                                        <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                            <span className="bg-white/90 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                                                <i className="fa-solid fa-expand text-[#0194F3]"></i>
-                                                <span>Lihat Foto</span>
-                                            </span>
-                                        </div>
-                                    </div>
+                                {/* Category Badge */}
+                                <span className="absolute top-3 left-3 z-10 bg-slate-900/70 backdrop-blur-md text-white text-[9px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                                    {item.category || 'Momen Tamu'}
+                                </span>
 
-                                    {/* Detail Teks */}
-                                    <div className="p-3.5 sm:p-4">
-                                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#0194F3] transition-colors line-clamp-1 mb-1">
-                                            {item.title}
-                                        </h3>
-                                        <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                                            {item.description || 'Dokumentasi momen perjalanan menyenangkan di Pulau Lombok.'}
-                                        </p>
-                                    </div>
+                                {/* Hamparan Gradien Gelap untuk Judul di Dalam Foto */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent flex flex-col justify-end p-4 transition-all duration-300 group-hover:from-slate-950/90">
+                                    <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug group-hover:text-sky-300 transition-colors">
+                                        {item.title}
+                                    </h3>
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
 
+                {/* Tombol Muat Lebih Banyak */}
                 {hasMore && (
-                    <div className="text-center mt-8 min-h-[44px] flex items-center justify-center">
+                    <div className="text-center mt-10">
                         <button
                             type="button"
-                            className="px-6 py-2.5 rounded-xl border border-[#0194F3] text-[#0194F3] hover:bg-[#0194F3] hover:text-white font-bold text-xs transition-colors duration-200 cursor-pointer shadow-xs inline-flex items-center gap-2"
+                            className="px-6 py-2.5 rounded-xl border border-[#0194F3] text-[#0194F3] hover:bg-[#0194F3] hover:text-white font-bold text-xs transition-colors duration-200 cursor-pointer shadow-xs inline-flex items-center gap-2 group"
                             onClick={loadMore}
                         >
-                            <i className="fa-solid fa-arrows-rotate"></i>
+                            <i className="fa-solid fa-arrows-rotate group-hover:rotate-180 transition-transform duration-500"></i>
                             <span>Tampilkan Lebih Banyak Foto</span>
                         </button>
                     </div>
                 )}
             </section>
 
-            {/* MODAL LIGHTBOX VIEW FOTO */}
+            {/* LIGHTBOX MODAL */}
             {selectedImage && (
                 <div
-                    className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
+                    className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
                     onClick={() => setSelectedImage(null)}
                 >
                     <div
-                        className="bg-white rounded-2xl overflow-hidden max-w-2xl w-full shadow-2xl border border-slate-100"
+                        className="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center justify-center"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="relative bg-slate-900 flex items-center justify-center max-h-[70vh] overflow-hidden">
+                        {/* Tombol Close */}
+                        <button
+                            type="button"
+                            onClick={() => setSelectedImage(null)}
+                            className="absolute -top-12 right-0 sm:-right-2 bg-slate-900/80 hover:bg-slate-900 text-white w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                            <i className="fa-solid fa-xmark text-sm"></i>
+                        </button>
+
+                        {/* Container Foto */}
+                        <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-2xl max-h-[80vh] flex items-center justify-center">
                             <img
                                 src={getImageUrl(selectedImage)}
                                 alt={selectedImage.title}
                                 translate="no"
-                                className="notranslate max-h-[70vh] w-auto object-contain"
+                                className="notranslate max-h-[80vh] w-auto object-contain"
                             />
-                            <button
-                                type="button"
-                                onClick={() => setSelectedImage(null)}
-                                className="absolute top-3 right-3 bg-slate-900/70 hover:bg-slate-900 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer"
-                            >
-                                <i className="fa-solid fa-xmark text-sm"></i>
-                            </button>
                         </div>
-                        <div className="p-4 sm:p-5 bg-white">
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="bg-sky-100 text-[#0194F3] text-[10px] font-extrabold px-2 py-0.5 rounded">
-                                    {selectedImage.category || 'MOMEN TAMU'}
-                                </span>
-                            </div>
-                            <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
+
+                        {/* Judul & Kategori di Lightbox */}
+                        <div className="mt-3 flex flex-col items-center gap-1 text-center">
+                            <span className="bg-sky-100 text-[#0194F3] text-[10px] font-extrabold px-3 py-0.5 rounded-full uppercase tracking-wider">
+                                {selectedImage.category || 'Momen Tamu'}
+                            </span>
+                            <h3 className="text-sm sm:text-base font-bold text-white">
                                 {selectedImage.title}
                             </h3>
-                            <p className="text-xs text-slate-500 leading-relaxed">
-                                {selectedImage.description || 'Dokumentasi momen perjalanan menyenangkan di Pulau Lombok.'}
-                            </p>
                         </div>
                     </div>
                 </div>

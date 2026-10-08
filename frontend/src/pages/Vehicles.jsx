@@ -35,7 +35,6 @@ const Mobil = () => {
         };
     }, []);
 
-    // PERBAIKAN: Kirim state yang ditandai khusus untuk Form Sewa Mobil
     const handleSelectCar = (car) => {
         navigate('/pesan', {
             state: {
@@ -48,7 +47,7 @@ const Mobil = () => {
         });
     };
 
-    // Helper URL Gambar Dinamis: Menggunakan domain aktif browser jika API_BASE_URL tidak tersedia
+    // Helper URL Gambar Dinamis
     const getImageUrl = (car) => {
         const imageUrl = typeof car === 'string' ? car : car?.image_url || car?.image || car?.image_path || '';
         if (!imageUrl) return 'https://placehold.co/400x250?text=Armada+Mobil';
@@ -69,19 +68,17 @@ const Mobil = () => {
     };
 
     return (
-        <div className="w-full min-h-screen bg-[#F2F4F7] text-slate-800 pt-20 sm:pt-24">
-            {/* Banner Compact Ala Traveloka */}
-            <div className="bg-[#0194F3] text-white px-5 py-6 sm:py-8 text-center shadow-xs">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-1 tracking-tight">
-                    Pilihan Armada Mobil Lombok
-                </h1>
-                <p className="text-sky-100 text-xs sm:text-sm max-w-xl mx-auto font-medium">
-                    Kondisi kendaraan prima, bersih, dan terawat untuk kenyamanan perjalanan Anda.
-                </p>
-            </div>
-
+        <div className="w-full min-h-screen bg-[#F2F4F7] text-slate-800 pt-24 sm:pt-28 pb-16">
             {/* Main Section */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+
+                {/* Judul Halaman Rata Kiri */}
+                <div className="mb-6">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                        Pilihan Armada
+                    </h1>
+                </div>
+
                 {loading && (
                     <div className="text-center py-12 text-slate-500">
                         <i className="fa-solid fa-spinner fa-spin mr-2 text-[#0194F3]"></i>
@@ -102,7 +99,7 @@ const Mobil = () => {
                 )}
 
                 {!loading && !error && vehicles.length > 0 && (
-                    /* Grid 4 Kolom Seragam dengan Card Traveloka */
+                    /* Grid 4 Kolom Seragam dengan Card */
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
                         {vehicles.map((car) => (
                             <div

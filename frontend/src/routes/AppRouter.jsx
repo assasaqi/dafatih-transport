@@ -7,7 +7,7 @@ import Tariffs from '@/pages/Tariffs';
 import Booking from '@/pages/Booking';
 import Gallery from '@/pages/Gallery';
 import Blog from '@/pages/Blog';
-import Vehicles from '@/pages/Vehicles'; // Diselaraskan menggunakan nama Vehicles
+import Vehicles from '@/pages/Vehicles';
 import NotFound from '@/pages/NotFound';
 
 // Impor Halaman Admin & Proteksi Route
@@ -15,7 +15,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Login from '@/pages/admin/Login';
 import Dashboard from '@/pages/admin/Dashboard';
 import AdminRoutes from '@/pages/admin/AdminRoutes';
-import AdminVehicles from '@/pages/admin/AdminVehicles'; // Impor Halaman Kelola Armada Admin
+import AdminVehicles from '@/pages/admin/AdminVehicles';
 import AdminBookings from '@/pages/admin/AdminBookings';
 import AdminGallery from '@/pages/admin/AdminGallery';
 import AdminBlog from '@/pages/admin/AdminBlog';

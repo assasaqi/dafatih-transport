@@ -64,29 +64,27 @@ const Tariffs = () => {
         };
     }, []);
 
-    // FIX: Kirim data dengan properti key yang konsisten ke /pesan
-const handleSelectTariff = (route) => {
-    navigate('/pesan', {
-        state: {
-            jenisLayanan: 'Antar-Jemput',
-            pickupLoc: route.pickup_location,
-            dropLoc: route.dropoff_location,
-            pickup: route.pickup_location,
-            drop: route.dropoff_location,
-            dropoff: route.dropoff_location,
-            price: Number(route.price || 0),
-            date: travelDate,
-            passengers: passengers
-        }
-    });
-};
+    const handleSelectTariff = (route) => {
+        navigate('/pesan', {
+            state: {
+                jenisLayanan: 'Antar-Jemput',
+                pickupLoc: route.pickup_location,
+                dropLoc: route.dropoff_location,
+                pickup: route.pickup_location,
+                drop: route.dropoff_location,
+                dropoff: route.dropoff_location,
+                price: Number(route.price || 0),
+                date: travelDate,
+                passengers: passengers
+            }
+        });
+    };
 
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
         setVisibleCount(getInitialLimit());
     };
 
-    // Fungsi Reset Filter: Mengosongkan state pencarian dari Home & kata kunci search bar lokal
     const handleResetFilter = () => {
         setSearchQuery('');
         setVisibleCount(getInitialLimit());
@@ -97,7 +95,6 @@ const handleSelectTariff = (route) => {
     const filteredRoutes = useMemo(() => {
         let list = [...routes];
 
-        // Filter berdasarkan state penjemputan/tujuan yang dikirim dari Home.jsx
         if (pickupFilter.trim() || dropoffFilter.trim()) {
             const p = pickupFilter.toLowerCase().trim();
             const d = dropoffFilter.toLowerCase().trim();
@@ -110,7 +107,6 @@ const handleSelectTariff = (route) => {
             });
         }
 
-        // Filter tambahan berdasarkan kata kunci pada search bar lokal
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase().trim();
             list = list.filter((r) => {
@@ -131,19 +127,16 @@ const handleSelectTariff = (route) => {
     const hasMore = currentLimit < filteredRoutes.length;
 
     return (
-        <div className="w-full overflow-x-hidden min-h-screen bg-[#F2F4F7] text-slate-800 pt-20 sm:pt-24">
-            {/* Banner Compact */}
-            <div className="bg-[#0194F3] text-white px-5 py-6 sm:py-8 text-center shadow-xs">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-1 tracking-tight">
-                    Daftar Tarif Layanan Transportasi Lombok
-                </h1>
-                <p className="text-sky-100 text-xs sm:text-sm max-w-xl mx-auto font-medium">
-                    Pilihan rute perjalanan &amp; harga transparan untuk kenyamanan liburan Anda di Pulau Lombok.
-                </p>
-            </div>
-
+        <div className="w-full overflow-x-hidden min-h-screen bg-[#F2F4F7] text-slate-800 pt-24 sm:pt-28 pb-16">
             {/* Main Section */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+
+                {/* Judul Halaman Rata Kiri */}
+                <div className="mb-6">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                        Rute &amp; Tarif
+                    </h1>
+                </div>
 
                 {/* Status Filter Aktif dari Home.jsx / Search Bar */}
                 {(pickupFilter || dropoffFilter || searchQuery) && (

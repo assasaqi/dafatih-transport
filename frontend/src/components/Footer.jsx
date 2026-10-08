@@ -1,6 +1,9 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
+// Import aset logo dari folder public/logo
+import logoImg from '/logo/logo.png';
+
 const Footer = () => {
     const location = useLocation();
 
@@ -10,18 +13,17 @@ const Footer = () => {
     }
 
     return (
-        <footer className="bg-slate-900 text-white mt-auto pt-10 pb-20 md:pb-10 px-4 sm:px-6 lg:px-8 border-t border-slate-800">
+        <footer className="bg-slate-900 text-white mt-auto pt-5 pb-20 md:pb-10 px-4 sm:px-6 lg:px-8 border-t border-slate-800">
             <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
 
                 {/* Kolom 1: Profil Brand & Sosmed */}
                 <div className="space-y-3">
-                    <Link to="/" className="flex items-center gap-2 decoration-none group">
-                        <div className="w-8 h-8 bg-[#0194F3] rounded-lg flex items-center justify-center text-white shadow-xs">
-                            <i className="fa-solid fa-car-side text-sm"></i>
-                        </div>
-                        <span className="font-extrabold text-lg text-white tracking-tight">
-                            Dafatih<span className="text-[#0194F3]">Transport</span>
-                        </span>
+                    <Link to="/" className="inline-block decoration-none group">
+                        <img
+                            src={logoImg}
+                            alt="Dafatih Transport Logo"
+                            className="sm:h-24 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+                        />
                     </Link>
                     <p className="text-xs text-slate-400 leading-relaxed">
                         Penyedia jasa transportasi dan antar-jemput terpercaya di Pulau Lombok dengan harga transparan.
@@ -60,19 +62,9 @@ const Footer = () => {
                 {/* Kolom 2: Navigasi */}
                 <div>
                     <h4 className="text-sm font-bold text-white mb-3 uppercase tracking-wider">
-                        Navigasi
+                        Tentang
                     </h4>
                     <ul className="space-y-2 text-xs">
-                        <li>
-                            {/* <Link to="/" className="text-slate-400 hover:text-[#0194F3] transition-colors">
-                                Beranda
-                            </Link> */}
-                        </li>
-                        {/* <li>
-                            <Link to="/tarif" className="text-slate-400 hover:text-[#0194F3] transition-colors">
-                                Daftar Tarif
-                            </Link>
-                        </li> */}
                         <li>
                             <Link to="/galeri" className="text-slate-400 hover:text-[#0194F3] transition-colors">
                                 Galeri
@@ -86,14 +78,34 @@ const Footer = () => {
                     </ul>
                 </div>
 
-                {/* Kolom 3: Metode Pembayaran */}
-                <div>
-                    <h4 className="text-sm font-bold text-white mb-3 uppercase tracking-wider">
-                        Metode Pembayaran
-                    </h4>
-                    <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-800/60 p-3 rounded-xl border border-slate-800 w-fit">
-                        <i className="fa-solid fa-wallet text-amber-400 text-sm"></i>
-                        <span className="font-medium text-slate-300">Cash dan Transfer Bank</span>
+                {/* Kolom 3: Produk & Layanan serta Metode Pembayaran */}
+                <div className="space-y-6">
+                    <div>
+                        <h4 className="text-sm font-bold text-white mb-3 uppercase tracking-wider">
+                            Layanan
+                        </h4>
+                        <ul className="space-y-2 text-xs">
+                            <li>
+                                <Link to="/armada" className="text-slate-400 hover:text-[#0194F3] transition-colors">
+                                    Armada
+                                </Link>
+                            </li>
+                            <li>
+                                <Link to="/tarif" className="text-slate-400 hover:text-[#0194F3] transition-colors">
+                                    Rute &amp; Tarif
+                                </Link>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 className="text-sm font-bold text-white mb-3 uppercase tracking-wider">
+                            Metode Pembayaran
+                        </h4>
+                        <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-800/60 p-3 rounded-xl border border-slate-800 w-fit">
+                            <i className="fa-solid fa-wallet text-amber-400 text-sm"></i>
+                            <span className="font-medium text-slate-300">Cash dan Transfer Bank</span>
+                        </div>
                     </div>
                 </div>
 
