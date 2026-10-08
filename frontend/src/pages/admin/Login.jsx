@@ -38,49 +38,86 @@ const Login = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-            <div style={{ background: '#ffffff', width: '100%', maxWidth: '380px', borderRadius: '12px', padding: '28px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-                <h2 style={{ margin: '0 0 6px 0', fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', textAlign: 'center' }}>
-                    {isRegister ? 'Registrasi Admin' : 'Login Admin'}
-                </h2>
-                <p style={{ margin: '0 0 20px 0', fontSize: '0.8rem', color: '#64748b', textAlign: 'center' }}>
-                    Dafatih Transport Management System
-                </p>
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-sm rounded-2xl p-6 sm:p-8 shadow-2xl border border-slate-100">
+                <div className="text-center mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-[#0194F3] text-white flex items-center justify-center text-xl shadow-lg mx-auto mb-3">
+                        <i className="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                        {isRegister ? 'Registrasi Admin' : 'Login Admin'}
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                        Dafatih Transport Management System
+                    </p>
+                </div>
 
                 {message.text && (
-                    <div style={{ background: message.type === 'error' ? '#fef2f2' : '#f0fdf4', color: message.type === 'error' ? '#ef4444' : '#16a34a', border: `1px solid ${message.type === 'error' ? '#fecaca' : '#bbf7d0'}`, padding: '10px', borderRadius: '6px', fontSize: '0.78rem', marginBottom: '14px', textAlign: 'center' }}>
+                    <div
+                        className={`p-3 rounded-xl text-xs font-bold mb-4 border text-center ${
+                            message.type === 'error'
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}
+                    >
                         {message.text}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} className="space-y-4">
                     {isRegister && (
-                        <div style={{ marginBottom: '14px' }}>
-                            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>Nama Lengkap</label>
-                            <input type="text" placeholder="Masukkan nama" value={name} onChange={(e) => setName(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '0 10px', boxSizing: 'border-box' }} />
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">
+                                Nama Lengkap *
+                            </label>
+                            <input
+                                type="text"
+                                required
+                                placeholder="Masukkan nama"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold outline-none focus:border-[#0194F3] transition-colors"
+                            />
                         </div>
                     )}
 
-                    <div style={{ marginBottom: '14px' }}>
-                        <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>Email</label>
-                        <input type="email" required placeholder="admin@dafatihtransport.com" value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '0 10px', boxSizing: 'border-box' }} />
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Email Admin *
+                        </label>
+                        <input
+                            type="email"
+                            required
+                            placeholder="admin@dafatihtransport.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold outline-none focus:border-[#0194F3] transition-colors"
+                        />
                     </div>
 
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>Password</label>
-                        <input type="password" required placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '0 10px', boxSizing: 'border-box' }} />
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Password *
+                        </label>
+                        <input
+                            type="password"
+                            required
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full h-10 px-3.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold outline-none focus:border-[#0194F3] transition-colors"
+                        />
                     </div>
 
-                    <button type="submit" disabled={loading} style={{ width: '100%', height: '40px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}>
-                        {loading ? 'Memproses...' : (isRegister ? 'Daftar Sekarang' : 'Masuk Dashboard')}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full h-11 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 mt-2"
+                    >
+                        {loading && <i className="fa-solid fa-spinner fa-spin text-xs"></i>}
+                        <span>{loading ? 'Memproses...' : isRegister ? 'Daftar Sekarang' : 'Masuk Dashboard'}</span>
                     </button>
                 </form>
-
-                {/* <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                    <button type="button" onClick={() => { setIsRegister(!isRegister); setMessage({ type: '', text: '' }); }} style={{ background: 'none', border: 'none', color: '#0284c7', fontSize: '0.78rem', cursor: 'pointer', fontWeight: 600 }}>
-                        {isRegister ? 'Sudah punya akun? Login di sini' : 'Belum punya akun? Daftar Admin'}
-                    </button>
-                </div> */}
             </div>
         </div>
     );

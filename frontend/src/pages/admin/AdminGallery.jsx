@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { getGalleries, createGallery, updateGallery, deleteGallery, API_BASE_URL } from '@/services/api';
 import AdminNavbar from '@/components/AdminNavbar';
+import Toast from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
 
 const AdminGallery = () => {
     const [galleries, setGalleries] = useState([]);
@@ -11,17 +13,8 @@ const AdminGallery = () => {
     const [formData, setFormData] = useState({ title: '', category: 'Destinasi' });
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
-    const [activeDropdownId, setActiveDropdownId] = useState(null);
 
-    // State untuk Toast Notification
-    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-
-    const showToast = (message, type = 'success') => {
-        setToast({ show: true, message, type });
-        setTimeout(() => {
-            setToast({ show: false, message: '', type: 'success' });
-        }, 3500);
-    };
+    const { toast, showToast, hideToast } = useToast();
 
     const loadGalleries = () => {
         setLoading(true);
@@ -37,18 +30,6 @@ const AdminGallery = () => {
         loadGalleries();
     }, []);
 
-    // Tutup dropdown saat pengguna mengklik area di luar dropdown
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (!event.target.closest('.dropdown-container')) {
-                setActiveDropdownId(null);
-            }
-        };
-        document.addEventListener('click', handleClickOutside);
-        return () => document.removeEventListener('click', handleClickOutside);
-    }, []);
-
-    // Helper URL Gambar Dinamis berdasarkan API_BASE_URL
     const getImageUrl = (imageUrl) => {
         if (!imageUrl) return 'https://placehold.co/120x80?text=No+Foto';
         if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
@@ -59,13 +40,7 @@ const AdminGallery = () => {
         return `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
     };
 
-    const toggleDropdown = (id, e) => {
-        e.stopPropagation();
-        setActiveDropdownId((prev) => (prev === id ? null : id));
-    };
-
     const handleOpenModal = (item = null) => {
-        setActiveDropdownId(null);
         setImageFile(null);
         setImagePreview(null);
 
@@ -130,9 +105,8 @@ const AdminGallery = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        setActiveDropdownId(null);
-        if (window.confirm('Hapus foto dari galeri ini?')) {
+    const handleDelete = async (id, title) => {
+        if (window.confirm(`Hapus foto "${title}" dari galeri ini?`)) {
             try {
                 await deleteGallery(id);
                 showToast('Foto galeri berhasil dihapus!', 'success');
@@ -147,26 +121,14 @@ const AdminGallery = () => {
         <div className="min-h-screen bg-slate-100 text-slate-800 md:pl-60 transition-all relative">
             <AdminNavbar />
 
-            {/* Toast Notification Container */}
-            {toast.show && (
-                <div
-                    className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-xs sm:text-sm font-bold transition-all animate-bounce ${
-                        toast.type === 'success'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-rose-50 text-rose-800 border-rose-200'
-                    }`}
-                >
-                    <i
-                        className={`fa-solid ${
-                            toast.type === 'success' ? 'fa-circle-check text-emerald-500' : 'fa-circle-exclamation text-rose-500'
-                        } text-base`}
-                    ></i>
-                    <span>{toast.message}</span>
-                </div>
-            )}
+            <Toast
+                show={toast.show}
+                message={toast.message}
+                type={toast.type}
+                onClose={hideToast}
+            />
 
             <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-                {/* Header Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80">
                     <div>
                         <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
@@ -187,7 +149,6 @@ const AdminGallery = () => {
                     </button>
                 </div>
 
-                {/* Content Table / Loading State */}
                 {loading ? (
                     <div className="text-center py-16 text-slate-500 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
                         <i className="fa-solid fa-spinner fa-spin text-xl text-[#0194F3] mr-2"></i>
@@ -202,7 +163,7 @@ const AdminGallery = () => {
                                         <th className="py-3 px-4 text-center w-28">Foto</th>
                                         <th className="py-3 px-4">Judul Foto / Keterangan</th>
                                         <th className="py-3 px-4 w-32">Kategori</th>
-                                        <th className="py-3 px-4 text-center w-20">Aksi</th>
+                                        <th className="py-3 px-4 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 font-medium">
@@ -215,7 +176,6 @@ const AdminGallery = () => {
                                     ) : (
                                         galleries.map((item) => (
                                             <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                                                {/* Foto Galeri Lanskap Horizontal */}
                                                 <td className="py-3 px-4 text-center">
                                                     <div className="w-20 h-12 rounded-lg overflow-hidden border border-slate-200 mx-auto bg-slate-50 shadow-2xs group relative">
                                                         <img
@@ -234,35 +194,23 @@ const AdminGallery = () => {
                                                     </span>
                                                 </td>
                                                 <td className="py-3 px-4 text-center">
-                                                    <div className="dropdown-container relative inline-block text-left">
+                                                    <div className="flex items-center justify-center gap-1.5">
                                                         <button
                                                             type="button"
-                                                            onClick={(e) => toggleDropdown(item.id, e)}
-                                                            className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                                                            onClick={() => handleOpenModal(item)}
+                                                            className="w-8 h-8 rounded-lg bg-sky-50 hover:bg-sky-100 text-[#0194F3] transition-colors flex items-center justify-center cursor-pointer"
+                                                            title="Edit Foto"
                                                         >
-                                                            <i className="fa-solid fa-ellipsis-vertical text-xs pointer-events-none"></i>
+                                                            <i className="fa-solid fa-pen-to-square text-xs"></i>
                                                         </button>
-
-                                                        {activeDropdownId === item.id && (
-                                                            <div className="absolute right-0 sm:right-0 mt-1 w-32 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleOpenModal(item)}
-                                                                    className="w-full text-left px-3.5 py-2 text-xs font-bold text-amber-600 hover:bg-amber-50 flex items-center gap-2 cursor-pointer transition-colors"
-                                                                >
-                                                                    <i className="fa-solid fa-pen-to-square"></i>
-                                                                    <span>Edit</span>
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleDelete(item.id)}
-                                                                    className="w-full text-left px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
-                                                                >
-                                                                    <i className="fa-solid fa-trash"></i>
-                                                                    <span>Hapus</span>
-                                                                </button>
-                                                            </div>
-                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDelete(item.id, item.title)}
+                                                            className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors flex items-center justify-center cursor-pointer"
+                                                            title="Hapus Foto"
+                                                        >
+                                                            <i className="fa-solid fa-trash-can text-xs"></i>
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -274,7 +222,6 @@ const AdminGallery = () => {
                     </div>
                 )}
 
-                {/* Modal Form Tambah/Edit Foto */}
                 {modalOpen && (
                     <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
                         <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md shadow-xl border border-slate-200">
@@ -331,7 +278,6 @@ const AdminGallery = () => {
                                         )}
                                     </label>
 
-                                    {/* Preview Gambar Dalam Modal Form */}
                                     {imagePreview && (
                                         <div className="mb-2 relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
                                             <img src={imagePreview} alt="Preview Foto Galeri" className="w-full h-full object-cover" />

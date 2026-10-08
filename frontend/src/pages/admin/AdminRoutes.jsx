@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { getRoutes, createRoute, updateRoute, deleteRoute, getImageUrl } from '@/services/api';
 import AdminNavbar from '@/components/AdminNavbar';
+import Toast from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
 
 const AdminRoutes = () => {
     const [routes, setRoutes] = useState([]);
@@ -10,20 +12,9 @@ const AdminRoutes = () => {
     const [formData, setFormData] = useState({ pickup_location: '', dropoff_location: '', price: '' });
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
-    const [activeDropdownId, setActiveDropdownId] = useState(null);
 
-    // State Toast Notification
-    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-
-    const dropdownRef = useRef(null);
+    const { toast, showToast, hideToast } = useToast();
     const fileInputRef = useRef(null);
-
-    const showToast = (message, type = 'success') => {
-        setToast({ show: true, message, type });
-        setTimeout(() => {
-            setToast({ show: false, message: '', type: 'success' });
-        }, 3500);
-    };
 
     const loadRoutes = () => {
         setLoading(true);
@@ -37,23 +28,9 @@ const AdminRoutes = () => {
 
     useEffect(() => {
         loadRoutes();
-
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setActiveDropdownId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const toggleDropdown = (id, e) => {
-        e.stopPropagation();
-        setActiveDropdownId(activeDropdownId === id ? null : id);
-    };
-
     const handleOpenModal = (route = null) => {
-        setActiveDropdownId(null);
         setImageFile(null);
         setImagePreview(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -91,7 +68,6 @@ const AdminRoutes = () => {
         submitData.append('dropoff_location', formData.dropoff_location);
         submitData.append('price', formData.price);
 
-        // Tambahkan berkas gambar jika dipilih oleh pengguna
         if (imageFile) {
             submitData.append('image', imageFile);
         }
@@ -112,9 +88,8 @@ const AdminRoutes = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        setActiveDropdownId(null);
-        if (window.confirm('Apakah Anda yakin ingin menghapus rute ini?')) {
+    const handleDelete = async (id, pickup, dropoff) => {
+        if (window.confirm(`Yakin ingin menghapus rute ${pickup} ➔ ${dropoff}?`)) {
             try {
                 await deleteRoute(id);
                 showToast('Rute berhasil dihapus!', 'success');
@@ -129,26 +104,14 @@ const AdminRoutes = () => {
         <div className="min-h-screen bg-slate-100 text-slate-800 md:pl-60 transition-all relative">
             <AdminNavbar />
 
-            {/* Toast Notification Container */}
-            {toast.show && (
-                <div
-                    className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-xs sm:text-sm font-bold transition-all animate-bounce ${
-                        toast.type === 'success'
-                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                            : 'bg-rose-50 text-rose-800 border-rose-200'
-                    }`}
-                >
-                    <i
-                        className={`fa-solid ${
-                            toast.type === 'success' ? 'fa-circle-check text-emerald-500' : 'fa-circle-exclamation text-rose-500'
-                        } text-base`}
-                    ></i>
-                    <span>{toast.message}</span>
-                </div>
-            )}
+            <Toast
+                show={toast.show}
+                message={toast.message}
+                type={toast.type}
+                onClose={hideToast}
+            />
 
             <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-                {/* Header Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80">
                     <div>
                         <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
@@ -169,7 +132,6 @@ const AdminRoutes = () => {
                     </button>
                 </div>
 
-                {/* Content Table / Loading State */}
                 {loading ? (
                     <div className="text-center py-16 text-slate-500 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
                         <i className="fa-solid fa-spinner fa-spin text-xl text-[#0194F3] mr-2"></i>
@@ -185,7 +147,7 @@ const AdminRoutes = () => {
                                         <th className="py-3 px-4">Penjemputan</th>
                                         <th className="py-3 px-4">Tujuan</th>
                                         <th className="py-3 px-4">Tarif</th>
-                                        <th className="py-3 px-4 text-center w-16">Aksi</th>
+                                        <th className="py-3 px-4 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 font-medium">
@@ -216,36 +178,24 @@ const AdminRoutes = () => {
                                                 <td className="py-3 px-4 font-extrabold text-[#0194F3]">
                                                     Rp {Number(r.price).toLocaleString('id-ID')}
                                                 </td>
-                                                <td className="py-3 px-4 text-center relative">
-                                                    <div className="inline-block text-left" ref={activeDropdownId === r.id ? dropdownRef : null}>
+                                                <td className="py-3 px-4 text-center">
+                                                    <div className="flex items-center justify-center gap-1.5">
                                                         <button
                                                             type="button"
-                                                            onClick={(e) => toggleDropdown(r.id, e)}
-                                                            className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                                                            onClick={() => handleOpenModal(r)}
+                                                            className="w-8 h-8 rounded-lg bg-sky-50 hover:bg-sky-100 text-[#0194F3] transition-colors flex items-center justify-center cursor-pointer"
+                                                            title="Edit Rute"
                                                         >
-                                                            <i className="fa-solid fa-ellipsis-vertical text-xs"></i>
+                                                            <i className="fa-solid fa-pen-to-square text-xs"></i>
                                                         </button>
-
-                                                        {activeDropdownId === r.id && (
-                                                            <div className="absolute right-0 mt-1 w-32 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-30">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleOpenModal(r)}
-                                                                    className="w-full text-left px-3.5 py-1.5 text-xs font-bold text-amber-600 hover:bg-amber-50 flex items-center gap-2 cursor-pointer transition-colors"
-                                                                >
-                                                                    <i className="fa-solid fa-pen-to-square"></i>
-                                                                    <span>Edit</span>
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleDelete(r.id)}
-                                                                    className="w-full text-left px-3.5 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer transition-colors"
-                                                                >
-                                                                    <i className="fa-solid fa-trash"></i>
-                                                                    <span>Hapus</span>
-                                                                </button>
-                                                            </div>
-                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDelete(r.id, r.pickup_location, r.dropoff_location)}
+                                                            className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors flex items-center justify-center cursor-pointer"
+                                                            title="Hapus Rute"
+                                                        >
+                                                            <i className="fa-solid fa-trash-can text-xs"></i>
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -257,7 +207,6 @@ const AdminRoutes = () => {
                     </div>
                 )}
 
-                {/* Modal Form Tambah/Edit */}
                 {modalOpen && (
                     <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
                         <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md shadow-xl border border-slate-200">
@@ -322,7 +271,6 @@ const AdminRoutes = () => {
                                         Gambar Rute (Opsional)
                                     </label>
 
-                                    {/* Preview Gambar Dalam Modal Form */}
                                     {imagePreview && (
                                         <div className="mb-2 relative w-full h-28 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
                                             <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />

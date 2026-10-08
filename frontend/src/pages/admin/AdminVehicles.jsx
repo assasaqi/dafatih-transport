@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminNavbar from '@/components/AdminNavbar';
+import Toast from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
 import {
   getVehicles,
   createVehicle,
@@ -11,15 +13,13 @@ import {
 const AdminVehicles = () => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
 
-  // State Modal Form Tambah / Edit
+  const { toast, showToast, hideToast } = useToast();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form State
   const [formData, setFormData] = useState({
     name: '',
     category: 'MPV',
@@ -32,10 +32,8 @@ const AdminVehicles = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
 
-  // Fetch daftar armada saat komponen dimuat
   const fetchVehiclesData = async () => {
     setLoading(true);
-    setError('');
     try {
       const res = await getVehicles();
       if (res.data?.success) {
@@ -45,7 +43,7 @@ const AdminVehicles = () => {
       }
     } catch (err) {
       console.error('Gagal memuat data armada:', err);
-      setError('Gagal memuat data armada dari server.');
+      showToast('Gagal memuat data armada dari server.', 'error');
     } finally {
       setLoading(false);
     }
@@ -55,13 +53,11 @@ const AdminVehicles = () => {
     fetchVehiclesData();
   }, []);
 
-  // Handle Input Form Teks
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle Select File Gambar
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -70,7 +66,6 @@ const AdminVehicles = () => {
     }
   };
 
-  // Helper URL Gambar
   const getImageUrl = (car) => {
     const imageUrl = typeof car === 'string' ? car : car?.image_url || car?.image || car?.image_path || '';
     if (!imageUrl) return 'https://placehold.co/400x250?text=Armada+Mobil';
@@ -87,7 +82,6 @@ const AdminVehicles = () => {
     return encodeURI(fullUrl);
   };
 
-  // Buka Modal Tambah
   const handleOpenAddModal = () => {
     setSelectedVehicle(null);
     setFormData({
@@ -104,7 +98,6 @@ const AdminVehicles = () => {
     setIsModalOpen(true);
   };
 
-  // Buka Modal Edit
   const handleOpenEditModal = (vehicle) => {
     setSelectedVehicle(vehicle);
     setFormData({
@@ -121,12 +114,9 @@ const AdminVehicles = () => {
     setIsModalOpen(true);
   };
 
-  // Submit Form (Tambah / Update)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    setError('');
-    setSuccessMsg('');
 
     try {
       const data = new FormData();
@@ -144,43 +134,48 @@ const AdminVehicles = () => {
 
       if (selectedVehicle) {
         await updateVehicle(selectedVehicle.id, data);
-        setSuccessMsg('Armada berhasil diperbarui!');
+        showToast('Armada berhasil diperbarui!', 'success');
       } else {
         await createVehicle(data);
-        setSuccessMsg('Armada baru berhasil ditambahkan!');
+        showToast('Armada baru berhasil ditambahkan!', 'success');
       }
 
       setIsModalOpen(false);
       fetchVehiclesData();
     } catch (err) {
       console.error('Gagal menyimpan armada:', err);
-      setError('Gagal menyimpan data armada. Periksa koneksi dan input.');
+      showToast('Gagal menyimpan data armada.', 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Hapus Armada
   const handleDelete = async (id, name) => {
     if (window.confirm(`Yakin ingin menghapus armada "${name}"?`)) {
       try {
         await deleteVehicle(id);
-        setSuccessMsg(`Armada ${name} berhasil dihapus.`);
+        showToast(`Armada ${name} berhasil dihapus.`, 'success');
         fetchVehiclesData();
       } catch (err) {
         console.error('Gagal menghapus armada:', err);
-        setError('Gagal menghapus armada.');
+        showToast('Gagal menghapus armada.', 'error');
       }
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row relative">
       <AdminNavbar />
+
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={hideToast}
+      />
 
       <main className="flex-1 md:pl-60 w-full min-h-screen">
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto text-slate-800">
-          {/* Header Dashboard Admin */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 flex items-center gap-2">
@@ -201,32 +196,6 @@ const AdminVehicles = () => {
             </button>
           </div>
 
-          {/* Alert Pesan Sukses / Error */}
-          {successMsg && (
-            <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs sm:text-sm font-semibold rounded-xl flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <i className="fa-solid fa-circle-check text-emerald-500"></i>
-                {successMsg}
-              </span>
-              <button type="button" onClick={() => setSuccessMsg('')} className="text-emerald-500 hover:text-emerald-800">
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-4 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-semibold rounded-xl flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <i className="fa-solid fa-triangle-exclamation text-rose-500"></i>
-                {error}
-              </span>
-              <button type="button" onClick={() => setError('')} className="text-rose-500 hover:text-rose-800">
-                <i className="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-          )}
-
-          {/* Tabel Data Armada */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
             {loading ? (
               <div className="text-center py-12 text-slate-500 text-sm">
@@ -319,7 +288,6 @@ const AdminVehicles = () => {
             )}
           </div>
 
-          {/* Modal Form Tambah / Edit Armada */}
           {isModalOpen && (
             <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
               <div className="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 my-8 animate-in fade-in zoom-in-95 duration-150">
@@ -338,7 +306,6 @@ const AdminVehicles = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-3.5">
-                  {/* Nama Mobil */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Nama Armada / Mobil *
@@ -354,7 +321,6 @@ const AdminVehicles = () => {
                     />
                   </div>
 
-                  {/* Grid 2 Kolom: Kategori & Transmisi */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -389,7 +355,6 @@ const AdminVehicles = () => {
                     </div>
                   </div>
 
-                  {/* Grid 2 Kolom: Kapasitas & Harga */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -422,7 +387,6 @@ const AdminVehicles = () => {
                     </div>
                   </div>
 
-                  {/* Status Ketersediaan */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Status Ketersediaan
@@ -439,7 +403,6 @@ const AdminVehicles = () => {
                     </select>
                   </div>
 
-                  {/* Deskripsi / Fasilitas */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Deskripsi / Fasilitas
@@ -454,7 +417,6 @@ const AdminVehicles = () => {
                     ></textarea>
                   </div>
 
-                  {/* Upload Foto Armada */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       Foto Kendaraan
@@ -472,7 +434,6 @@ const AdminVehicles = () => {
                     )}
                   </div>
 
-                  {/* Footer Modal Action */}
                   <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 mt-4">
                     <button
                       type="button"
