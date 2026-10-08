@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHome } from '@/context/HomeContext';
-import { getRoutes, getBlogs, API_BASE_URL } from '@/services/api';
+import { getRoutes, getBlogs } from '@/services/api';
+import RouteCard from '@/components/cards/RouteCard'; // <-- IMPOR KOMPONEN CARD BARU
 
 // Secara dinamis membaca semua berkas gambar dari folder /public/images/
 const localImagesModules = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp,avif}', {
@@ -9,7 +10,6 @@ const localImagesModules = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp
   import: 'default'
 });
 
-// Mengubah objek modul menjadi array string URL gambar publik
 const localImageUrls = Object.keys(localImagesModules).map((filePath) =>
   filePath.replace('/public', '')
 );
@@ -44,18 +44,17 @@ const Home = () => {
   // State kriteria filter aktif untuk slider bawah
   const [searchFilter, setSearchFilter] = useState({ pickup: '', dropoff: '' });
 
-  // State untuk Custom Dropdown Open/Close (Antar-Jemput)
+  // State Dropdown
   const [isPickupOpen, setIsPickupOpen] = useState(false);
   const [isDropoffOpen, setIsDropoffOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isPassengerOpen, setIsPassengerOpen] = useState(false);
 
-  // State untuk Custom Dropdown Open/Close (Sewa Mobil)
   const [isRentalLocOpen, setIsRentalLocOpen] = useState(false);
   const [isRentalCalOpen, setIsRentalCalOpen] = useState(false);
   const [isRentalDurOpen, setIsRentalDurOpen] = useState(false);
 
-  // Ref untuk click outside handler
+  // Refs
   const pickupRef = useRef(null);
   const dropoffRef = useRef(null);
   const calendarRef = useRef(null);
@@ -65,11 +64,9 @@ const Home = () => {
   const rentalDurRef = useRef(null);
   const sliderRef = useRef(null);
 
-  // State visibilitas tombol slide
   const [showLeftBtn, setShowLeftBtn] = useState(false);
   const [showRightBtn, setShowRightBtn] = useState(true);
 
-  // Helper untuk memformat objek Date ke ISO string 'YYYY-MM-DD'
   const formatDateToISO = (dateObj) => {
     const year = dateObj.getFullYear();
     const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -79,12 +76,10 @@ const Home = () => {
 
   const todayObj = new Date();
 
-  // State Navigasi Bulan untuk Kalender Kustom
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState(
     new Date(todayObj.getFullYear(), todayObj.getMonth(), 1)
   );
 
-  // Close all dropdowns helper
   const closeAllDropdowns = () => {
     setIsPickupOpen(false);
     setIsDropoffOpen(false);
@@ -95,7 +90,6 @@ const Home = () => {
     setIsRentalDurOpen(false);
   };
 
-  // Load Data Rute & Blog dari Backend API
   useEffect(() => {
     Promise.all([getRoutes(), getBlogs()])
       .then(([routesRes, blogsRes]) => {
@@ -114,7 +108,6 @@ const Home = () => {
       });
   }, []);
 
-  // Close dropdown saat klik di luar area input
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (pickupRef.current && !pickupRef.current.contains(e.target)) setIsPickupOpen(false);
@@ -129,7 +122,6 @@ const Home = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Daftar lokasi penjemputan & rental unik dari data rute
   const uniquePickupLocations = Array.from(
     new Set(routes.map((r) => r.pickup_location).filter(Boolean))
   );
@@ -159,7 +151,6 @@ const Home = () => {
     setIsDropoffOpen(false);
   };
 
-  // Logika Kalender
   const generateCalendarDays = () => {
     const year = currentCalendarMonth.getFullYear();
     const month = currentCalendarMonth.getMonth();
@@ -167,12 +158,8 @@ const Home = () => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     const days = [];
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      days.push(null);
-    }
-    for (let d = 1; d <= daysInMonth; d++) {
-      days.push(new Date(year, month, d));
-    }
+    for (let i = 0; i < firstDayOfMonth; i++) days.push(null);
+    for (let d = 1; d <= daysInMonth; d++) days.push(new Date(year, month, d));
     return days;
   };
 
@@ -188,7 +175,6 @@ const Home = () => {
     setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 1));
   };
 
-  // Slideshow Background
   useEffect(() => {
     if (heroSlides.length <= 1) return;
     const timer = setInterval(() => {
@@ -202,7 +188,6 @@ const Home = () => {
     closeAllDropdowns();
   };
 
-  // Handler Submit Form Antar-Jemput
   const handleHeroSearchSubmit = (e) => {
     e.preventDefault();
     navigate('/tarif', {
@@ -216,7 +201,6 @@ const Home = () => {
     });
   };
 
-  // Handler Submit Form Sewa Mobil
   const handleRentalSearchSubmit = (e) => {
     e.preventDefault();
     navigate('/mobil', {
@@ -229,14 +213,12 @@ const Home = () => {
     });
   };
 
-  // Handler Konsultasi WhatsApp Tour
   const handleWAConsultation = () => {
     const phoneNumber = '6281234567890';
     const message = encodeURIComponent('Halo Dafatih Transport, saya ingin konsultasi mengenai Paket Wisata Lombok.');
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
   };
 
-  // Filter Rute untuk Slider di Beranda
   const getFilteredRoutes = () => {
     let routesList = [...routes];
     if (searchFilter.pickup.trim() !== '' || searchFilter.dropoff.trim() !== '') {
@@ -287,35 +269,19 @@ const Home = () => {
     }
   };
 
-  const handleSelectRoute = (route) => {
-    navigate('/pesan', {
-      state: {
-        jenisLayanan: 'Antar-Jemput', // <- TAMBAHKAN PROPERTI INI
-        pickup: route.pickup_location,
-        dropoff: route.dropoff_location,
-        price: Number(route.price),
-        date: travelDate,
-        passengers: passengers,
-        carType: route.car_type || route.vehicle_name || 'Standar'
-      }
-    });
-  };
-
-  const getImageUrl = (route) => {
-    const imageUrl = route?.image_url || route?.image || route?.image_path || '';
-    if (!imageUrl) return 'https://placehold.co/400x250?text=Transport+Lombok';
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return encodeURI(imageUrl);
+// Di dalam Home.jsx
+const handleSelectRoute = (route) => {
+  navigate('/pesan', {
+    state: {
+      jenisLayanan: 'Antar-Jemput',
+      pickup: route.pickup_location,
+      dropoff: route.dropoff_location,
+      price: Number(route.price || 0),
+      travelDate: travelDate || '',
+      passengers: passengers || ''
     }
-    let baseUrl = '';
-    if (API_BASE_URL) {
-      baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
-    } else if (typeof window !== 'undefined') {
-      baseUrl = window.location.origin;
-    }
-    const fullUrl = `${baseUrl}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
-    return encodeURI(fullUrl);
-  };
+  });
+};
 
   const formatDisplayDate = (dateStr) => {
     if (!dateStr) return '';
@@ -333,7 +299,6 @@ const Home = () => {
     <div className="bg-[#F2F4F7] text-slate-800 min-h-screen">
       {/* HERO SECTION */}
       <section className="relative min-h-[480px] md:min-h-[520px] flex items-center justify-center px-4 py-12 md:py-20 bg-slate-900 pt-20 sm:pt-24">
-        {/* Background Slideshow */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           {heroSlides.length > 0 ? (
             heroSlides.map((imagePath, index) => (
@@ -354,15 +319,12 @@ const Home = () => {
           <div className="absolute inset-0 bg-slate-950/45 backdrop-brightness-95" />
         </div>
 
-        {/* Hero Content */}
         <div className="relative z-10 w-full max-w-6xl mx-auto">
           <h1 className="text-center text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-8 drop-shadow-lg tracking-tight leading-snug">
             Pilihan Terbaik Jelajahi Keindahan Lombok
           </h1>
 
-          {/* Floating Search Card */}
           <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-2xl border border-white/20 relative z-20">
-            {/* Tab Kategori Layanan */}
             <div className="flex gap-2 border-b border-slate-200 pb-3.5 mb-5 overflow-x-auto">
               <button
                 type="button"
@@ -402,7 +364,6 @@ const Home = () => {
             {/* TAB 1: FORM ANTAR-JEMPUT */}
             {activeTab === 'airport' && (
               <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.5fr_1.5fr_1.2fr_1fr_auto] gap-3 items-center" onSubmit={handleHeroSearchSubmit}>
-                {/* LOKASI PENJEMPUTAN */}
                 <div className="relative" ref={pickupRef}>
                   <div
                     onClick={() => {
@@ -455,7 +416,6 @@ const Home = () => {
                   )}
                 </div>
 
-                {/* LOKASI TUJUAN */}
                 <div className="relative" ref={dropoffRef}>
                   <div
                     onClick={() => {
@@ -508,7 +468,6 @@ const Home = () => {
                   )}
                 </div>
 
-                {/* TANGGAL PERJALANAN */}
                 <div className="relative" ref={calendarRef}>
                   <div
                     onClick={() => {
@@ -598,7 +557,6 @@ const Home = () => {
                   )}
                 </div>
 
-                {/* JUMLAH PENUMPANG */}
                 <div className="relative" ref={passengerRef}>
                   <div
                     onClick={() => {
@@ -646,7 +604,6 @@ const Home = () => {
                   )}
                 </div>
 
-                {/* TOMBOL CARI */}
                 <button
                   type="submit"
                   className="w-full lg:w-auto h-full px-6 py-3 bg-[#0194F3] hover:bg-blue-600 text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
@@ -660,7 +617,6 @@ const Home = () => {
             {/* TAB 2: FORM SEWA MOBIL */}
             {activeTab === 'rental' && (
               <form className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-[2fr_1.5fr_1.5fr_auto] gap-3 items-center" onSubmit={handleRentalSearchSubmit}>
-                {/* LOKASI RENTAL */}
                 <div className="relative" ref={rentalLocRef}>
                   <div
                     onClick={() => {
@@ -715,7 +671,6 @@ const Home = () => {
                   )}
                 </div>
 
-                {/* TANGGAL MULAI RENTAL */}
                 <div className="relative" ref={rentalCalRef}>
                   <div
                     onClick={() => {
@@ -804,7 +759,6 @@ const Home = () => {
                   )}
                 </div>
 
-                {/* DURASI RENTAL */}
                 <div className="relative" ref={rentalDurRef}>
                   <div
                     onClick={() => {
@@ -851,7 +805,6 @@ const Home = () => {
                   )}
                 </div>
 
-                {/* TOMBOL CARI SEWA MOBIL */}
                 <button
                   type="submit"
                   className="w-full lg:w-auto h-full px-6 py-3 bg-[#0194F3] hover:bg-blue-600 text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
@@ -862,7 +815,7 @@ const Home = () => {
               </form>
             )}
 
-            {/* TAB 3: KETERANGAN PAKET TOUR LOMBOK */}
+            {/* TAB 3: PAKET TOUR */}
             {activeTab === 'tour' && (
               <div className="py-8 text-center flex flex-col items-center justify-center animate-in fade-in duration-200">
                 <div className="w-16 h-16 bg-sky-50 rounded-full flex items-center justify-center mb-4 text-[#0194F3] text-2xl shadow-xs">
@@ -944,43 +897,14 @@ const Home = () => {
               className="flex gap-4 sm:gap-5 overflow-x-auto scroll-smooth pb-4 pt-1 px-1 no-scrollbar scrollbar-none snap-x snap-mandatory"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
+              {/* MENGGUNAKAN KOMPONEN ROUTECARD DI SINI */}
               {filteredRoutes.map((route) => (
-                <div
+                <RouteCard
                   key={route.id}
-                  onClick={() => handleSelectRoute(route)}
-                  className="snap-start shrink-0 w-[260px] sm:w-[280px] lg:w-[calc(25%-15px)] group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 border border-slate-200/80 cursor-pointer flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="relative h-40 sm:h-44 overflow-hidden bg-slate-100">
-                      <img
-                        src={getImageUrl(route)}
-                        alt={`${route.pickup_location} - ${route.dropoff_location}`}
-                        translate="no"
-                        className="notranslate w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    </div>
-
-                    <div className="p-3.5 sm:p-4">
-                      <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#0194F3] transition-colors line-clamp-1 mb-1">
-                        {route.pickup_location} - {route.dropoff_location}
-                      </h3>
-
-                      {travelDate && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mb-2 font-medium">
-                          <i className="fa-regular fa-calendar text-[10px] text-amber-600"></i>
-                          <span>{formatDisplayDate(travelDate)}</span>
-                        </div>
-                      )}
-
-                      <div className="pt-1">
-                        <span className="text-base sm:text-lg font-extrabold text-[#F96D01] block leading-tight">
-                          Rp {Number(route.price).toLocaleString('id-ID')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  route={route}
+                  travelDate={travelDate}
+                  onSelectRoute={handleSelectRoute}
+                />
               ))}
             </div>
           </div>

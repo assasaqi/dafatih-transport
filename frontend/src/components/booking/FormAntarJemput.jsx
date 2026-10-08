@@ -64,18 +64,10 @@ const FormAntarJemput = ({ onOpenModal }) => {
       .catch((err) => console.error('Gagal memuat rute:', err));
   }, []);
 
-  // 2. Menerima data dari Page Tarif atau Card Home Antar-Jemput
+  // 2. Menerima data dari Page Tarif atau RouteCard Antar-Jemput
   useEffect(() => {
     if (location.state) {
       const stateData = location.state;
-
-      // Filter ketat: Abaikan jika data dikirim dari Sewa Mobil atau Paket Tour
-      const isRentalData = stateData.jenisLayanan === 'Sewa Mobil' || !!stateData.carType || !!stateData.namaArmada;
-      const isTourData = stateData.jenisLayanan === 'Paket Tour' || !!stateData.packageTour || !!stateData.packageName;
-
-      if (isRentalData || isTourData) {
-        return;
-      }
 
       const incomingPickup = stateData.pickupLoc || stateData.pickup || '';
       const incomingDrop = stateData.dropLoc || stateData.dropoff || stateData.drop || '';
