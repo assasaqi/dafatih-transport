@@ -38,7 +38,7 @@ const API = axios.create({
 // 4. Interceptor: Menyisipkan Token Authorization Secara Otomatis
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+    const token = localStorage.getItem('token') || localStorage.getItem('adminToken') || localStorage.getItem('clientToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -47,9 +47,12 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ==========================================
 // API ENDPOINTS
-// ==========================================
+
+// --- Client Auth API ---
+export const registerClient = (data) => API.post('/client/register', data);
+export const loginClient = (data) => API.post('/client/login', data);
+export const getClientProfile = () => API.get('/client/profile');
 
 // --- Admin Auth & Profile API ---
 export const getProfile = (email) => API.get(`/profile${email ? `?email=${email}` : ''}`);
