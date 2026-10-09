@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
+// Import aset logo dari folder public/logo
+import logoImg from '/logo/logo.png';
+
 const AdminNavbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -47,11 +50,12 @@ const AdminNavbar = () => {
         <>
             {/* Header Mobile Tipis */}
             <div className="md:hidden sticky top-0 left-0 w-full bg-slate-900 text-white px-4 py-3 flex justify-between items-center z-40 shadow-md">
-                <Link to="/admin/dashboard" className="font-extrabold text-[#0194F3] text-base flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-[#0194F3] text-white flex items-center justify-center text-xs shadow-xs">
-                        <i className="fa-solid fa-shield-halved"></i>
-                    </div>
-                    <span className="tracking-tight text-white">Dafatih <span className="text-[#0194F3]">Admin</span></span>
+                <Link to="/admin/dashboard" className="flex items-center">
+                    <img
+                        src={logoImg}
+                        alt="Dafatih Transport Logo"
+                        className="h-14 w-auto object-contain"
+                    />
                 </Link>
                 <button
                     type="button"
@@ -78,20 +82,14 @@ const AdminNavbar = () => {
                 }`}
             >
                 <div>
-                    {/* Brand Header */}
-                    <div className="p-5 flex items-center justify-between border-b border-slate-800/80">
-                        <Link to="/admin/dashboard" className="font-extrabold text-base flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-[#0194F3] text-white flex items-center justify-center text-sm shadow-md">
-                                <i className="fa-solid fa-shield-halved"></i>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="tracking-tight text-white font-extrabold text-sm leading-tight">
-                                    Dafatih <span className="text-[#0194F3]">Transport</span>
-                                </span>
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                    Admin
-                                </span>
-                            </div>
+                    {/* Brand Header Menggunakan Gambar Logo */}
+                    <div className="p-4 flex items-center justify-between border-b border-slate-800/80">
+                        <Link to="/admin/dashboard" className="flex items-center">
+                            <img
+                                src={logoImg}
+                                alt="Dafatih Transport Logo"
+                                className="h-16 w-auto object-contain"
+                            />
                         </Link>
                         <button
                             type="button"
