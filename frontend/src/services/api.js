@@ -7,11 +7,10 @@ export const API_BASE_URL =
     ? 'https://dafatih-transport.rasmantech.web.id/api'
     : 'http://localhost:5000/api');
 
-// 2. Helper URL Gambar Global (Menghapus '/api' untuk membentuk domain utama server)
+// 2. Helper URL Gambar Global
 export const getImageUrl = (imageUrl) => {
   if (!imageUrl) return 'https://placehold.co/400x250?text=No+Image';
 
-  // Jika parameter berupa objek (seperti objek car/vehicle/route)
   const path = typeof imageUrl === 'string'
     ? imageUrl
     : imageUrl?.image_url || imageUrl?.image || imageUrl?.image_path || '';
@@ -47,7 +46,7 @@ API.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// API ENDPOINTS
+// ================= API ENDPOINTS =================
 
 // --- Client Auth API ---
 export const registerClient = (data) => API.post('/client/register', data);
@@ -60,7 +59,7 @@ export const updateProfile = (data) => API.put('/profile', data);
 export const loginAdmin = (data) => API.post('/login', data);
 export const registerAdmin = (data) => API.post('/register', data);
 
-// --- Vehicle / Armada API (CRUD Lengkap) ---
+// --- Vehicle / Armada API (Sewa Mobil) ---
 export const getVehicles = () => API.get('/vehicles');
 export const createVehicle = (formData) =>
   API.post('/vehicles', formData, {
@@ -72,7 +71,7 @@ export const updateVehicle = (id, formData) =>
   });
 export const deleteVehicle = (id) => API.delete(`/vehicles/${id}`);
 
-// --- Route & Tarif API (CRUD Lengkap) ---
+// --- Route & Tarif API (Antar Jemput) ---
 export const getRoutes = () => API.get('/routes');
 export const createRoute = (formData) =>
   API.post('/routes', formData, {
@@ -84,9 +83,23 @@ export const updateRoute = (id, formData) =>
   });
 export const deleteRoute = (id) => API.delete(`/routes/${id}`);
 
+// --- Tour Package API (Paket Tour) - BARU ---
+export const getTourPackages = () => API.get('/tour-packages');
+export const getTourPackageBySlug = (slug) => API.get(`/tour-packages/${slug}`);
+export const createTourPackage = (formData) =>
+  API.post('/tour-packages', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+export const updateTourPackage = (id, formData) =>
+  API.put(`/tour-packages/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+export const deleteTourPackage = (id) => API.delete(`/tour-packages/${id}`);
+
 // --- Booking API ---
 export const getBookings = () => API.get('/bookings');
 export const createBooking = (bookingData) => API.post('/bookings', bookingData);
+export const getBookingByCode = (code) => API.get(`/bookings/track/${code}`); // BARU: Untuk Tracking Pesanan
 export const updateBookingStatus = (id, status) => API.put(`/bookings/${id}/status`, { status });
 export const deleteBooking = (id) => API.delete(`/bookings/${id}`);
 

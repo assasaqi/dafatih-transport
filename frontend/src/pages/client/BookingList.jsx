@@ -8,9 +8,10 @@ const Booking = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('airport');
+  const [activeTab, setActiveTab] = useState('airport'); // 'airport' | 'rental' | 'tour'
   const [showInfoBanner, setShowInfoBanner] = useState(true);
 
+  // 1. DETEKSI OTOMATIS TAB DARI NAVIGASI LUAR
   useEffect(() => {
     if (location.state && Object.keys(location.state).length > 0) {
       const stateData = location.state;
@@ -43,7 +44,7 @@ const Booking = () => {
               onClick={() => navigate('/riwayat-booking')}
               className="flex items-center gap-1.5 text-slate-600 hover:text-[#0194F3] text-xs font-semibold transition-colors cursor-pointer"
             >
-              <i className="fa-solid fa-receipt text-xs"></i>
+              <i className="fa-solid fa-list-check text-xs"></i>
               <span>Riwayat Pesanan</span>
             </button>
           </div>
@@ -119,7 +120,7 @@ const Booking = () => {
             </div>
           )}
 
-          {/* RENDER FORM TANPA MODAL */}
+          {/* RENDER FORM TANPA CALLBACK MODAL */}
           {activeTab === 'airport' && <FormAntarJemput />}
           {activeTab === 'rental' && <FormSewaMobil />}
           {activeTab === 'tour' && <FormPaketTour />}

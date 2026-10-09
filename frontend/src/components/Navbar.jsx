@@ -71,9 +71,6 @@ const Navbar = () => {
                     : 'bg-transparent h-20'
             }`}
         >
-            {/* 🛑 BANNER HIJAU LAMA DI SINI SUDAH DIHAPUS TOTAL agar tidak menutupi Navbar.
-                Notifikasi login sekarang ditangani oleh useNotification (floating toast di pojok bawah). */}
-
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-4">
 
                 {/* Brand Logo */}
@@ -180,8 +177,9 @@ const Navbar = () => {
                                                 <i className="fa-regular fa-user text-sm text-[#0194F3] w-5 text-center"></i>
                                                 <span>Edit Profil Saya</span>
                                             </Link>
+                                            {/* LINK RIWAYAT BOOKING DESKTOP */}
                                             <Link
-                                                to="/my-bookings"
+                                                to="/riwayat-booking"
                                                 onClick={() => setIsProfileMenuOpen(false)}
                                                 className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors"
                                             >
@@ -341,8 +339,9 @@ const Navbar = () => {
                                     <span>Edit Profil Saya</span>
                                 </Link>
 
+                                {/* LINK RIWAYAT BOOKING MOBILE */}
                                 <Link
-                                    to="/my-bookings"
+                                    to="/riwayat-booking"
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className="flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 rounded-xl"
                                 >

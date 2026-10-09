@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getRoutes } from '@/services/api';
+import { getRoutes, createBooking } from '@/services/api';
 
-const FormAntarJemput = ({ onOpenModal }) => {
+const FormAntarJemput = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -15,22 +15,22 @@ const FormAntarJemput = ({ onOpenModal }) => {
 
   const todayObj = new Date();
   const [routes, setRoutes] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const initialForm = {
     custName: '',
     custWa: '',
     jenisLayanan: 'Antar-Jemput',
     pickupDate: '',
-    pickupTime: '',
+    pickupTime: '08:00',
     pickupLoc: '',
     dropLoc: '',
-    passengers: '',
+    passengers: '1',
     price: 0
   };
 
   const [formData, setFormData] = useState(initialForm);
 
-  // Popover State
   const [isPickupOpen, setIsPickupOpen] = useState(false);
   const [isDropoffOpen, setIsDropoffOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -51,7 +51,6 @@ const FormAntarJemput = ({ onOpenModal }) => {
   const hoursList = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const minutesList = ['00', '15', '30', '45'];
 
-  // 1. Memuat data rute dari API
   useEffect(() => {
     getRoutes()
       .then((res) => {
@@ -64,11 +63,9 @@ const FormAntarJemput = ({ onOpenModal }) => {
       .catch((err) => console.error('Gagal memuat rute:', err));
   }, []);
 
-  // 2. Menerima data dari Page Tarif atau RouteCard Antar-Jemput
   useEffect(() => {
     if (location.state) {
       const stateData = location.state;
-
       const incomingPickup = stateData.pickupLoc || stateData.pickup || '';
       const incomingDrop = stateData.dropLoc || stateData.dropoff || stateData.drop || '';
       const incomingPrice = Number(stateData.price || stateData.harga || 0);
@@ -85,16 +82,6 @@ const FormAntarJemput = ({ onOpenModal }) => {
     }
   }, [location.state]);
 
-  // Sync jam & menit lokal ketika pickupTime terisi
-  useEffect(() => {
-    if (formData.pickupTime) {
-      const [h, m] = formData.pickupTime.split(':');
-      if (h) setSelectedHour(h);
-      if (m) setSelectedMinute(m);
-    }
-  }, [formData.pickupTime]);
-
-  // Click Outside Handler untuk popover
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (pickupRef.current && !pickupRef.current.contains(e.target)) setIsPickupOpen(false);
@@ -106,7 +93,6 @@ const FormAntarJemput = ({ onOpenModal }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Reset Form Handler
   const handleResetForm = () => {
     setFormData(initialForm);
     setSelectedHour('08');
@@ -114,7 +100,6 @@ const FormAntarJemput = ({ onOpenModal }) => {
     navigate(location.pathname, { replace: true, state: {} });
   };
 
-  // Daftar Lokasi Penjemputan Unik dari API
   const uniquePickupLocations = Array.from(
     new Set([
       ...routes.map((r) => r.pickup_location || r.origin).filter(Boolean),
@@ -122,7 +107,6 @@ const FormAntarJemput = ({ onOpenModal }) => {
     ].filter(Boolean))
   );
 
-  // Daftar Lokasi Tujuan Unik Sesuai Penjemputan
   const availableDropoffLocations = Array.from(
     new Set([
       ...routes
@@ -146,11 +130,9 @@ const FormAntarJemput = ({ onOpenModal }) => {
     const matchingRoutes = routes.filter(
       (r) => (r.pickup_location || r.origin || '').toLowerCase().trim() === selectedPickup.toLowerCase().trim()
     );
-
     const isCurrentDropValid = matchingRoutes.some(
       (r) => (r.dropoff_location || r.destination || '').toLowerCase().trim() === (formData.dropLoc || '').toLowerCase().trim()
     );
-
     const newDrop = isCurrentDropValid
       ? formData.dropLoc
       : (matchingRoutes.length > 0 ? matchingRoutes[0].dropoff_location || matchingRoutes[0].destination || '' : '');
@@ -168,7 +150,6 @@ const FormAntarJemput = ({ onOpenModal }) => {
 
   const handleSelectDropoff = (selectedDropoff) => {
     const newPrice = updatePriceAndDropoff(formData.pickupLoc, selectedDropoff);
-
     setFormData((prev) => ({
       ...prev,
       dropLoc: selectedDropoff,
@@ -177,7 +158,6 @@ const FormAntarJemput = ({ onOpenModal }) => {
     setIsDropoffOpen(false);
   };
 
-  // Logika pembuatan hari kalender
   const generateCalendarDays = () => {
     const year = currentCalendarMonth.getFullYear();
     const month = currentCalendarMonth.getMonth();
@@ -191,16 +171,6 @@ const FormAntarJemput = ({ onOpenModal }) => {
   };
 
   const calendarDays = generateCalendarDays();
-
-  const handlePrevMonth = (e) => {
-    e.stopPropagation();
-    setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - 1, 1));
-  };
-
-  const handleNextMonth = (e) => {
-    e.stopPropagation();
-    setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 1));
-  };
 
   const formatDisplayDate = (dateStr) => {
     if (!dateStr) return '';
@@ -227,7 +197,8 @@ const FormAntarJemput = ({ onOpenModal }) => {
     setIsTimePickerOpen(false);
   };
 
-  const handleSubmit = (e) => {
+  // KIRIM DATA KE BACKEND API & PINDAH KEMUDIAN KE RIWAYAT BOOKING
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.pickupLoc) return alert('Silakan pilih lokasi penjemputan!');
@@ -235,7 +206,38 @@ const FormAntarJemput = ({ onOpenModal }) => {
     if (!formData.pickupDate) return alert('Silakan pilih tanggal!');
     if (!formData.pickupTime) return alert('Silakan pilih waktu!');
 
-    onOpenModal(formData);
+    setIsLoading(true);
+
+    const newBookingPayload = {
+      id: Date.now(),
+      customerName: formData.custName || 'Pelanggan',
+      customerPhone: formData.custWa || '-',
+      serviceType: 'Antar-Jemput',
+      pickupLocation: formData.pickupLoc,
+      dropoffLocation: formData.dropLoc,
+      pickupDate: formData.pickupDate,
+      pickupTime: formData.pickupTime,
+      passengers: Number(formData.passengers || 1),
+      price: Number(formData.price || 0),
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      // 1. Kirim data ke API backend
+      await createBooking(newBookingPayload);
+    } catch (error) {
+      console.warn('API error/offline, data disimpan ke LocalStorage.');
+    } finally {
+      // 2. Cadangkan data ke LocalStorage browser
+      const existingTemp = JSON.parse(localStorage.getItem('temp_bookings') || '[]');
+      localStorage.setItem('temp_bookings', JSON.stringify([newBookingPayload, ...existingTemp]));
+
+      setIsLoading(false);
+
+      // 3. DIARAHKAN LANGSUNG KE PAGE RIWAYAT BOOKING
+      navigate('/riwayat-booking', { state: { newBooking: newBookingPayload } });
+    }
   };
 
   return (
@@ -382,9 +384,9 @@ const FormAntarJemput = ({ onOpenModal }) => {
             {isCalendarOpen && (
               <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[60] p-4">
                 <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-                  <button type="button" onClick={handlePrevMonth} className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600"><i className="fa-solid fa-chevron-left text-xs"></i></button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - 1, 1)); }} className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600"><i className="fa-solid fa-chevron-left text-xs"></i></button>
                   <span className="text-xs font-bold text-slate-800">{currentCalendarMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span>
-                  <button type="button" onClick={handleNextMonth} className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600"><i className="fa-solid fa-chevron-right text-xs"></i></button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 1)); }} className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600"><i className="fa-solid fa-chevron-right text-xs"></i></button>
                 </div>
                 <div className="grid grid-cols-7 text-center mb-1">
                   {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((dayName, idx) => (
@@ -472,9 +474,22 @@ const FormAntarJemput = ({ onOpenModal }) => {
                 Pilih Tarif Rute
               </button>
             )}
-            <button type="submit" className="w-full sm:w-auto px-5 py-2.5 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center justify-center gap-2">
-              <span>Lanjutkan Pemesanan</span>
-              <i className="fa-solid fa-arrow-right text-xs"></i>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full sm:w-auto px-5 py-2.5 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <i className="fa-solid fa-spinner fa-spin text-xs"></i>
+                  <span>Memproses...</span>
+                </>
+              ) : (
+                <>
+                  <span>Lanjutkan Pemesanan</span>
+                  <i className="fa-solid fa-arrow-right text-xs"></i>
+                </>
+              )}
             </button>
           </div>
         </div>
