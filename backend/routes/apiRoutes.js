@@ -3,56 +3,71 @@ const router = express.Router();
 
 // Import Controllers (CommonJS)
 const authController = require('../controllers/authController');
-const authClientController = require('../controllers/authClientController'); // Disamakan dengan nama controller
+const authClientController = require('../controllers/authClientController');
 const routeController = require('../controllers/routeController');
 const vehicleController = require('../controllers/vehicleController');
 const bookingController = require('../controllers/bookingController');
 const blogController = require('../controllers/blogController');
 const galleryController = require('../controllers/galleryController');
 
-// Import Middleware Upload Multer & Auth (jika ada)
+// Import Middleware Upload Multer & Auth
 const upload = require('../middleware/upload');
-// const { verifyToken } = require('../middleware/authMiddleware');
+
+// Helper untuk mencegah crash jika fungsi controller undefined / belum dibuat
+const getHandler = (controller, ...fnNames) => {
+  for (const name of fnNames) {
+    if (controller && typeof controller[name] === 'function') {
+      return controller[name];
+    }
+  }
+  // Fallback handler jika fungsi belum di-export di controller
+  return (req, res) => {
+    res.status(501).json({
+      success: false,
+      message: `Handler belum diimplementasikan untuk route ${req.originalUrl}`
+    });
+  };
+};
 
 // 1. Auth & Admin Profile Routes
-router.post('/login', authController.loginAdmin || authController.login);
-router.post('/register', authController.registerAdmin || authController.register);
-router.get('/profile', authController.getProfile);
-router.put('/profile', authController.updateProfile);
+router.post('/login', getHandler(authController, 'loginAdmin', 'login'));
+router.post('/register', getHandler(authController, 'registerAdmin', 'register'));
+router.get('/profile', getHandler(authController, 'getProfile'));
+router.put('/profile', getHandler(authController, 'updateProfile'));
 
 // 2. Auth & Client Profile Routes
-router.post('/client/register', authClientController.registerClient);
-router.post('/client/login', authClientController.loginClient);
-router.get('/client/profile', authClientController.getClientProfile || authClientController.getProfile);
+router.post('/client/register', getHandler(authClientController, 'registerClient'));
+router.post('/client/login', getHandler(authClientController, 'loginClient'));
+router.get('/client/profile', getHandler(authClientController, 'getClientProfile', 'getProfile'));
 
 // 3. Route & Tarif Management (CRUD + Upload)
-router.get('/routes', routeController.getAllRoutes || routeController.getRoutes);
-router.post('/routes', upload.single('image'), routeController.createRoute);
-router.put('/routes/:id', upload.single('image'), routeController.updateRoute);
-router.delete('/routes/:id', routeController.deleteRoute);
+router.get('/routes', getHandler(routeController, 'getAllRoutes', 'getRoutes'));
+router.post('/routes', upload.single('image'), getHandler(routeController, 'createRoute'));
+router.put('/routes/:id', upload.single('image'), getHandler(routeController, 'updateRoute'));
+router.delete('/routes/:id', getHandler(routeController, 'deleteRoute'));
 
 // 4. Vehicle / Armada Routes (CRUD Lengkap + Upload)
-router.get('/vehicles', vehicleController.getAllVehicles || vehicleController.getVehicles);
-router.post('/vehicles', upload.single('image'), vehicleController.createVehicle);
-router.put('/vehicles/:id', upload.single('image'), vehicleController.updateVehicle);
-router.delete('/vehicles/:id', vehicleController.deleteVehicle);
+router.get('/vehicles', getHandler(vehicleController, 'getAllVehicles', 'getVehicles'));
+router.post('/vehicles', upload.single('image'), getHandler(vehicleController, 'createVehicle'));
+router.put('/vehicles/:id', upload.single('image'), getHandler(vehicleController, 'updateVehicle'));
+router.delete('/vehicles/:id', getHandler(vehicleController, 'deleteVehicle'));
 
 // 5. Booking Routes
-router.get('/bookings', bookingController.getAllBookings || bookingController.getBookings);
-router.post('/bookings', bookingController.createBooking);
-router.put('/bookings/:id/status', bookingController.updateBookingStatus);
-router.delete('/bookings/:id', bookingController.deleteBooking);
+router.get('/bookings', getHandler(bookingController, 'getAllBookings', 'getBookings'));
+router.post('/bookings', getHandler(bookingController, 'createBooking'));
+router.put('/bookings/:id/status', getHandler(bookingController, 'updateBookingStatus'));
+router.delete('/bookings/:id', getHandler(bookingController, 'deleteBooking'));
 
 // 6. Blog Routes (CRUD + Upload)
-router.get('/blogs', blogController.getAllBlogs || blogController.getBlogs);
-router.post('/blogs', upload.single('image'), blogController.createBlog);
-router.put('/blogs/:id', upload.single('image'), blogController.updateBlog);
-router.delete('/blogs/:id', blogController.deleteBlog);
+router.get('/blogs', getHandler(blogController, 'getAllBlogs', 'getBlogs'));
+router.post('/blogs', upload.single('image'), getHandler(blogController, 'createBlog'));
+router.put('/blogs/:id', upload.single('image'), getHandler(blogController, 'updateBlog'));
+router.delete('/blogs/:id', getHandler(blogController, 'deleteBlog'));
 
 // 7. Gallery Management (CRUD + Upload)
-router.get('/galleries', galleryController.getAllGalleries || galleryController.getGalleries);
-router.post('/galleries', upload.single('image'), galleryController.createGallery);
-router.put('/galleries/:id', upload.single('image'), galleryController.updateGallery);
-router.delete('/galleries/:id', galleryController.deleteGallery);
+router.get('/galleries', getHandler(galleryController, 'getAllGalleries', 'getGalleries'));
+router.post('/galleries', upload.single('image'), getHandler(galleryController, 'createGallery'));
+router.put('/galleries/:id', upload.single('image'), getHandler(galleryController, 'updateGallery'));
+router.delete('/galleries/:id', getHandler(galleryController, 'deleteGallery'));
 
 module.exports = router;

@@ -1,138 +1,175 @@
-const db = require('../config/db');
-const fs = require('fs');
-const path = require('path');
+const prisma = require('../config/prisma');
+const { deleteImageFile } = require('../middleware/upload');
 
-// Helper untuk menghapus file fisik di folder uploads
-const deleteImageFile = (imageUrl) => {
-    if (imageUrl && imageUrl.startsWith('/uploads/')) {
-        const filePath = path.join(__dirname, '..', imageUrl);
-        fs.unlink(filePath, (err) => {
-            if (err) console.error('Gagal menghapus file gambar galeri:', err.message);
-        });
-    }
+// Helper format respon agar selalu menyertakan `image_url` untuk frontend React
+const formatGallery = (item) => {
+  if (!item) return null;
+  return {
+    ...item,
+    image_url: item.image_url || item.imageUrl || ''
+  };
 };
 
-// 1. Get All Galleries
+// 1. Ambil Semua Data Galeri (Read All)
 exports.getAllGalleries = async (req, res) => {
-    try {
-        const [rows] = await db.query('SELECT * FROM galleries ORDER BY id DESC');
-        res.json({
-            success: true,
-            data: rows
-        });
-    } catch (error) {
-        console.error('Error pada getAllGalleries:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Gagal mengambil data galeri: ' + error.message
-        });
-    }
+  try {
+    const galleries = await prisma.gallery.findMany({
+      orderBy: { id: 'desc' }
+    });
+
+    res.json({
+      success: true,
+      data: galleries.map(formatGallery)
+    });
+  } catch (error) {
+    console.error('Error pada getAllGalleries:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil data galeri: ' + error.message
+    });
+  }
 };
 
-// 2. Create Gallery Item
+// 2. Tambah Galeri Baru (Create)
 exports.createGallery = async (req, res) => {
-    try {
-        const { title, category } = req.body;
-        const image_url = req.file ? `/uploads/${req.file.filename}` : '';
+  try {
+    const { title, category } = req.body;
+    const uploadedImageUrl = req.file ? `/uploads/${req.file.filename}` : '';
 
-        if (!image_url) {
-            return res.status(400).json({
-                success: false,
-                message: 'File gambar wajib diunggah!'
-            });
-        }
-
-        const [result] = await db.query(
-            'INSERT INTO galleries (title, category, image_url) VALUES (?, ?, ?)',
-            [title || 'Momen Wisata', category || 'Destinasi', image_url]
-        );
-
-        res.status(201).json({
-            success: true,
-            message: 'Foto berhasil ditambahkan ke galeri!',
-            id: result.insertId
-        });
-    } catch (error) {
-        console.error('Error pada createGallery:', error);
-        if (req.file) deleteImageFile(`/uploads/${req.file.filename}`);
-        res.status(500).json({
-            success: false,
-            message: 'Gagal menambahkan foto ke galeri: ' + error.message
-        });
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'File gambar wajib diunggah!'
+      });
     }
+
+    const baseData = {
+      title: title || '',
+      category: category || 'Destinasi'
+    };
+
+    let newGallery;
+    try {
+      newGallery = await prisma.gallery.create({
+        data: { ...baseData, image_url: uploadedImageUrl }
+      });
+    } catch (err) {
+      // Deteksi 'Unknown argument', 'Unknown field', atau kata 'image_url'
+      if (err.message && (err.message.includes('Unknown argument') || err.message.includes('Unknown field') || err.message.includes('image_url'))) {
+        newGallery = await prisma.gallery.create({
+          data: { ...baseData, imageUrl: uploadedImageUrl }
+        });
+      } else {
+        throw err;
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Foto galeri berhasil ditambahkan!',
+      data: formatGallery(newGallery)
+    });
+  } catch (error) {
+    if (req.file) deleteImageFile(`/uploads/${req.file.filename}`);
+    console.error('Error pada createGallery:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Gagal menambahkan galeri: ' + error.message
+    });
+  }
 };
 
-// 3. Update Gallery Item (Fungsi Edit Baru)
+// 3. Perbarui Data Galeri (Update)
 exports.updateGallery = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { title, category } = req.body;
-
-        const [existing] = await db.query('SELECT image_url FROM galleries WHERE id = ?', [id]);
-        if (existing.length === 0) {
-            if (req.file) deleteImageFile(`/uploads/${req.file.filename}`);
-            return res.status(404).json({
-                success: false,
-                message: 'Data galeri tidak ditemukan!'
-            });
-        }
-
-        const oldImageUrl = existing[0].image_url;
-        let newImageUrl = oldImageUrl;
-
-        // Jika user mengunggah foto baru, gunakan yang baru & hapus foto lama dari disk
-        if (req.file) {
-            newImageUrl = `/uploads/${req.file.filename}`;
-            deleteImageFile(oldImageUrl);
-        }
-
-        await db.query(
-            'UPDATE galleries SET title = ?, category = ?, image_url = ? WHERE id = ?',
-            [title, category, newImageUrl, id]
-        );
-
-        res.json({
-            success: true,
-            message: 'Foto galeri berhasil diperbarui!'
-        });
-    } catch (error) {
-        console.error('Error pada updateGallery:', error);
-        if (req.file) deleteImageFile(`/uploads/${req.file.filename}`);
-        res.status(500).json({
-            success: false,
-            message: 'Gagal memperbarui foto galeri: ' + error.message
-        });
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      if (req.file) deleteImageFile(`/uploads/${req.file.filename}`);
+      return res.status(400).json({ success: false, message: 'ID galeri tidak valid' });
     }
+
+    const { title, category } = req.body;
+
+    const existing = await prisma.gallery.findUnique({ where: { id } });
+
+    if (!existing) {
+      if (req.file) deleteImageFile(`/uploads/${req.file.filename}`);
+      return res.status(404).json({ success: false, message: 'Data galeri tidak ditemukan!' });
+    }
+
+    const oldImage = existing.image_url || existing.imageUrl;
+    let newImageUrl = oldImage;
+
+    if (req.file) {
+      newImageUrl = `/uploads/${req.file.filename}`;
+      if (oldImage) deleteImageFile(oldImage);
+    }
+
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (category !== undefined) updateData.category = category;
+
+    let updated;
+    try {
+      updated = await prisma.gallery.update({
+        where: { id },
+        data: { ...updateData, image_url: newImageUrl }
+      });
+    } catch (err) {
+      // Deteksi 'Unknown argument', 'Unknown field', atau kata 'image_url'
+      if (err.message && (err.message.includes('Unknown argument') || err.message.includes('Unknown field') || err.message.includes('image_url'))) {
+        updated = await prisma.gallery.update({
+          where: { id },
+          data: { ...updateData, imageUrl: newImageUrl }
+        });
+      } else {
+        throw err;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Galeri berhasil diperbarui!',
+      data: formatGallery(updated)
+    });
+  } catch (error) {
+    if (req.file) deleteImageFile(`/uploads/${req.file.filename}`);
+    console.error('Error pada updateGallery:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Gagal memperbarui galeri: ' + error.message
+    });
+  }
 };
 
-// 4. Delete Gallery Item
+// 4. Hapus Data Galeri (Delete)
 exports.deleteGallery = async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const [existing] = await db.query('SELECT image_url FROM galleries WHERE id = ?', [id]);
-        const [result] = await db.query('DELETE FROM galleries WHERE id = ?', [id]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Data galeri tidak ditemukan!'
-            });
-        }
-
-        if (existing.length > 0) {
-            deleteImageFile(existing[0].image_url);
-        }
-
-        res.json({
-            success: true,
-            message: 'Foto galeri berhasil dihapus!'
-        });
-    } catch (error) {
-        console.error('Error pada deleteGallery:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Gagal menghapus foto galeri: ' + error.message
-        });
+  try {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ success: false, message: 'ID galeri tidak valid' });
     }
+
+    const existing = await prisma.gallery.findUnique({ where: { id } });
+
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Data galeri tidak ditemukan!' });
+    }
+
+    await prisma.gallery.delete({ where: { id } });
+
+    const imageToDelete = existing.image_url || existing.imageUrl;
+    if (imageToDelete) deleteImageFile(imageToDelete);
+
+    res.json({
+      success: true,
+      message: 'Galeri berhasil dihapus!'
+    });
+  } catch (error) {
+    console.error('Error pada deleteGallery:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Gagal menghapus galeri: ' + error.message
+    });
+  }
 };
