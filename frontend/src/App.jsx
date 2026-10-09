@@ -4,11 +4,9 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import AppRouter from '@/routes/AppRouter';
-import { useNotification } from '@/hooks/useNotification';
 
 export default function App() {
     const location = useLocation();
-    const { NotificationToast } = useNotification(4000); // Notifikasi otomatis hilang dalam 4 detik
 
     // Cek apakah halaman yang dibuka adalah halaman admin
     const isAdminRoute = location.pathname.startsWith('/admin');
@@ -24,9 +22,6 @@ export default function App() {
                 overflowX: 'hidden'
             }}
         >
-            {/* Toast Notifikasi Melayang (Tampil di atas semua elemen tanpa menutupi Navbar) */}
-            <NotificationToast />
-
             {/* 1. Header & Navigasi Atas (Hanya untuk publik) */}
             {!isAdminRoute && <Navbar />}
 

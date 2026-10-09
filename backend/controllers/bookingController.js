@@ -12,12 +12,18 @@ const formatBooking = (item) => {
     service_type: item.service_type || item.serviceType || 'Sewa_Mobil',
     vehicle_id: item.vehicle_id !== undefined ? item.vehicle_id : item.vehicleId,
     route_id: item.route_id !== undefined ? item.route_id : item.routeId,
+    tour_package_id: item.tour_package_id !== undefined ? item.tour_package_id : item.tourPackageId,
+    passenger_count: item.passenger_count || item.passengerCount || 1,
     pickup_date: item.pickup_date || item.pickupDate,
     pickup_time: item.pickup_time || item.pickupTime,
     pickup_address: item.pickup_address || item.pickupAddress || item.pickup_location || '',
     total_price: item.total_price !== undefined ? item.total_price : item.totalPrice,
     status: item.status || 'pending',
-    created_at: item.created_at || item.createdAt
+    created_at: item.created_at || item.createdAt,
+    // Include Relasi
+    vehicle: item.vehicle || null,
+    route: item.route || null,
+    tour_package: item.tour_package || item.tourPackage || null
   };
 };
 
@@ -31,7 +37,7 @@ const parsePickupTime = (timeStr) => {
 const parseServiceType = (typeStr) => {
   if (!typeStr) return 'Sewa_Mobil';
   const normalized = typeStr.toString().replace(/\s+/g, '_');
-  if (['Sewa_Mobil', 'Antar_Jemput'].includes(normalized)) return normalized;
+  if (['Sewa_Mobil', 'Antar_Jemput', 'Paket_Tour'].includes(normalized)) return normalized;
   return 'Sewa_Mobil';
 };
 
@@ -50,7 +56,8 @@ exports.getAllBookings = async (req, res) => {
       orderBy: { id: 'desc' },
       include: {
         vehicle: true,
-        route: true
+        route: true,
+        tour_package: true
       }
     });
 
@@ -67,7 +74,7 @@ exports.getAllBookings = async (req, res) => {
   }
 };
 
-// 2. Buat Booking Baru (Create dengan Try-Catch Fallback)
+// 2. Buat Booking Baru (Create dengan Dukungan Paket Tour)
 exports.createBooking = async (req, res) => {
   try {
     const {
@@ -77,6 +84,8 @@ exports.createBooking = async (req, res) => {
       service_type, serviceType,
       vehicle_id, vehicleId,
       route_id, routeId,
+      tour_package_id, tourPackageId,
+      passenger_count, passengerCount,
       pickup_date, pickupDate,
       pickup_time, pickupTime,
       pickup_address, pickupAddress, pickup_location,
@@ -90,10 +99,10 @@ exports.createBooking = async (req, res) => {
     const rawDate = pickup_date || pickupDate;
     const rawTime = pickup_time || pickupTime;
 
-    if (!name || !phone || !rawDate || !address) {
+    if (!name || !phone || !rawDate) {
       return res.status(400).json({
         success: false,
-        message: 'Nama, No. Telepon, Tanggal Jemput, dan Alamat Jemput wajib diisi!'
+        message: 'Nama, No. Telepon, dan Tanggal Jemput wajib diisi!'
       });
     }
 
@@ -101,10 +110,10 @@ exports.createBooking = async (req, res) => {
     const price = total_price || totalPrice;
     const validVehicleId = (vehicle_id || vehicleId) ? Number(vehicle_id || vehicleId) : null;
     const validRouteId = (route_id || routeId) ? Number(route_id || routeId) : null;
+    const validTourPackageId = (tour_package_id || tourPackageId) ? Number(tour_package_id || tourPackageId) : null;
 
     let newBooking;
     try {
-      // Coba simpan menggunakan skema baru (snake_case)
       newBooking = await prisma.booking.create({
         data: {
           booking_code,
@@ -114,17 +123,23 @@ exports.createBooking = async (req, res) => {
           service_type: parseServiceType(service_type || serviceType),
           vehicle_id: validVehicleId,
           route_id: validRouteId,
+          tour_package_id: validTourPackageId,
+          passenger_count: Number(passenger_count || passengerCount) || 1,
           pickup_date: new Date(rawDate),
           pickup_time: parsePickupTime(rawTime),
-          pickup_address: address,
+          pickup_address: address || '',
           notes: notes || '',
           total_price: price ? parseFloat(price) : 0,
           status: 'pending'
         },
-        include: { vehicle: true, route: true }
+        include: {
+          vehicle: true,
+          route: true,
+          tour_package: true
+        }
       });
     } catch (err) {
-      // Fallback jika Prisma Client di node_modules belum di-generate (camelCase)
+      // Fallback jika Prisma Client belum di-generate ulang
       if (err.message && err.message.includes('Unknown field')) {
         newBooking = await prisma.booking.create({
           data: {
@@ -135,14 +150,20 @@ exports.createBooking = async (req, res) => {
             serviceType: parseServiceType(service_type || serviceType),
             vehicleId: validVehicleId,
             routeId: validRouteId,
+            tourPackageId: validTourPackageId,
+            passengerCount: Number(passenger_count || passengerCount) || 1,
             pickupDate: new Date(rawDate),
             pickupTime: parsePickupTime(rawTime),
-            pickupAddress: address,
+            pickupAddress: address || '',
             notes: notes || '',
             totalPrice: price ? parseFloat(price) : 0,
             status: 'pending'
           },
-          include: { vehicle: true, route: true }
+          include: {
+            vehicle: true,
+            route: true,
+            tour_package: true
+          }
         });
       } else {
         throw err;
@@ -165,7 +186,40 @@ exports.createBooking = async (req, res) => {
   }
 };
 
-// 3. Perbarui Status Booking (Update Status)
+// 3. Cek Booking Berdasarkan Kode Booking (Tracking Pelanggan)
+exports.getBookingByCode = async (req, res) => {
+  try {
+    const { code } = req.params;
+    const booking = await prisma.booking.findUnique({
+      where: { booking_code: code },
+      include: {
+        vehicle: true,
+        route: true,
+        tour_package: true
+      }
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Kode pemesanan tidak ditemukan!'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: formatBooking(booking)
+    });
+  } catch (error) {
+    console.error('Error pada getBookingByCode:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil data booking: ' + error.message
+    });
+  }
+};
+
+// 4. Perbarui Status Booking (Update Status)
 exports.updateBookingStatus = async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -184,7 +238,7 @@ exports.updateBookingStatus = async (req, res) => {
     const updated = await prisma.booking.update({
       where: { id },
       data: { status: validStatus },
-      include: { vehicle: true, route: true }
+      include: { vehicle: true, route: true, tour_package: true }
     });
 
     res.json({
@@ -201,7 +255,7 @@ exports.updateBookingStatus = async (req, res) => {
   }
 };
 
-// 4. Hapus Booking (Delete)
+// 5. Hapus Booking (Delete)
 exports.deleteBooking = async (req, res) => {
   try {
     const id = Number(req.params.id);
