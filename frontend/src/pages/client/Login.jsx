@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { loginClient } from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 import logoImg from '/logo/logo2.png';
 
 const Login = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { login } = useAuth();
+
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -20,42 +24,54 @@ const Login = () => {
         });
     };
 
-const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
 
-    try {
-        const res = await loginClient(formData);
+        try {
+            const res = await loginClient(formData);
 
-        if (res.data?.success) {
-            if (res.data.token) {
-                localStorage.setItem('clientToken', res.data.token);
+            if (res.data?.success) {
+                const user = res.data.user;
+                const token = res.data.token;
+
+                if (token && user) {
+                    login(user, token);
+                } else if (token) {
+                    login({ email: formData.email }, token);
+                }
+
+                // 1. Tentukan target rute pengalihan yang valid
+                let targetRedirect = '/'; // Default fallback ke Halaman Utama
+
+                if (typeof location.state?.from === 'string' && location.state.from.startsWith('/')) {
+                    targetRedirect = location.state.from;
+                } else if (localStorage.getItem('pending_booking')) {
+                    targetRedirect = '/booking'; // Jika ada draf pesanan, utamakan ke halaman booking
+                }
+
+                // 2. Navigasikan ke target rute
+                navigate(targetRedirect, {
+                    replace: true,
+                    state: { message: `Selamat datang kembali, ${user?.name || 'Klien'}!` }
+                });
+            } else {
+                setError(res.data?.message || 'Gagal masuk. Silakan periksa email dan kata sandi.');
             }
-            if (res.data.user) {
-                localStorage.setItem('clientUser', JSON.stringify(res.data.user));
+        } catch (err) {
+            console.error('Error login client:', err);
+            if (err.response) {
+                setError(err.response.data?.message || 'Email atau kata sandi tidak cocok.');
+            } else if (err.request) {
+                setError('Tidak dapat terhubung ke server backend.');
+            } else {
+                setError('Terjadi kesalahan sistem.');
             }
-
-            // Dialihkan langsung ke halaman utama dengan membawa state penanda
-            navigate('/', {
-                state: { message: `Selamat datang kembali, ${res.data.user?.name || 'Klien'}!` }
-            });
-        } else {
-            setError(res.data?.message || 'Gagal masuk. Silakan periksa email dan kata sandi.');
+        } finally {
+            setLoading(false);
         }
-    } catch (err) {
-        console.error('Error login client:', err);
-        if (err.response) {
-            setError(err.response.data?.message || 'Email atau kata sandi tidak cocok.');
-        } else if (err.request) {
-            setError('Tidak dapat terhubung ke server backend.');
-        } else {
-            setError('Terjadi kesalahan sistem.');
-        }
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
     return (
         <div className="min-h-screen bg-[#F2F4F7] flex flex-col justify-center items-center px-4 py-12 pt-24">

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import countriesData from '@/data/countries.json';
 import { getRoutes } from '@/services/api';
 
 const FormAntarJemput = ({ onOpenModal }) => {
@@ -19,7 +18,6 @@ const FormAntarJemput = ({ onOpenModal }) => {
 
   const initialForm = {
     custName: '',
-    countryCode: '62',
     custWa: '',
     jenisLayanan: 'Antar-Jemput',
     pickupDate: '',
@@ -32,7 +30,7 @@ const FormAntarJemput = ({ onOpenModal }) => {
 
   const [formData, setFormData] = useState(initialForm);
 
-  // Kustom Popover State
+  // Popover State
   const [isPickupOpen, setIsPickupOpen] = useState(false);
   const [isDropoffOpen, setIsDropoffOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -59,6 +57,8 @@ const FormAntarJemput = ({ onOpenModal }) => {
       .then((res) => {
         if (res.data?.success && Array.isArray(res.data.data)) {
           setRoutes(res.data.data);
+        } else if (Array.isArray(res.data)) {
+          setRoutes(res.data);
         }
       })
       .catch((err) => console.error('Gagal memuat rute:', err));
@@ -117,7 +117,7 @@ const FormAntarJemput = ({ onOpenModal }) => {
   // Daftar Lokasi Penjemputan Unik dari API
   const uniquePickupLocations = Array.from(
     new Set([
-      ...routes.map((r) => r.pickup_location).filter(Boolean),
+      ...routes.map((r) => r.pickup_location || r.origin).filter(Boolean),
       formData.pickupLoc
     ].filter(Boolean))
   );
@@ -126,8 +126,8 @@ const FormAntarJemput = ({ onOpenModal }) => {
   const availableDropoffLocations = Array.from(
     new Set([
       ...routes
-        .filter((r) => !formData.pickupLoc || (r.pickup_location || '').toLowerCase().trim() === (formData.pickupLoc || '').toLowerCase().trim())
-        .map((r) => r.dropoff_location)
+        .filter((r) => !formData.pickupLoc || (r.pickup_location || r.origin || '').toLowerCase().trim() === (formData.pickupLoc || '').toLowerCase().trim())
+        .map((r) => r.dropoff_location || r.destination)
         .filter(Boolean),
       formData.dropLoc
     ].filter(Boolean))
@@ -136,24 +136,24 @@ const FormAntarJemput = ({ onOpenModal }) => {
   const updatePriceAndDropoff = (pickup, drop) => {
     const matchRoute = routes.find(
       (r) =>
-        (r.pickup_location || '').toLowerCase().trim() === (pickup || '').toLowerCase().trim() &&
-        (r.dropoff_location || '').toLowerCase().trim() === (drop || '').toLowerCase().trim()
+        (r.pickup_location || r.origin || '').toLowerCase().trim() === (pickup || '').toLowerCase().trim() &&
+        (r.dropoff_location || r.destination || '').toLowerCase().trim() === (drop || '').toLowerCase().trim()
     );
     return matchRoute ? Number(matchRoute.price) : 0;
   };
 
   const handleSelectPickup = (selectedPickup) => {
     const matchingRoutes = routes.filter(
-      (r) => (r.pickup_location || '').toLowerCase().trim() === selectedPickup.toLowerCase().trim()
+      (r) => (r.pickup_location || r.origin || '').toLowerCase().trim() === selectedPickup.toLowerCase().trim()
     );
 
     const isCurrentDropValid = matchingRoutes.some(
-      (r) => (r.dropoff_location || '').toLowerCase().trim() === (formData.dropLoc || '').toLowerCase().trim()
+      (r) => (r.dropoff_location || r.destination || '').toLowerCase().trim() === (formData.dropLoc || '').toLowerCase().trim()
     );
 
     const newDrop = isCurrentDropValid
       ? formData.dropLoc
-      : (matchingRoutes.length > 0 ? matchingRoutes[0].dropoff_location || '' : '');
+      : (matchingRoutes.length > 0 ? matchingRoutes[0].dropoff_location || matchingRoutes[0].destination || '' : '');
 
     const newPrice = updatePriceAndDropoff(selectedPickup, newDrop);
 
@@ -229,17 +229,13 @@ const FormAntarJemput = ({ onOpenModal }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    let waNumber = formData.custWa.trim();
-    if (waNumber.startsWith('0')) waNumber = waNumber.substring(1);
 
     if (!formData.pickupLoc) return alert('Silakan pilih lokasi penjemputan!');
     if (!formData.dropLoc) return alert('Silakan pilih lokasi tujuan terlebih dahulu!');
     if (!formData.pickupDate) return alert('Silakan pilih tanggal!');
     if (!formData.pickupTime) return alert('Silakan pilih waktu!');
 
-    const finalData = { ...formData, custWa: waNumber };
-    setFormData(finalData);
-    onOpenModal(finalData);
+    onOpenModal(formData);
   };
 
   return (
@@ -268,7 +264,7 @@ const FormAntarJemput = ({ onOpenModal }) => {
                 type="text"
                 name="custName"
                 required
-                placeholder="Contoh: Budi Santoso"
+                placeholder="Contoh: Dafatih Alamsyah"
                 value={formData.custName}
                 onChange={handleChange}
                 className="w-full h-10 px-3 pr-8 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3]"
@@ -281,18 +277,19 @@ const FormAntarJemput = ({ onOpenModal }) => {
 
           <div className="flex flex-col gap-1">
             <label className="text-[11px] sm:text-xs font-bold text-slate-700">Nomor WhatsApp / HP *</label>
-            <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden h-10 focus-within:border-[#0194F3] bg-white">
-              <select name="countryCode" value={formData.countryCode} onChange={handleChange} className="h-full bg-slate-50 border-r border-slate-300 px-2 text-xs font-bold text-slate-700 outline-none cursor-pointer shrink-0">
-                {countriesData.countries?.map((c, i) => (
-                  <option key={i} value={c.code}>{c.flag} +{c.code}</option>
-                ))}
-              </select>
-              <div className="relative flex-1 flex items-center h-full">
-                <input type="tel" name="custWa" required placeholder="8123456789" value={formData.custWa} onChange={handleChange} className="w-full h-full px-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none bg-transparent" />
-                {formData.custWa && (
-                  <button type="button" className="absolute right-2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer" onClick={() => handleClear('custWa')}>&times;</button>
-                )}
-              </div>
+            <div className="relative flex items-center">
+              <input
+                type="tel"
+                name="custWa"
+                required
+                placeholder="Contoh: 0812xxxxxxxx"
+                value={formData.custWa}
+                onChange={handleChange}
+                className="w-full h-10 px-3 pr-8 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3]"
+              />
+              {formData.custWa && (
+                <button type="button" className="absolute right-2.5 text-slate-400 hover:text-slate-600 p-1 cursor-pointer" onClick={() => handleClear('custWa')}>&times;</button>
+              )}
             </div>
           </div>
         </div>

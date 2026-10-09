@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import ModalSummary from '@/components/ModalSummary';
 import FormAntarJemput from "@/components/booking/FormAntarJemput";
 import FormSewaMobil from "@/components/booking/FormSewaMobil";
@@ -8,6 +9,7 @@ import FormPaketTour from "@/components/booking/FormPaketTour";
 const Booking = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth(); // Import status login
   const PHONE_NUMBER = "6287757004214";
 
   const [activeTab, setActiveTab] = useState('airport'); // 'airport' | 'rental' | 'tour'
@@ -15,36 +17,60 @@ const Booking = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalFormData, setModalFormData] = useState(null);
 
-  // DETEKSI OTOMATIS TAB HANYA JIKA ADA DATA NAVIGASI DARI LUAR
-// src/pages/Booking.jsx
+  // 1. DETEKSI OTOMATIS TAB DARI NAVIGASI LUAR
+  useEffect(() => {
+    if (location.state && Object.keys(location.state).length > 0) {
+      const stateData = location.state;
 
-useEffect(() => {
-  // Hanya proses jika location.state ada dan tidak kosong
-  if (location.state && Object.keys(location.state).length > 0) {
-    const stateData = location.state;
+      const isRental = stateData.jenisLayanan === 'Sewa Mobil' || !!stateData.carType || !!stateData.namaArmada;
+      const isTour = stateData.jenisLayanan === 'Paket Tour' || !!stateData.packageTour || !!stateData.packageName;
 
-    const isRental = stateData.jenisLayanan === 'Sewa Mobil' || !!stateData.carType || !!stateData.namaArmada;
-    const isTour = stateData.jenisLayanan === 'Paket Tour' || !!stateData.packageTour || !!stateData.packageName;
-
-    if (isTour) {
-      setActiveTab('tour');
-    } else if (isRental) {
-      setActiveTab('rental');
-    } else if (stateData.pickup || stateData.pickupLoc || stateData.dropoff || stateData.dropLoc) {
-      setActiveTab('airport');
+      if (isTour) {
+        setActiveTab('tour');
+      } else if (isRental) {
+        setActiveTab('rental');
+      } else if (stateData.pickup || stateData.pickupLoc || stateData.dropoff || stateData.dropLoc) {
+        setActiveTab('airport');
+      }
     }
-  }
-}, [location.state]);
+  }, [location.state]);
 
+  // 2. CEK PESANAN TERTUNDA (RESUME BOOKING DARI BEFORE LOGIN)
+  useEffect(() => {
+    const pendingBooking = localStorage.getItem('pending_booking');
+    if (pendingBooking && isAuthenticated) {
+      try {
+        const parsedData = JSON.parse(pendingBooking);
+        setModalFormData(parsedData);
+        setShowModal(true);
+        localStorage.removeItem('pending_booking'); // Bersihkan setelah dimuat
+      } catch (err) {
+        console.error('Gagal membaca data pesanan tersimpan:', err);
+      }
+    }
+  }, [isAuthenticated]);
+
+  // 3. HANDLER BUKA MODAL / PROTEKSI LOGIN
   const handleOpenModal = (data) => {
+    if (!isAuthenticated) {
+      // Simpan data form sementara
+      localStorage.setItem('pending_booking', JSON.stringify(data));
+
+      // Arahkan ke halaman login dengan menyertakan lokasi asal
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
+
+    // Jika sudah login, tampilkan modal summary
     setModalFormData(data);
     setShowModal(true);
   };
 
+  // 4. HANDLER KONFIRMASI KIRIM KE WHATSAPP
   const handleConfirmWhatsApp = () => {
     if (!modalFormData) return;
 
-    let message = `Halo Dafatih Transport, saya ingin memesan layanan *${modalFormData.jenisLayanan}* dengan detail berikut:%0A%0A*Nama:* ${modalFormData.custName}%0A*No. WA:* +${modalFormData.countryCode}${modalFormData.custWa}%0A*Tanggal:* ${modalFormData.pickupDate}%0A*Waktu:* ${modalFormData.pickupTime} WITA%0A*Lokasi Penjemputan:* ${modalFormData.pickupLoc}`;
+    let message = `Halo Dafatih Transport, saya ingin memesan layanan *${modalFormData.jenisLayanan}* dengan detail berikut:%0A%0A*Nama:* ${modalFormData.custName}%0A*No. WA:* ${modalFormData.custWa}%0A*Tanggal:* ${modalFormData.pickupDate}%0A*Waktu:* ${modalFormData.pickupTime} WITA%0A*Lokasi Penjemputan:* ${modalFormData.pickupLoc}`;
 
     if (activeTab === 'airport' && modalFormData.dropLoc) {
       message += `%0A*Tujuan:* ${modalFormData.dropLoc}`;
@@ -67,6 +93,7 @@ useEffect(() => {
 
     message += `%0A%0AMohon konfirmasinya, terima kasih.`;
     window.open(`https://wa.me/${PHONE_NUMBER}?text=${message}`, '_blank');
+    setShowModal(false);
   };
 
   return (
@@ -146,7 +173,7 @@ useEffect(() => {
                     Pesan Layanan Transportasi &amp; Wisata Lombok
                   </h3>
                   <p className="text-[11px] sm:text-xs text-sky-100 leading-normal">
-                    Lengkapi formulir pemesanan di bawah ini atau pilih dari <button type="button" onClick={() => navigate('/tarif')} className="underline font-bold hover:text-white">Daftar Tarif</button>.
+                    Lengkapi formulir pemesanan di bawah ini atau pilih dari <button type="button" onClick={() => navigate('/tarif')} className="underline font-bold hover:text-white cursor-pointer">Daftar Tarif</button>.
                   </p>
                 </div>
               </div>
@@ -160,7 +187,7 @@ useEffect(() => {
             </div>
           )}
 
-          {/* RENDER FORM SESUAI TAB AKTIF (Tanpa meneruskan locationState yang memicu re-render salah) */}
+          {/* RENDER FORM SESUAI TAB AKTIF */}
           {activeTab === 'airport' && <FormAntarJemput onOpenModal={handleOpenModal} />}
           {activeTab === 'rental' && <FormSewaMobil onOpenModal={handleOpenModal} />}
           {activeTab === 'tour' && <FormPaketTour onOpenModal={handleOpenModal} />}

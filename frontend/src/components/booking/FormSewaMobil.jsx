@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import countriesData from '@/data/countries.json';
 
 const FormSewaMobil = ({ onOpenModal }) => {
   const location = useLocation();
@@ -17,7 +16,6 @@ const FormSewaMobil = ({ onOpenModal }) => {
 
   const initialForm = {
     custName: '',
-    countryCode: '62',
     custWa: '',
     jenisLayanan: 'Sewa Mobil',
     armada: '',
@@ -88,7 +86,6 @@ const FormSewaMobil = ({ onOpenModal }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // DIUBAH: Hanya mereset state lokal tanpa navigasi router / redirect
   const handleResetForm = () => {
     setFormData(initialForm);
     setSelectedHour('08');
@@ -146,17 +143,13 @@ const FormSewaMobil = ({ onOpenModal }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    let waNumber = formData.custWa.trim();
-    if (waNumber.startsWith('0')) waNumber = waNumber.substring(1);
 
     if (!formData.pickupLoc) return alert('Silakan isi lokasi penjemputan / hotel!');
     if (!formData.armada) return alert('Silakan isi jenis/nama armada mobil!');
     if (!formData.pickupDate) return alert('Silakan pilih tanggal!');
     if (!formData.pickupTime) return alert('Silakan pilih waktu!');
 
-    const finalData = { ...formData, custWa: waNumber };
-    setFormData(finalData);
-    onOpenModal(finalData);
+    onOpenModal(formData);
   };
 
   return (
@@ -185,7 +178,7 @@ const FormSewaMobil = ({ onOpenModal }) => {
                 type="text"
                 name="custName"
                 required
-                placeholder="Contoh: Budi Santoso"
+                placeholder="Contoh: Dafatih Alamsyah"
                 value={formData.custName}
                 onChange={handleChange}
                 className="w-full h-10 px-3 pr-8 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3]"
@@ -198,18 +191,19 @@ const FormSewaMobil = ({ onOpenModal }) => {
 
           <div className="flex flex-col gap-1">
             <label className="text-[11px] sm:text-xs font-bold text-slate-700">Nomor WhatsApp / HP *</label>
-            <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden h-10 focus-within:border-[#0194F3] bg-white">
-              <select name="countryCode" value={formData.countryCode} onChange={handleChange} className="h-full bg-slate-50 border-r border-slate-300 px-2 text-xs font-bold text-slate-700 outline-none cursor-pointer shrink-0">
-                {countriesData.countries?.map((c, i) => (
-                  <option key={i} value={c.code}>{c.flag} +{c.code}</option>
-                ))}
-              </select>
-              <div className="relative flex-1 flex items-center h-full">
-                <input type="tel" name="custWa" required placeholder="8123456789" value={formData.custWa} onChange={handleChange} className="w-full h-full px-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none bg-transparent" />
-                {formData.custWa && (
-                  <button type="button" className="absolute right-2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer" onClick={() => handleClear('custWa')}>&times;</button>
-                )}
-              </div>
+            <div className="relative flex items-center">
+              <input
+                type="tel"
+                name="custWa"
+                required
+                placeholder="Contoh: 0812xxxxxxxx"
+                value={formData.custWa}
+                onChange={handleChange}
+                className="w-full h-10 px-3 pr-8 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3]"
+              />
+              {formData.custWa && (
+                <button type="button" className="absolute right-2.5 text-slate-400 hover:text-slate-600 p-1 cursor-pointer" onClick={() => handleClear('custWa')}>&times;</button>
+              )}
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext'; // Import AuthContext
 
 // Import aset logo
 import logoImg from '/logo/logo.png';
@@ -9,14 +10,11 @@ const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const dropdownRef = useRef(null);
+    const { user: clientUser, logout } = useAuth(); // Pakai AuthContext
 
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-
-    // State untuk data sesi pengguna
-    const [clientUser, setClientUser] = useState(null);
-    const [toastMessage, setToastMessage] = useState('');
 
     const isHomePage = location.pathname === '/';
 
@@ -46,33 +44,14 @@ const Navbar = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Load User & Toast dari LocalStorage / Location State
+    // Tutup menu mobile & profile saat lokasi berpindah
     useEffect(() => {
         setIsMobileMenuOpen(false);
         setIsProfileMenuOpen(false);
-
-        const storedUser = localStorage.getItem('clientUser');
-        if (storedUser) {
-            try {
-                setClientUser(JSON.parse(storedUser));
-            } catch (err) {
-                console.error('Gagal membaca data clientUser:', err);
-            }
-        } else {
-            setClientUser(null);
-        }
-
-        if (location.state?.message) {
-            setToastMessage(location.state.message);
-            const timer = setTimeout(() => setToastMessage(''), 4000);
-            return () => clearTimeout(timer);
-        }
     }, [location]);
 
     const handleLogout = () => {
-        localStorage.removeItem('clientToken');
-        localStorage.removeItem('clientUser');
-        setClientUser(null);
+        logout(); // Panggil logout dari AuthContext
         setIsProfileMenuOpen(false);
         setIsMobileMenuOpen(false);
         navigate('/login');
@@ -92,13 +71,8 @@ const Navbar = () => {
                     : 'bg-transparent h-20'
             }`}
         >
-            {/* Pop-up Toast Penanda Sesi */}
-            {toastMessage && (
-                <div className="bg-emerald-500 text-white text-xs sm:text-sm font-bold px-4 py-2 text-center flex items-center justify-center gap-2 shadow-md animate-in fade-in duration-200">
-                    <i className="fa-solid fa-circle-check"></i>
-                    <span>{toastMessage}</span>
-                </div>
-            )}
+            {/* 🛑 BANNER HIJAU LAMA DI SINI SUDAH DIHAPUS TOTAL agar tidak menutupi Navbar.
+                Notifikasi login sekarang ditangani oleh useNotification (floating toast di pojok bawah). */}
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-4">
 
@@ -108,12 +82,12 @@ const Navbar = () => {
                         src={currentLogo}
                         alt="Dafatih Transport Logo"
                         className={`w-auto object-contain transition-all duration-300 group-hover:scale-105 ${
-                            isScrolled || !isHomePage ? 'h-9 sm:h-24 lg:h-24' : 'h-10 sm:h-24 lg:h-24'
+                            isScrolled || !isHomePage ? 'h-14 sm:h-24 lg:h-24' : 'h-24 sm:h-24 lg:h-24'
                         }`}
                     />
                 </NavLink>
 
-                {/* Desktop Navigasi Utama (Hanya Tampil di Layar XL/Lebar agar tidak berhimpitan di Tablet) */}
+                {/* Desktop Navigasi Utama */}
                 <nav className="hidden xl:flex items-center gap-2 bg-white/80 backdrop-blur-md px-5 py-2 rounded-2xl border border-white/60 shadow-xs">
                     <NavLink
                         to="/"
@@ -168,11 +142,10 @@ const Navbar = () => {
                     </NavLink>
                 </nav>
 
-                {/* Header Actions (Mulai Tampil dari Layar Medium `md`) */}
+                {/* Header Actions Desktop */}
                 <div className="hidden md:flex items-center gap-3 shrink-0">
                     {clientUser ? (
                         <div className="relative" ref={dropdownRef}>
-                            {/* Tombol Trigger Profil Navbar */}
                             <button
                                 type="button"
                                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
@@ -194,7 +167,7 @@ const Navbar = () => {
                                 }`}></i>
                             </button>
 
-                            {/* Dropdown Menu Klien Desktop */}
+                            {/* Dropdown Menu Desktop */}
                             {isProfileMenuOpen && (
                                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
                                     <div className="py-2 text-xs font-bold text-slate-700 divide-y divide-slate-100">
@@ -285,7 +258,7 @@ const Navbar = () => {
                     )}
                 </div>
 
-                {/* Tombol Hamburger Mobile/Tablet (Tampil di Layar < XL) */}
+                {/* Tombol Hamburger Mobile */}
                 <button
                     type="button"
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -296,11 +269,9 @@ const Navbar = () => {
 
             </div>
 
-            {/* Dropdown Menu Mobile & Tablet (< XL) */}
+            {/* Menu Mobile & Tablet */}
             {isMobileMenuOpen && (
                 <div className="xl:hidden bg-white/95 backdrop-blur-lg border-b border-slate-200/80 px-4 py-4 space-y-4 shadow-xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-top-2 duration-200">
-
-                    {/* Halaman Utama Navigasi */}
                     <div className="flex flex-col space-y-1">
                         <p className="px-3 text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1">Navigasi Utama</p>
                         <NavLink
@@ -356,7 +327,6 @@ const Navbar = () => {
                         </NavLink>
                     </div>
 
-                    {/* Area Akun Klien Lengkap (Diperbaiki agar seluruh fitur profil muncul) */}
                     <div className="pt-3 border-t border-slate-100">
                         {clientUser ? (
                             <div className="space-y-1">

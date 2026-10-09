@@ -39,8 +39,8 @@ const MobileBottomNav = () => {
                 {/* <NavLink to="/tarif" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-table-list"></i><span>Tarif</span></NavLink> */}
                 {/* <NavLink to="/mobil" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-car"></i><span>Mobil</span></NavLink> */}
                 <NavLink to="/pesan" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-circle-plus"></i><span>Pesan</span></NavLink>
-                <NavLink to="/galeri" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-images"></i><span>Galeri</span></NavLink>
-                <NavLink to="/blog" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-blog"></i><span>Blog</span></NavLink>
+                {/* <NavLink to="/galeri" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-images"></i><span>Galeri</span></NavLink>
+                <NavLink to="/blog" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-blog"></i><span>Blog</span></NavLink> */}
             </div>
         </>
     );

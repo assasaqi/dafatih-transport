@@ -1,245 +1,102 @@
 import React from 'react';
 
 const ModalSummary = ({ formData, onClose, onConfirm }) => {
+  if (!formData) return null;
+
   return (
-    <>
-      <style>{`
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(15, 23, 42, 0.65);
-          backdrop-filter: blur(4px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 2000;
-          padding: 16px;
-        }
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-900/65 backdrop-blur-xs animate-fade-in">
+      <div className="w-full max-w-md bg-white rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col transform transition-all duration-200 ease-out scale-100">
 
-        .modal-card {
-          background: #ffffff;
-          border-radius: 16px;
-          padding: 20px;
-          width: 100%;
-          max-width: 440px;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-          display: flex;
-          flex-direction: column;
-          animation: modalPop 0.25s ease-out forwards;
-        }
+        {/* Header Modal */}
+        <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-200">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i className="fa-solid fa-file-invoice text-sky-600"></i>
+            Ringkasan Pemesanan
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup"
+            className="text-slate-400 hover:text-slate-600 p-1 text-xl leading-none transition-colors cursor-pointer"
+          >
+            &times;
+          </button>
+        </div>
 
-        @keyframes modalPop {
-          from {
-            opacity: 0;
-            transform: scale(0.95) translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
-        }
-
-        .modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 12px;
-          padding-bottom: 10px;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .modal-header h3 {
-          margin: 0;
-          font-size: 1.1rem;
-          font-weight: 700;
-          color: #0f172a;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .modal-close-btn {
-          background: transparent;
-          border: none;
-          font-size: 1.25rem;
-          color: #94a3b8;
-          cursor: pointer;
-          padding: 4px;
-          line-height: 1;
-        }
-
-        .summary-details-list {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          background: #f8fafc;
-          padding: 12px 14px;
-          border-radius: 10px;
-          border: 1px solid #f1f5f9;
-          margin-bottom: 16px;
-        }
-
-        .summary-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 0.84rem;
-          color: #334155;
-        }
-
-        .summary-item span.label {
-          color: #64748b;
-          font-weight: 500;
-        }
-
-        .summary-item span.value {
-          font-weight: 600;
-          text-align: right;
-          max-width: 60%;
-          word-break: break-word;
-        }
-
-        .summary-item.price-item {
-          margin-top: 4px;
-          padding-top: 8px;
-          border-top: 1px dashed #cbd5e1;
-        }
-
-        .summary-item.price-item span.value {
-          color: var(--primary, #0284c7);
-          font-size: 1rem;
-          font-weight: 800;
-        }
-
-        .modal-actions {
-          display: flex;
-          gap: 10px;
-        }
-
-        .btn-modal-cancel {
-          flex: 1;
-          padding: 10px;
-          background: #ffffff;
-          border: 1px solid #cbd5e1;
-          color: #475569;
-          border-radius: 8px;
-          font-weight: 600;
-          font-size: 0.85rem;
-          cursor: pointer;
-        }
-
-        .btn-modal-confirm {
-          flex: 1.2;
-          padding: 10px;
-          background: #25d366;
-          border: none;
-          color: #ffffff;
-          border-radius: 8px;
-          font-weight: 700;
-          font-size: 0.85rem;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-        }
-
-        @media (max-width: 768px) {
-          .modal-card {
-            padding: 16px;
-            border-radius: 14px;
-          }
-
-          .modal-header h3 {
-            font-size: 1rem;
-          }
-
-          .summary-details-list {
-            padding: 10px 12px;
-            gap: 6px;
-            margin-bottom: 14px;
-          }
-
-          .summary-item {
-            font-size: 0.78rem;
-          }
-
-          .summary-item.price-item span.value {
-            font-size: 0.92rem;
-          }
-
-          .btn-modal-cancel,
-          .btn-modal-confirm {
-            padding: 9px;
-            font-size: 0.8rem;
-            height: 40px;
-          }
-        }
-      `}</style>
-
-      <div className="modal-overlay">
-        <div className="modal-card">
-          {/* Header Modal */}
-          <div className="modal-header">
-            <h3>
-              <i className="fa-solid fa-file-invoice" style={{ color: 'var(--primary, #0284c7)' }}></i>
-              Ringkasan Pemesanan
-            </h3>
-            <button className="modal-close-btn" onClick={onClose} aria-label="Tutup">
-              &times;
-            </button>
+        {/* Daftar Detail Rincian */}
+        <div className="flex flex-col gap-2 bg-slate-50 p-3.5 sm:p-4 rounded-xl border border-slate-100 mb-4">
+          <div className="flex justify-between items-center text-xs sm:text-sm text-slate-700">
+            <span className="text-slate-500 font-medium">Nama Pemesan:</span>
+            <span className="font-semibold text-right max-w-[60%] break-words">{formData.custName || '-'}</span>
           </div>
 
-          {/* Daftar Detail Rincian */}
-          <div className="summary-details-list">
-            <div className="summary-item">
-              <span className="label">Nama Pemesan:</span>
-              <span className="value">{formData.custName}</span>
-            </div>
-
-            <div className="summary-item">
-              <span className="label">No. WhatsApp:</span>
-              <span className="value">+{formData.countryCode} {formData.custWa}</span>
-            </div>
-
-            <div className="summary-item">
-              <span className="label">Jadwal Penjemputan:</span>
-              <span className="value">{formData.pickupDate} ({formData.pickupTime} WITA)</span>
-            </div>
-
-            <div className="summary-item">
-              <span className="label">Lokasi Jemput (From):</span>
-              <span className="value">{formData.pickupLoc}</span>
-            </div>
-
-            <div className="summary-item">
-              <span className="label">Lokasi Tujuan (To):</span>
-              <span className="value">{formData.dropLoc}</span>
-            </div>
-
-            <div className="summary-item price-item">
-              <span className="label">Estimasi Tarif:</span>
-              <span className="value">
-                Rp {new Intl.NumberFormat('id-ID').format(formData.price)}
-              </span>
-            </div>
+          <div className="flex justify-between items-center text-xs sm:text-sm text-slate-700">
+            <span className="text-slate-500 font-medium">No. WhatsApp:</span>
+            <span className="font-semibold text-right max-w-[60%] break-words">{formData.custWa || '-'}</span>
           </div>
 
-          {/* Tombol Aksi */}
-          <div className="modal-actions">
-            <button type="button" className="btn-modal-cancel" onClick={onClose}>
-              Ubah Data
-            </button>
-            <button type="button" className="btn-modal-confirm" onClick={onConfirm}>
-              <i className="fa-brands fa-whatsapp"></i> Kirim ke WA
-            </button>
+          {formData.jenisLayanan && (
+            <div className="flex justify-between items-center text-xs sm:text-sm text-slate-700">
+              <span className="text-slate-500 font-medium">Layanan:</span>
+              <span className="font-semibold text-right max-w-[60%] break-words">{formData.jenisLayanan}</span>
+            </div>
+          )}
+
+          {formData.armada && (
+            <div className="flex justify-between items-center text-xs sm:text-sm text-slate-700">
+              <span className="text-slate-500 font-medium">Armada / Mobil:</span>
+              <span className="font-semibold text-right max-w-[60%] break-words">{formData.armada}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center text-xs sm:text-sm text-slate-700">
+            <span className="text-slate-500 font-medium">Jadwal Penjemputan:</span>
+            <span className="font-semibold text-right max-w-[60%] break-words">
+              {formData.pickupDate || '-'} {formData.pickupTime ? `(${formData.pickupTime} WITA)` : ''}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center text-xs sm:text-sm text-slate-700">
+            <span className="text-slate-500 font-medium">Lokasi Jemput:</span>
+            <span className="font-semibold text-right max-w-[60%] break-words">{formData.pickupLoc || '-'}</span>
+          </div>
+
+          {formData.dropLoc && (
+            <div className="flex justify-between items-center text-xs sm:text-sm text-slate-700">
+              <span className="text-slate-500 font-medium">Lokasi Tujuan:</span>
+              <span className="font-semibold text-right max-w-[60%] break-words">{formData.dropLoc}</span>
+            </div>
+          )}
+
+          {/* Estimasi Tarif */}
+          <div className="flex justify-between items-center text-xs sm:text-sm text-slate-700 mt-1 pt-2.5 border-t border-dashed border-slate-300">
+            <span className="text-slate-500 font-medium">Estimasi Tarif:</span>
+            <span className="text-sky-600 text-base sm:text-lg font-extrabold text-right">
+              Rp {new Intl.NumberFormat('id-ID').format(formData.price || 0)}
+            </span>
           </div>
         </div>
+
+        {/* Tombol Aksi */}
+        <div className="flex gap-2.5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-2.5 px-3 bg-white border border-slate-300 text-slate-600 rounded-xl font-semibold text-xs sm:text-sm hover:bg-slate-50 transition-colors cursor-pointer"
+          >
+            Ubah Data
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex-[1.2] py-2.5 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <i className="fa-brands fa-whatsapp text-base"></i> Kirim ke WA
+          </button>
+        </div>
+
       </div>
-    </>
+    </div>
   );
 };
 
