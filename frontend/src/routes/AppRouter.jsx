@@ -14,10 +14,9 @@ import Vehicles from '@/pages/Vehicles';
 import NotFound from '@/pages/NotFound';
 import AuthTest from '@/pages/AuthTest';
 
-// Halaman Klien (Auth & Riwayat Booking)
+// Halaman Klien (Auth)
 import Login from '@/pages/client/Login';
 import Register from '@/pages/client/Register';
-import BookingList from '@/pages/client/BookingList'; // <-- IMPOR HALAMAN DAFTAR BOOKING CLIENT
 
 // Impor Halaman Admin & Proteksi Route
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -37,7 +36,6 @@ export default function AppRouter() {
             <Route path="/" element={<MainLayout><Home /></MainLayout>} />
             <Route path="/tarif" element={<MainLayout><Tariffs /></MainLayout>} />
             <Route path="/pesan" element={<MainLayout><Booking /></MainLayout>} />
-            <Route path="/riwayat-booking" element={<MainLayout><BookingList /></MainLayout>} /> {/* <-- RUTE BARU DAFTAR BOOKING */}
             <Route path="/galeri" element={<MainLayout><Gallery /></MainLayout>} />
             <Route path="/blog" element={<MainLayout><Blog /></MainLayout>} />
             <Route path="/mobil" element={<MainLayout><Vehicles /></MainLayout>} />

@@ -2,7 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHome } from '@/context/HomeContext';
 import { getRoutes, getBlogs } from '@/services/api';
-import RouteCard from '@/components/cards/RouteCard'; // <-- IMPOR KOMPONEN CARD BARU
+import RouteCard from '@/components/cards/RouteCard';
+
+// Import Komponen Form dari folder forms
+import AirportSearchForm from '@/components/forms/AirportSearchForm';
+import RentalSearchForm from '@/components/forms/RentalSearchForm';
+import TourPackageTab from '@/components/forms/TourPackageTab';
 
 // Secara dinamis membaca semua berkas gambar dari folder /public/images/
 const localImagesModules = import.meta.glob('/public/images/*.{png,jpg,jpeg,webp,avif}', {
@@ -30,65 +35,14 @@ const Home = () => {
   // Tab Aktif: 'airport', 'rental', 'tour'
   const [activeTab, setActiveTab] = useState('airport');
 
-  // State Form Pencarian Hero: Antar-Jemput
-  const [pickupInput, setPickupInput] = useState('');
-  const [dropoffInput, setDropoffInput] = useState('');
-  const [travelDate, setTravelDate] = useState('');
-  const [passengers, setPassengers] = useState('');
-
-  // State Form Pencarian Hero: Sewa Mobil
-  const [rentalLocation, setRentalLocation] = useState('');
-  const [rentalStartDate, setRentalStartDate] = useState('');
-  const [rentalDuration, setRentalDuration] = useState('');
-
   // State kriteria filter aktif untuk slider bawah
   const [searchFilter, setSearchFilter] = useState({ pickup: '', dropoff: '' });
 
-  // State Dropdown
-  const [isPickupOpen, setIsPickupOpen] = useState(false);
-  const [isDropoffOpen, setIsDropoffOpen] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isPassengerOpen, setIsPassengerOpen] = useState(false);
-
-  const [isRentalLocOpen, setIsRentalLocOpen] = useState(false);
-  const [isRentalCalOpen, setIsRentalCalOpen] = useState(false);
-  const [isRentalDurOpen, setIsRentalDurOpen] = useState(false);
-
   // Refs
-  const pickupRef = useRef(null);
-  const dropoffRef = useRef(null);
-  const calendarRef = useRef(null);
-  const passengerRef = useRef(null);
-  const rentalLocRef = useRef(null);
-  const rentalCalRef = useRef(null);
-  const rentalDurRef = useRef(null);
   const sliderRef = useRef(null);
 
   const [showLeftBtn, setShowLeftBtn] = useState(false);
   const [showRightBtn, setShowRightBtn] = useState(true);
-
-  const formatDateToISO = (dateObj) => {
-    const year = dateObj.getFullYear();
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const day = String(dateObj.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const todayObj = new Date();
-
-  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(
-    new Date(todayObj.getFullYear(), todayObj.getMonth(), 1)
-  );
-
-  const closeAllDropdowns = () => {
-    setIsPickupOpen(false);
-    setIsDropoffOpen(false);
-    setIsCalendarOpen(false);
-    setIsPassengerOpen(false);
-    setIsRentalLocOpen(false);
-    setIsRentalCalOpen(false);
-    setIsRentalDurOpen(false);
-  };
 
   useEffect(() => {
     Promise.all([getRoutes(), getBlogs()])
@@ -109,73 +63,6 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (pickupRef.current && !pickupRef.current.contains(e.target)) setIsPickupOpen(false);
-      if (dropoffRef.current && !dropoffRef.current.contains(e.target)) setIsDropoffOpen(false);
-      if (calendarRef.current && !calendarRef.current.contains(e.target)) setIsCalendarOpen(false);
-      if (passengerRef.current && !passengerRef.current.contains(e.target)) setIsPassengerOpen(false);
-      if (rentalLocRef.current && !rentalLocRef.current.contains(e.target)) setIsRentalLocOpen(false);
-      if (rentalCalRef.current && !rentalCalRef.current.contains(e.target)) setIsRentalCalOpen(false);
-      if (rentalDurRef.current && !rentalDurRef.current.contains(e.target)) setIsRentalDurOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const uniquePickupLocations = Array.from(
-    new Set(routes.map((r) => r.pickup_location).filter(Boolean))
-  );
-
-  const availableDropoffLocations = Array.from(
-    new Set(
-      routes
-        .filter((r) => !pickupInput || r.pickup_location === pickupInput)
-        .map((r) => r.dropoff_location)
-        .filter(Boolean)
-    )
-  );
-
-  const handleSelectPickup = (selectedPickup) => {
-    setPickupInput(selectedPickup);
-    setIsPickupOpen(false);
-    const matchingRoutes = routes.filter((r) => r.pickup_location === selectedPickup);
-    if (matchingRoutes.length > 0) {
-      setDropoffInput(matchingRoutes[0].dropoff_location || '');
-    } else {
-      setDropoffInput('');
-    }
-  };
-
-  const handleSelectDropoff = (selectedDropoff) => {
-    setDropoffInput(selectedDropoff);
-    setIsDropoffOpen(false);
-  };
-
-  const generateCalendarDays = () => {
-    const year = currentCalendarMonth.getFullYear();
-    const month = currentCalendarMonth.getMonth();
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const days = [];
-    for (let i = 0; i < firstDayOfMonth; i++) days.push(null);
-    for (let d = 1; d <= daysInMonth; d++) days.push(new Date(year, month, d));
-    return days;
-  };
-
-  const calendarDays = generateCalendarDays();
-
-  const handlePrevMonth = (e) => {
-    e.stopPropagation();
-    setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - 1, 1));
-  };
-
-  const handleNextMonth = (e) => {
-    e.stopPropagation();
-    setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 1));
-  };
-
-  useEffect(() => {
     if (heroSlides.length <= 1) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
@@ -185,38 +72,6 @@ const Home = () => {
 
   const handleTabClick = (tabKey) => {
     setActiveTab(tabKey);
-    closeAllDropdowns();
-  };
-
-  const handleHeroSearchSubmit = (e) => {
-    e.preventDefault();
-    navigate('/tarif', {
-      state: {
-        jenisLayanan: 'Antar-Jemput',
-        pickup: pickupInput,
-        dropoff: dropoffInput,
-        travelDate: travelDate,
-        passengers: passengers
-      }
-    });
-  };
-
-  const handleRentalSearchSubmit = (e) => {
-    e.preventDefault();
-    navigate('/mobil', {
-      state: {
-        jenisLayanan: 'Sewa Mobil',
-        location: rentalLocation,
-        startDate: rentalStartDate,
-        duration: rentalDuration
-      }
-    });
-  };
-
-  const handleWAConsultation = () => {
-    const phoneNumber = '6281234567890';
-    const message = encodeURIComponent('Halo Dafatih Transport, saya ingin konsultasi mengenai Paket Wisata Lombok.');
-    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
   };
 
   const getFilteredRoutes = () => {
@@ -269,29 +124,14 @@ const Home = () => {
     }
   };
 
-// Di dalam Home.jsx
-const handleSelectRoute = (route) => {
-  navigate('/pesan', {
-    state: {
-      jenisLayanan: 'Antar-Jemput',
-      pickup: route.pickup_location,
-      dropoff: route.dropoff_location,
-      price: Number(route.price || 0),
-      travelDate: travelDate || '',
-      passengers: passengers || ''
-    }
-  });
-};
-
-  const formatDisplayDate = (dateStr) => {
-    if (!dateStr) return '';
-    const [y, m, d] = dateStr.split('-');
-    if (!y || !m || !d) return dateStr;
-    const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
-    return dateObj.toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
+  const handleSelectRoute = (route) => {
+    navigate('/pesan', {
+      state: {
+        jenisLayanan: 'Antar-Jemput',
+        pickup: route.pickup_location,
+        dropoff: route.dropoff_location,
+        price: Number(route.price || 0)
+      }
     });
   };
 
@@ -325,6 +165,7 @@ const handleSelectRoute = (route) => {
           </h1>
 
           <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-2xl border border-white/20 relative z-20">
+            {/* TAB NAVIGATION */}
             <div className="flex gap-2 border-b border-slate-200 pb-3.5 mb-5 overflow-x-auto">
               <button
                 type="button"
@@ -361,485 +202,10 @@ const handleSelectRoute = (route) => {
               </button>
             </div>
 
-            {/* TAB 1: FORM ANTAR-JEMPUT */}
-            {activeTab === 'airport' && (
-              <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.5fr_1.5fr_1.2fr_1fr_auto] gap-3 items-center" onSubmit={handleHeroSearchSubmit}>
-                <div className="relative" ref={pickupRef}>
-                  <div
-                    onClick={() => {
-                      setIsPickupOpen(!isPickupOpen);
-                      setIsDropoffOpen(false);
-                      setIsCalendarOpen(false);
-                      setIsPassengerOpen(false);
-                    }}
-                    className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
-                      isPickupOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
-                    }`}
-                  >
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Lokasi Penjemputan
-                    </span>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <i className="fa-solid fa-location-dot text-[#0194F3] text-sm shrink-0"></i>
-                        <span className={`text-xs sm:text-sm font-semibold truncate ${pickupInput ? 'text-slate-900' : 'text-slate-400'}`}>
-                          {pickupInput || 'Pilih Penjemputan'}
-                        </span>
-                      </div>
-                      <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isPickupOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
-                    </div>
-                  </div>
-
-                  {isPickupOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-                      <div className="max-h-56 overflow-y-auto py-1">
-                        {uniquePickupLocations.length > 0 ? (
-                          uniquePickupLocations.map((loc, idx) => (
-                            <div
-                              key={idx}
-                              onClick={() => handleSelectPickup(loc)}
-                              className={`px-3 py-2 text-xs font-semibold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
-                                pickupInput === loc ? 'text-[#0194F3] bg-sky-50/50 font-bold' : 'text-slate-700'
-                              }`}
-                            >
-                              <span>{loc}</span>
-                              {pickupInput === loc && <i className="fa-solid fa-check text-xs"></i>}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="px-3 py-3 text-xs text-slate-400 text-center">
-                            Tidak ada lokasi penjemputan
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="relative" ref={dropoffRef}>
-                  <div
-                    onClick={() => {
-                      setIsDropoffOpen(!isDropoffOpen);
-                      setIsPickupOpen(false);
-                      setIsCalendarOpen(false);
-                      setIsPassengerOpen(false);
-                    }}
-                    className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
-                      isDropoffOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
-                    }`}
-                  >
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Lokasi Tujuan
-                    </span>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <i className="fa-solid fa-location-arrow text-[#0194F3] text-sm shrink-0"></i>
-                        <span className={`text-xs sm:text-sm font-semibold truncate ${dropoffInput ? 'text-slate-900' : 'text-slate-400'}`}>
-                          {dropoffInput || 'Pilih Tujuan'}
-                        </span>
-                      </div>
-                      <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isDropoffOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
-                    </div>
-                  </div>
-
-                  {isDropoffOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-                      <div className="max-h-56 overflow-y-auto py-1">
-                        {availableDropoffLocations.length > 0 ? (
-                          availableDropoffLocations.map((loc, idx) => (
-                            <div
-                              key={idx}
-                              onClick={() => handleSelectDropoff(loc)}
-                              className={`px-3 py-2 text-xs font-semibold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
-                                dropoffInput === loc ? 'text-[#0194F3] bg-sky-50/50 font-bold' : 'text-slate-700'
-                              }`}
-                            >
-                              <span>{loc}</span>
-                              {dropoffInput === loc && <i className="fa-solid fa-check text-xs"></i>}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="px-3 py-3 text-xs text-slate-400 text-center">
-                            Tidak ada tujuan tersedia
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="relative" ref={calendarRef}>
-                  <div
-                    onClick={() => {
-                      setIsCalendarOpen(!isCalendarOpen);
-                      setIsPickupOpen(false);
-                      setIsDropoffOpen(false);
-                      setIsPassengerOpen(false);
-                    }}
-                    className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
-                      isCalendarOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
-                    }`}
-                  >
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Tanggal Perjalanan
-                    </span>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <i className="fa-solid fa-calendar-days text-[#0194F3] text-sm shrink-0"></i>
-                        <span className={`text-xs sm:text-sm font-semibold truncate ${travelDate ? 'text-slate-900' : 'text-slate-400'}`}>
-                          {travelDate ? formatDisplayDate(travelDate) : 'Pilih Tanggal'}
-                        </span>
-                      </div>
-                      <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isCalendarOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
-                    </div>
-                  </div>
-
-                  {isCalendarOpen && (
-                    <div className="absolute left-0 sm:left-auto sm:right-0 lg:left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[60] p-4 animate-in fade-in slide-in-from-top-2 duration-150">
-                      <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-                        <button
-                          type="button"
-                          onClick={handlePrevMonth}
-                          className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors"
-                        >
-                          <i className="fa-solid fa-chevron-left text-xs"></i>
-                        </button>
-                        <span className="text-xs font-bold text-slate-800">
-                          {currentCalendarMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={handleNextMonth}
-                          className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors"
-                        >
-                          <i className="fa-solid fa-chevron-right text-xs"></i>
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-7 text-center mb-1">
-                        {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((dayName, index) => (
-                          <span key={index} className="text-[10px] font-bold text-slate-400">
-                            {dayName}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="grid grid-cols-7 gap-1 text-center">
-                        {calendarDays.map((dateObj, idx) => {
-                          if (!dateObj) return <div key={idx} className="h-8" />;
-                          const isoStr = formatDateToISO(dateObj);
-                          const isSelected = isoStr === travelDate;
-                          const isPast = dateObj < new Date(todayObj.getFullYear(), todayObj.getMonth(), todayObj.getDate());
-
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              disabled={isPast}
-                              onClick={() => {
-                                setTravelDate(isoStr);
-                                setIsCalendarOpen(false);
-                              }}
-                              className={`h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#0194F3] text-white shadow-sm'
-                                  : isPast
-                                  ? 'text-slate-300 cursor-not-allowed'
-                                  : 'text-slate-700 hover:bg-sky-50 hover:text-[#0194F3]'
-                              }`}
-                            >
-                              {dateObj.getDate()}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="relative" ref={passengerRef}>
-                  <div
-                    onClick={() => {
-                      setIsPassengerOpen(!isPassengerOpen);
-                      setIsPickupOpen(false);
-                      setIsDropoffOpen(false);
-                      setIsCalendarOpen(false);
-                    }}
-                    className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
-                      isPassengerOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
-                    }`}
-                  >
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Jumlah Penumpang
-                    </span>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <i className="fa-solid fa-user-group text-[#0194F3] text-sm shrink-0"></i>
-                        <span className={`text-xs sm:text-sm font-semibold truncate ${passengers ? 'text-slate-900' : 'text-slate-400'}`}>
-                          {passengers ? `${passengers} Orang` : 'Pilih Penumpang'}
-                        </span>
-                      </div>
-                      <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isPassengerOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
-                    </div>
-                  </div>
-
-                  {isPassengerOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-150">
-                      {['1', '2', '3', '4'].map((num) => (
-                        <div
-                          key={num}
-                          onClick={() => {
-                            setPassengers(num);
-                            setIsPassengerOpen(false);
-                          }}
-                          className={`px-3 py-2 text-xs font-semibold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
-                            passengers === num ? 'text-[#0194F3] bg-sky-50/50 font-bold' : 'text-slate-700'
-                          }`}
-                        >
-                          <span>{num} Orang {num === '4' ? '(Maksimal)' : ''}</span>
-                          {passengers === num && <i className="fa-solid fa-check text-xs"></i>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full lg:w-auto h-full px-6 py-3 bg-[#0194F3] hover:bg-blue-600 text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <i className="fa-solid fa-magnifying-glass"></i>
-                  <span>Cari</span>
-                </button>
-              </form>
-            )}
-
-            {/* TAB 2: FORM SEWA MOBIL */}
-            {activeTab === 'rental' && (
-              <form className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-[2fr_1.5fr_1.5fr_auto] gap-3 items-center" onSubmit={handleRentalSearchSubmit}>
-                <div className="relative" ref={rentalLocRef}>
-                  <div
-                    onClick={() => {
-                      setIsRentalLocOpen(!isRentalLocOpen);
-                      setIsRentalCalOpen(false);
-                      setIsRentalDurOpen(false);
-                    }}
-                    className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
-                      isRentalLocOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
-                    }`}
-                  >
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Lokasi Rental
-                    </span>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <i className="fa-solid fa-location-dot text-[#0194F3] text-sm shrink-0"></i>
-                        <span className={`text-xs sm:text-sm font-semibold truncate ${rentalLocation ? 'text-slate-900' : 'text-slate-400'}`}>
-                          {rentalLocation || 'Pilih Lokasi Rental'}
-                        </span>
-                      </div>
-                      <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isRentalLocOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
-                    </div>
-                  </div>
-
-                  {isRentalLocOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-                      <div className="max-h-56 overflow-y-auto py-1">
-                        {uniquePickupLocations.length > 0 ? (
-                          uniquePickupLocations.map((loc, idx) => (
-                            <div
-                              key={idx}
-                              onClick={() => {
-                                setRentalLocation(loc);
-                                setIsRentalLocOpen(false);
-                              }}
-                              className={`px-3 py-2 text-xs font-semibold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
-                                rentalLocation === loc ? 'text-[#0194F3] bg-sky-50/50 font-bold' : 'text-slate-700'
-                              }`}
-                            >
-                              <span>{loc}</span>
-                              {rentalLocation === loc && <i className="fa-solid fa-check text-xs"></i>}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="px-3 py-3 text-xs text-slate-400 text-center">
-                            Tidak ada lokasi tersedia
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="relative" ref={rentalCalRef}>
-                  <div
-                    onClick={() => {
-                      setIsRentalCalOpen(!isRentalCalOpen);
-                      setIsRentalLocOpen(false);
-                      setIsRentalDurOpen(false);
-                    }}
-                    className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
-                      isRentalCalOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
-                    }`}
-                  >
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Tanggal Mulai Rental
-                    </span>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <i className="fa-solid fa-calendar-days text-[#0194F3] text-sm shrink-0"></i>
-                        <span className={`text-xs sm:text-sm font-semibold truncate ${rentalStartDate ? 'text-slate-900' : 'text-slate-400'}`}>
-                          {rentalStartDate ? formatDisplayDate(rentalStartDate) : 'Pilih Tanggal'}
-                        </span>
-                      </div>
-                      <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isRentalCalOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
-                    </div>
-                  </div>
-
-                  {isRentalCalOpen && (
-                    <div className="absolute left-0 sm:left-auto sm:right-0 lg:left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[60] p-4 animate-in fade-in slide-in-from-top-2 duration-150">
-                      <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-                        <button
-                          type="button"
-                          onClick={handlePrevMonth}
-                          className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors"
-                        >
-                          <i className="fa-solid fa-chevron-left text-xs"></i>
-                        </button>
-                        <span className="text-xs font-bold text-slate-800">
-                          {currentCalendarMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={handleNextMonth}
-                          className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors"
-                        >
-                          <i className="fa-solid fa-chevron-right text-xs"></i>
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-7 text-center mb-1">
-                        {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((dayName, index) => (
-                          <span key={index} className="text-[10px] font-bold text-slate-400">
-                            {dayName}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="grid grid-cols-7 gap-1 text-center">
-                        {calendarDays.map((dateObj, idx) => {
-                          if (!dateObj) return <div key={idx} className="h-8" />;
-                          const isoStr = formatDateToISO(dateObj);
-                          const isSelected = isoStr === rentalStartDate;
-                          const isPast = dateObj < new Date(todayObj.getFullYear(), todayObj.getMonth(), todayObj.getDate());
-
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              disabled={isPast}
-                              onClick={() => {
-                                setRentalStartDate(isoStr);
-                                setIsRentalCalOpen(false);
-                              }}
-                              className={`h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#0194F3] text-white shadow-sm'
-                                  : isPast
-                                  ? 'text-slate-300 cursor-not-allowed'
-                                  : 'text-slate-700 hover:bg-sky-50 hover:text-[#0194F3]'
-                              }`}
-                            >
-                              {dateObj.getDate()}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="relative" ref={rentalDurRef}>
-                  <div
-                    onClick={() => {
-                      setIsRentalDurOpen(!isRentalDurOpen);
-                      setIsRentalLocOpen(false);
-                      setIsRentalCalOpen(false);
-                    }}
-                    className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
-                      isRentalDurOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
-                    }`}
-                  >
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Durasi Rental
-                    </span>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <i className="fa-solid fa-clock text-[#0194F3] text-sm shrink-0"></i>
-                        <span className={`text-xs sm:text-sm font-semibold truncate ${rentalDuration ? 'text-slate-900' : 'text-slate-400'}`}>
-                          {rentalDuration ? `${rentalDuration} Hari` : 'Pilih Durasi'}
-                        </span>
-                      </div>
-                      <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isRentalDurOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
-                    </div>
-                  </div>
-
-                  {isRentalDurOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-150">
-                      {['1', '2', '3', '4', '5', '6', '7'].map((day) => (
-                        <div
-                          key={day}
-                          onClick={() => {
-                            setRentalDuration(day);
-                            setIsRentalDurOpen(false);
-                          }}
-                          className={`px-3 py-2 text-xs font-semibold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
-                            rentalDuration === day ? 'text-[#0194F3] bg-sky-50/50 font-bold' : 'text-slate-700'
-                          }`}
-                        >
-                          <span>{day} Hari</span>
-                          {rentalDuration === day && <i className="fa-solid fa-check text-xs"></i>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full lg:w-auto h-full px-6 py-3 bg-[#0194F3] hover:bg-blue-600 text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <i className="fa-solid fa-magnifying-glass"></i>
-                  <span>Cari</span>
-                </button>
-              </form>
-            )}
-
-            {/* TAB 3: PAKET TOUR */}
-            {activeTab === 'tour' && (
-              <div className="py-8 text-center flex flex-col items-center justify-center animate-in fade-in duration-200">
-                <div className="w-16 h-16 bg-sky-50 rounded-full flex items-center justify-center mb-4 text-[#0194F3] text-2xl shadow-xs">
-                  <i className="fa-solid fa-route"></i>
-                </div>
-
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-2">
-                  Daftar Paket Wisata Lombok
-                </h3>
-
-                <p className="text-xs sm:text-sm text-slate-500 max-w-lg mb-6 leading-relaxed">
-                  Layanan paket tour pilihan sedang dipersiapkan untuk memberikan pengalaman liburan terbaik bagi Anda.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={handleWAConsultation}
-                  className="px-6 py-3 bg-[#0194F3] hover:bg-blue-600 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all transform hover:scale-105 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <i className="fa-brands fa-whatsapp text-base"></i>
-                  <span>Konsultasi Custom Tour via WA</span>
-                </button>
-              </div>
-            )}
+            {/* TAB CONTENT (MENGGUNAKAN KOMPONEN FORM DARI FOLDER FORMS) */}
+            {activeTab === 'airport' && <AirportSearchForm routes={routes} />}
+            {activeTab === 'rental' && <RentalSearchForm routes={routes} />}
+            {activeTab === 'tour' && <TourPackageTab />}
           </div>
         </div>
       </section>
@@ -897,12 +263,10 @@ const handleSelectRoute = (route) => {
               className="flex gap-4 sm:gap-5 overflow-x-auto scroll-smooth pb-4 pt-1 px-1 no-scrollbar scrollbar-none snap-x snap-mandatory"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {/* MENGGUNAKAN KOMPONEN ROUTECARD DI SINI */}
               {filteredRoutes.map((route) => (
                 <RouteCard
                   key={route.id}
                   route={route}
-                  travelDate={travelDate}
                   onSelectRoute={handleSelectRoute}
                 />
               ))}

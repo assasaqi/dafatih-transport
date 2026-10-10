@@ -63,6 +63,14 @@ const Navbar = () => {
 
     const currentLogo = isHomePage && !isScrolled ? logoImg : logo2Img;
 
+    // Helper class untuk warna teks link berdasarkan halaman & scroll
+    const linkTextColor = (isActive) => {
+        if (isActive) return 'text-[#0194F3] font-black';
+        return isHomePage && !isScrolled
+            ? 'text-white hover:text-sky-300'
+            : 'text-slate-700 hover:text-[#0194F3]';
+    };
+
     return (
         <header
             className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -79,20 +87,18 @@ const Navbar = () => {
                         src={currentLogo}
                         alt="Dafatih Transport Logo"
                         className={`w-auto object-contain transition-all duration-300 group-hover:scale-105 ${
-                            isScrolled || !isHomePage ? 'h-14 sm:h-24 lg:h-24' : 'h-24 sm:h-24 lg:h-24'
+                            isScrolled || !isHomePage ? 'h-14 sm:h-20 lg:h-20' : 'h-20 sm:h-24 lg:h-24'
                         }`}
                     />
                 </NavLink>
 
-                {/* Desktop Navigasi Utama */}
-                <nav className="hidden xl:flex items-center gap-2 bg-white/80 backdrop-blur-md px-5 py-2 rounded-2xl border border-white/60 shadow-xs">
+                {/* Desktop Navigasi Utama (Background dihapus) */}
+                <nav className="hidden xl:flex items-center gap-6 px-2 py-2">
                     <NavLink
                         to="/"
                         end
                         className={({ isActive }) =>
-                            `px-3 py-1.5 text-xs sm:text-sm font-bold transition-all ${
-                                isActive ? 'text-[#0194F3]' : 'text-slate-700 hover:text-[#0194F3]'
-                            }`
+                            `text-xs sm:text-sm font-bold transition-colors ${linkTextColor(isActive)}`
                         }
                     >
                         Beranda
@@ -100,9 +106,7 @@ const Navbar = () => {
                     <NavLink
                         to="/mobil"
                         className={({ isActive }) =>
-                            `px-3 py-1.5 text-xs sm:text-sm font-bold transition-all ${
-                                isActive ? 'text-[#0194F3]' : 'text-slate-700 hover:text-[#0194F3]'
-                            }`
+                            `text-xs sm:text-sm font-bold transition-colors ${linkTextColor(isActive)}`
                         }
                     >
                         Armada
@@ -110,9 +114,7 @@ const Navbar = () => {
                     <NavLink
                         to="/tarif"
                         className={({ isActive }) =>
-                            `px-3 py-1.5 text-xs sm:text-sm font-bold transition-all ${
-                                isActive ? 'text-[#0194F3]' : 'text-slate-700 hover:text-[#0194F3]'
-                            }`
+                            `text-xs sm:text-sm font-bold transition-colors ${linkTextColor(isActive)}`
                         }
                     >
                         Rute &amp; Tarif
@@ -120,9 +122,7 @@ const Navbar = () => {
                     <NavLink
                         to="/galeri"
                         className={({ isActive }) =>
-                            `px-3 py-1.5 text-xs sm:text-sm font-bold transition-all ${
-                                isActive ? 'text-[#0194F3]' : 'text-slate-700 hover:text-[#0194F3]'
-                            }`
+                            `text-xs sm:text-sm font-bold transition-colors ${linkTextColor(isActive)}`
                         }
                     >
                         Galeri
@@ -130,12 +130,18 @@ const Navbar = () => {
                     <NavLink
                         to="/blog"
                         className={({ isActive }) =>
-                            `px-3 py-1.5 text-xs sm:text-sm font-bold transition-all ${
-                                isActive ? 'text-[#0194F3]' : 'text-slate-700 hover:text-[#0194F3]'
-                            }`
+                            `text-xs sm:text-sm font-bold transition-colors ${linkTextColor(isActive)}`
                         }
                     >
                         Blog
+                    </NavLink>
+                    <NavLink
+                        to="/pesan"
+                        className={({ isActive }) =>
+                            `text-xs sm:text-sm font-bold transition-colors ${linkTextColor(isActive)}`
+                        }
+                    >
+                        Pesanan
                     </NavLink>
                 </nav>
 
@@ -146,22 +152,28 @@ const Navbar = () => {
                             <button
                                 type="button"
                                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                                className="flex items-center gap-2.5 bg-white/90 hover:bg-white backdrop-blur-md border border-slate-200/90 pl-2 pr-3 py-1.5 rounded-2xl shadow-xs transition-all cursor-pointer"
+                                className={`flex items-center gap-2.5 backdrop-blur-md border pl-2 pr-3 py-1.5 rounded-2xl shadow-xs transition-all cursor-pointer ${
+                                    isHomePage && !isScrolled
+                                        ? 'bg-black/30 hover:bg-black/40 border-white/30 text-white'
+                                        : 'bg-white/90 hover:bg-white border-slate-200/90 text-slate-900'
+                                }`}
                             >
                                 <div className="w-8 h-8 bg-[#0194F3] text-white rounded-xl flex items-center justify-center font-black text-xs shadow-xs">
                                     {clientUser.name ? clientUser.name.charAt(0).toUpperCase() : 'U'}
                                 </div>
                                 <div className="text-left hidden sm:block">
-                                    <p className="text-xs font-extrabold text-slate-900 leading-none">
+                                    <p className={`text-xs font-extrabold leading-none ${
+                                        isHomePage && !isScrolled ? 'text-white' : 'text-slate-900'
+                                    }`}>
                                         {clientUser.name?.split(' ')[0]}
                                     </p>
-                                    <span className="text-[9px] font-bold text-emerald-600 block mt-0.5">
+                                    <span className="text-[9px] font-bold text-emerald-400 block mt-0.5">
                                         • Sesi Aktif
                                     </span>
                                 </div>
-                                <i className={`fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-200 ${
-                                    isProfileMenuOpen ? 'rotate-180' : ''
-                                }`}></i>
+                                <i className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-200 ${
+                                    isHomePage && !isScrolled ? 'text-white/70' : 'text-slate-400'
+                                } ${isProfileMenuOpen ? 'rotate-180' : ''}`}></i>
                             </button>
 
                             {/* Dropdown Menu Desktop */}
@@ -176,15 +188,6 @@ const Navbar = () => {
                                             >
                                                 <i className="fa-regular fa-user text-sm text-[#0194F3] w-5 text-center"></i>
                                                 <span>Edit Profil Saya</span>
-                                            </Link>
-                                            {/* LINK RIWAYAT BOOKING DESKTOP */}
-                                            <Link
-                                                to="/riwayat-booking"
-                                                onClick={() => setIsProfileMenuOpen(false)}
-                                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors"
-                                            >
-                                                <i className="fa-solid fa-receipt text-sm text-[#0194F3] w-5 text-center"></i>
-                                                <span>Pesanan Saya</span>
                                             </Link>
                                             <Link
                                                 to="/payments"
@@ -239,7 +242,11 @@ const Navbar = () => {
                             <button
                                 type="button"
                                 onClick={() => navigate('/login')}
-                                className="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 hover:text-[#0194F3] hover:bg-slate-100/80 transition-all cursor-pointer flex items-center gap-1.5"
+                                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                    isHomePage && !isScrolled
+                                        ? 'text-white hover:text-sky-300 hover:bg-white/10'
+                                        : 'text-slate-700 hover:text-[#0194F3] hover:bg-slate-100/80'
+                                }`}
                             >
                                 <i className="fa-solid fa-right-to-bracket text-xs"></i>
                                 <span>Login</span>
@@ -260,7 +267,11 @@ const Navbar = () => {
                 <button
                     type="button"
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="xl:hidden text-slate-700 hover:text-[#0194F3] text-xl p-2 rounded-xl cursor-pointer transition-colors"
+                    className={`xl:hidden text-xl p-2 rounded-xl cursor-pointer transition-colors ${
+                        isHomePage && !isScrolled && !isMobileMenuOpen
+                            ? 'text-white hover:text-sky-300'
+                            : 'text-slate-700 hover:text-[#0194F3]'
+                    }`}
                 >
                     <i className={`fa-solid ${isMobileMenuOpen ? 'fa-xmark' : 'fa-bars'}`}></i>
                 </button>
@@ -323,12 +334,24 @@ const Navbar = () => {
                         >
                             Blog
                         </NavLink>
+                        <NavLink
+                            to="/pesan"
+                            className={({ isActive }) =>
+                                `px-3 py-2 rounded-xl text-sm font-bold transition-all ${
+                                    isActive ? 'bg-sky-50 text-[#0194F3]' : 'text-slate-700 hover:bg-slate-50'
+                                }`
+                            }
+                        >
+                            Pesanan
+                        </NavLink>
                     </div>
 
                     <div className="pt-3 border-t border-slate-100">
                         {clientUser ? (
                             <div className="space-y-1">
-                                <p className="px-3 text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">Akun Saya ({clientUser.name?.split(' ')[0]})</p>
+                                <p className="px-3 text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">
+                                    Akun Saya ({clientUser.name?.split(' ')[0]})
+                                </p>
 
                                 <Link
                                     to="/profile/edit"
@@ -337,16 +360,6 @@ const Navbar = () => {
                                 >
                                     <i className="fa-regular fa-user text-[#0194F3] w-4 text-center"></i>
                                     <span>Edit Profil Saya</span>
-                                </Link>
-
-                                {/* LINK RIWAYAT BOOKING MOBILE */}
-                                <Link
-                                    to="/riwayat-booking"
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className="flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 rounded-xl"
-                                >
-                                    <i className="fa-solid fa-receipt text-[#0194F3] w-4 text-center"></i>
-                                    <span>Pesanan Saya</span>
                                 </Link>
 
                                 <Link
