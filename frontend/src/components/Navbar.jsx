@@ -103,22 +103,22 @@ const Navbar = () => {
                     >
                         Beranda
                     </NavLink>
-                    <NavLink
+                    {/* <NavLink
                         to="/mobil"
                         className={({ isActive }) =>
                             `text-xs sm:text-sm font-bold transition-colors ${linkTextColor(isActive)}`
                         }
                     >
                         Armada
-                    </NavLink>
-                    <NavLink
+                    </NavLink> */}
+                    {/* <NavLink
                         to="/tarif"
                         className={({ isActive }) =>
                             `text-xs sm:text-sm font-bold transition-colors ${linkTextColor(isActive)}`
                         }
                     >
                         Rute &amp; Tarif
-                    </NavLink>
+                    </NavLink> */}
                     <NavLink
                         to="/galeri"
                         className={({ isActive }) =>
