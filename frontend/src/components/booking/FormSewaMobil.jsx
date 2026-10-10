@@ -19,7 +19,7 @@ const FormSewaMobil = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [pricePerDay, setPricePerDay] = useState(0);
 
-  // Initial Form State (pickupTime & duration diset '' agar tidak otomatis terisi)
+  // Initial Form State
   const initialForm = {
     custName: '',
     custWa: '',
@@ -29,7 +29,7 @@ const FormSewaMobil = () => {
     pickupDate: '',
     pickupTime: '',
     pickupLoc: '',
-    duration: '', // Diubah dari '1 Hari' ke '' agar opsional/dipilih pengguna
+    duration: '',
     price: 0
   };
 
@@ -38,6 +38,7 @@ const FormSewaMobil = () => {
   const [isArmadaOpen, setIsArmadaOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
+  const [isDurationOpen, setIsDurationOpen] = useState(false);
 
   const [selectedHour, setSelectedHour] = useState('08');
   const [selectedMinute, setSelectedMinute] = useState('00');
@@ -49,6 +50,7 @@ const FormSewaMobil = () => {
   const armadaRef = useRef(null);
   const calendarRef = useRef(null);
   const timePickerRef = useRef(null);
+  const durationRef = useRef(null);
 
   const hoursList = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const minutesList = ['00', '15', '30', '45'];
@@ -118,6 +120,7 @@ const FormSewaMobil = () => {
       if (armadaRef.current && !armadaRef.current.contains(e.target)) setIsArmadaOpen(false);
       if (calendarRef.current && !calendarRef.current.contains(e.target)) setIsCalendarOpen(false);
       if (timePickerRef.current && !timePickerRef.current.contains(e.target)) setIsTimePickerOpen(false);
+      if (durationRef.current && !durationRef.current.contains(e.target)) setIsDurationOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -128,6 +131,10 @@ const FormSewaMobil = () => {
     setSelectedHour('08');
     setSelectedMinute('00');
     setPricePerDay(0);
+    setIsArmadaOpen(false);
+    setIsCalendarOpen(false);
+    setIsTimePickerOpen(false);
+    setIsDurationOpen(false);
     navigate(location.pathname, { replace: true, state: {} });
   };
 
@@ -146,15 +153,15 @@ const FormSewaMobil = () => {
     setIsArmadaOpen(false);
   };
 
-  const handleDurationChange = (e) => {
-    const newDuration = e.target.value;
-    const durNum = parseInt(newDuration) || 0;
+  const handleSelectDuration = (opt) => {
+    const durNum = parseInt(opt) || 0;
 
     setFormData((prev) => ({
       ...prev,
-      duration: newDuration,
+      duration: opt,
       price: pricePerDay > 0 && durNum > 0 ? pricePerDay * durNum : prev.price
     }));
+    setIsDurationOpen(false);
   };
 
   const generateCalendarDays = () => {
@@ -205,6 +212,7 @@ const FormSewaMobil = () => {
     setIsTimePickerOpen(!isTimePickerOpen);
     setIsArmadaOpen(false);
     setIsCalendarOpen(false);
+    setIsDurationOpen(false);
   };
 
   const handleApplyTime = () => {
@@ -413,6 +421,7 @@ const FormSewaMobil = () => {
                 setIsArmadaOpen(!isArmadaOpen);
                 setIsCalendarOpen(false);
                 setIsTimePickerOpen(false);
+                setIsDurationOpen(false);
               }}
               className={`border rounded-xl p-2.5 sm:p-3 bg-white flex items-center justify-between cursor-pointer transition-all ${
                 isArmadaOpen
@@ -487,6 +496,7 @@ const FormSewaMobil = () => {
                 setIsCalendarOpen(!isCalendarOpen);
                 setIsArmadaOpen(false);
                 setIsTimePickerOpen(false);
+                setIsDurationOpen(false);
               }}
               className={`border rounded-xl p-2.5 sm:p-3 bg-white flex items-center justify-between cursor-pointer transition-all ${
                 isCalendarOpen
@@ -513,90 +523,99 @@ const FormSewaMobil = () => {
               ></i>
             </div>
 
+            {/* MODAL KALENDER TERPUSAT DI MOBILE */}
             {isCalendarOpen && (
-              <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[60] p-4">
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentCalendarMonth(
-                        new Date(
-                          currentCalendarMonth.getFullYear(),
-                          currentCalendarMonth.getMonth() - 1,
-                          1
-                        )
-                      );
-                    }}
-                    className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors"
-                  >
-                    <i className="fa-solid fa-chevron-left text-xs"></i>
-                  </button>
-                  <span className="text-xs font-bold text-slate-800">
-                    {currentCalendarMonth.toLocaleDateString('id-ID', {
-                      month: 'long',
-                      year: 'numeric'
-                    })}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCurrentCalendarMonth(
-                        new Date(
-                          currentCalendarMonth.getFullYear(),
-                          currentCalendarMonth.getMonth() + 1,
-                          1
-                        )
-                      );
-                    }}
-                    className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors"
-                  >
-                    <i className="fa-solid fa-chevron-right text-xs"></i>
-                  </button>
-                </div>
-                <div className="grid grid-cols-7 text-center mb-1">
-                  {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((dayName, idx) => (
-                    <span key={idx} className="text-[10px] font-bold text-slate-400">
-                      {dayName}
-                    </span>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-1 text-center">
-                  {calendarDays.map((dateObj, idx) => {
-                    if (!dateObj) return <div key={idx} className="h-8" />;
-                    const isoStr = formatDateToISO(dateObj);
-                    const isSelected = isoStr === formData.pickupDate;
-                    const isPast =
-                      dateObj <
-                      new Date(
-                        todayObj.getFullYear(),
-                        todayObj.getMonth(),
-                        todayObj.getDate()
-                      );
-                    return (
+              <>
+                <div
+                  className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[70] sm:hidden"
+                  onClick={() => setIsCalendarOpen(false)}
+                />
+                <div className="fixed inset-0 sm:inset-auto sm:absolute sm:left-0 sm:top-full sm:mt-2 z-[75] flex items-center justify-center sm:block p-4 sm:p-0 pointer-events-none sm:pointer-events-auto">
+                  <div className="w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 pointer-events-auto">
+                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
                       <button
-                        key={idx}
                         type="button"
-                        disabled={isPast}
-                        onClick={() => {
-                          setFormData((prev) => ({ ...prev, pickupDate: isoStr }));
-                          setIsCalendarOpen(false);
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentCalendarMonth(
+                            new Date(
+                              currentCalendarMonth.getFullYear(),
+                              currentCalendarMonth.getMonth() - 1,
+                              1
+                            )
+                          );
                         }}
-                        className={`h-8 rounded-lg text-xs font-bold flex items-center justify-center cursor-pointer transition-colors ${
-                          isSelected
-                            ? 'bg-[#0194F3] text-white shadow-sm'
-                            : isPast
-                            ? 'text-slate-300 cursor-not-allowed'
-                            : 'text-slate-700 hover:bg-sky-50 hover:text-[#0194F3]'
-                        }`}
+                        className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
                       >
-                        {dateObj.getDate()}
+                        <i className="fa-solid fa-chevron-left text-xs"></i>
                       </button>
-                    );
-                  })}
+                      <span className="text-xs font-bold text-slate-800">
+                        {currentCalendarMonth.toLocaleDateString('id-ID', {
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentCalendarMonth(
+                            new Date(
+                              currentCalendarMonth.getFullYear(),
+                              currentCalendarMonth.getMonth() + 1,
+                              1
+                            )
+                          );
+                        }}
+                        className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+                      >
+                        <i className="fa-solid fa-chevron-right text-xs"></i>
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-7 text-center mb-1">
+                      {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((dayName, idx) => (
+                        <span key={idx} className="text-[10px] font-bold text-slate-400">
+                          {dayName}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 text-center">
+                      {calendarDays.map((dateObj, idx) => {
+                        if (!dateObj) return <div key={idx} className="h-8" />;
+                        const isoStr = formatDateToISO(dateObj);
+                        const isSelected = isoStr === formData.pickupDate;
+                        const isPast =
+                          dateObj <
+                          new Date(
+                            todayObj.getFullYear(),
+                            todayObj.getMonth(),
+                            todayObj.getDate()
+                          );
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            disabled={isPast}
+                            onClick={() => {
+                              setFormData((prev) => ({ ...prev, pickupDate: isoStr }));
+                              setIsCalendarOpen(false);
+                            }}
+                            className={`h-8 rounded-lg text-xs font-bold flex items-center justify-center cursor-pointer transition-colors ${
+                              isSelected
+                                ? 'bg-[#0194F3] text-white shadow-sm'
+                                : isPast
+                                ? 'text-slate-300 cursor-not-allowed'
+                                : 'text-slate-700 hover:bg-sky-50 hover:text-[#0194F3]'
+                            }`}
+                          >
+                            {dateObj.getDate()}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
 
@@ -630,106 +649,145 @@ const FormSewaMobil = () => {
               ></i>
             </div>
 
+            {/* MODAL PEMILIH WAKTU TERPUSAT DI MOBILE */}
             {isTimePickerOpen && (
-              <div className="absolute right-0 sm:left-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[60] p-4">
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-                  <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                    <i className="fa-regular fa-clock text-[#0194F3]"></i> Pilih Jam
-                  </span>
-                  <span className="text-[11px] font-bold text-[#0194F3] bg-sky-50 px-2 py-0.5 rounded-md">
-                    {selectedHour}:{selectedMinute}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-400 text-center uppercase">
-                      Jam
-                    </span>
-                    <div className="h-36 overflow-y-auto border border-slate-200 rounded-xl p-1 bg-slate-50/50 space-y-1">
-                      {hoursList.map((h) => (
-                        <button
-                          key={h}
-                          type="button"
-                          onClick={() => setSelectedHour(h)}
-                          className={`w-full py-1 rounded-lg text-xs font-bold text-center transition-colors ${
-                            selectedHour === h
-                              ? 'bg-[#0194F3] text-white'
-                              : 'text-slate-700 hover:bg-sky-100'
-                          }`}
-                        >
-                          {h}
-                        </button>
-                      ))}
+              <>
+                <div
+                  className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[70] sm:hidden"
+                  onClick={() => setIsTimePickerOpen(false)}
+                />
+                <div className="fixed inset-0 sm:inset-auto sm:absolute sm:right-0 sm:left-auto sm:top-full sm:mt-2 z-[75] flex items-center justify-center sm:block p-4 sm:p-0 pointer-events-none sm:pointer-events-auto">
+                  <div className="w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 pointer-events-auto">
+                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+                      <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                        <i className="fa-regular fa-clock text-[#0194F3]"></i> Pilih Jam
+                      </span>
+                      <span className="text-[11px] font-bold text-[#0194F3] bg-sky-50 px-2 py-0.5 rounded-md">
+                        {selectedHour}:{selectedMinute}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-bold text-slate-400 text-center uppercase">
+                          Jam
+                        </span>
+                        <div className="h-36 overflow-y-auto border border-slate-200 rounded-xl p-1 bg-slate-50/50 space-y-1">
+                          {hoursList.map((h) => (
+                            <button
+                              key={h}
+                              type="button"
+                              onClick={() => setSelectedHour(h)}
+                              className={`w-full py-1 rounded-lg text-xs font-bold text-center transition-colors ${
+                                selectedHour === h
+                                  ? 'bg-[#0194F3] text-white'
+                                  : 'text-slate-700 hover:bg-sky-100'
+                              }`}
+                            >
+                              {h}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-bold text-slate-400 text-center uppercase">
+                          Menit
+                        </span>
+                        <div className="h-36 border border-slate-200 rounded-xl p-1 bg-slate-50/50 space-y-1">
+                          {minutesList.map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => setSelectedMinute(m)}
+                              className={`w-full py-1.5 rounded-lg text-xs font-bold text-center transition-colors ${
+                                selectedMinute === m
+                                  ? 'bg-[#0194F3] text-white'
+                                  : 'text-slate-700 hover:bg-sky-100'
+                              }`}
+                            >
+                              {m}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => setIsTimePickerOpen(false)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100 transition-colors"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleApplyTime}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0194F3] text-white hover:bg-sky-600 transition-colors"
+                      >
+                        Pilih
+                      </button>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-400 text-center uppercase">
-                      Menit
-                    </span>
-                    <div className="h-36 border border-slate-200 rounded-xl p-1 bg-slate-50/50 space-y-1">
-                      {minutesList.map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => setSelectedMinute(m)}
-                          className={`w-full py-1.5 rounded-lg text-xs font-bold text-center transition-colors ${
-                            selectedMinute === m
-                              ? 'bg-[#0194F3] text-white'
-                              : 'text-slate-700 hover:bg-sky-100'
-                          }`}
-                        >
-                          {m}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setIsTimePickerOpen(false)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100 transition-colors"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleApplyTime}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#0194F3] text-white hover:bg-sky-600 transition-colors"
-                  >
-                    Pilih
-                  </button>
-                </div>
-              </div>
+              </>
             )}
           </div>
 
-          {/* DURASI RENTAL (HARI) */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          {/* DURASI RENTAL (HARI) - CUSTOM DROPDOWN */}
+          <div className="relative" ref={durationRef}>
+            <label className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">
               Durasi Rental *
             </label>
-            <div className="relative flex items-center">
-              <i className="fa-solid fa-clock-rotate-left absolute left-3.5 text-[#0194F3] text-xs pointer-events-none"></i>
-              <select
-                name="duration"
-                value={formData.duration}
-                onChange={handleDurationChange}
-                className={`w-full h-11 pl-9 pr-8 bg-white rounded-xl border text-xs sm:text-sm font-semibold outline-none focus:border-[#0194F3] focus:ring-2 focus:ring-sky-100 cursor-pointer appearance-none transition-all ${
-                  formData.duration ? 'text-slate-900 border-slate-300' : 'text-slate-400 border-slate-300'
+            <div
+              onClick={() => {
+                setIsDurationOpen(!isDurationOpen);
+                setIsArmadaOpen(false);
+                setIsCalendarOpen(false);
+                setIsTimePickerOpen(false);
+              }}
+              className={`border rounded-xl p-2.5 sm:p-3 bg-white flex items-center justify-between cursor-pointer transition-all ${
+                isDurationOpen
+                  ? 'border-[#0194F3] ring-2 ring-sky-100'
+                  : 'border-slate-300 hover:border-slate-400'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <i className="fa-solid fa-clock-rotate-left text-[#0194F3] text-sm shrink-0"></i>
+                <span
+                  className={`text-xs sm:text-sm font-semibold truncate ${
+                    formData.duration ? 'text-slate-900' : 'text-slate-400'
+                  }`}
+                >
+                  {formData.duration || 'Pilih Durasi'}
+                </span>
+              </div>
+              <i
+                className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${
+                  isDurationOpen ? 'rotate-180 text-[#0194F3]' : ''
                 }`}
-              >
-                <option value="" disabled hidden>
-                  Pilih Durasi
-                </option>
-                {durationOptions.map((opt) => (
-                  <option key={opt} value={opt} className="text-slate-800 font-medium">
-                    {opt}
-                  </option>
-                ))}
-              </select>
-              <i className="fa-solid fa-chevron-down absolute right-3.5 text-slate-400 text-xs pointer-events-none"></i>
+              ></i>
             </div>
+
+            {isDurationOpen && (
+              <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden">
+                <div className="max-h-56 overflow-y-auto py-1">
+                  {durationOptions.map((opt) => {
+                    const isSelected = formData.duration === opt;
+                    return (
+                      <div
+                        key={opt}
+                        onClick={() => handleSelectDuration(opt)}
+                        className={`px-3.5 py-2.5 text-xs font-semibold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
+                          isSelected ? 'text-[#0194F3] bg-sky-50/50 font-bold' : 'text-slate-700'
+                        }`}
+                      >
+                        <span>{opt}</span>
+                        {isSelected && <i className="fa-solid fa-check text-xs text-[#0194F3]"></i>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

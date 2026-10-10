@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CustomCalendar from '../common/CustomCalendar';
 
 const AirportSearchForm = ({
   routes = [],
@@ -8,6 +7,8 @@ const AirportSearchForm = ({
   formatDisplayDate
 }) => {
   const navigate = useNavigate();
+
+  const todayObj = new Date();
 
   const [pickupInput, setPickupInput] = useState('');
   const [dropoffInput, setDropoffInput] = useState('');
@@ -20,10 +21,35 @@ const AirportSearchForm = ({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isPassengerOpen, setIsPassengerOpen] = useState(false);
 
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(
+    new Date(todayObj.getFullYear(), todayObj.getMonth(), 1)
+  );
+
   const pickupRef = useRef(null);
   const dropoffRef = useRef(null);
   const calendarRef = useRef(null);
   const passengerRef = useRef(null);
+
+  const formatDateToISO = (dateObj) => {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const generateCalendarDays = () => {
+    const year = currentCalendarMonth.getFullYear();
+    const month = currentCalendarMonth.getMonth();
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const days = [];
+    for (let i = 0; i < firstDayOfMonth; i++) days.push(null);
+    for (let d = 1; d <= daysInMonth; d++) days.push(new Date(year, month, d));
+    return days;
+  };
+
+  const calendarDays = generateCalendarDays();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -84,12 +110,15 @@ const AirportSearchForm = ({
     if (dateStr instanceof Date) {
       return dateStr.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
     }
+    const [y, m, d] = String(dateStr).split('-');
+    if (y && m && d) {
+      return new Date(Number(y), Number(m) - 1, Number(d)).toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
     return String(dateStr);
-  };
-
-  const handleSelectDate = (date) => {
-    setTravelDate(date);
-    setIsCalendarOpen(false);
   };
 
   const handleSubmit = (e) => {
@@ -270,12 +299,101 @@ const AirportSearchForm = ({
           </div>
         </div>
 
+        {/* MODAL KALENDER TERPUSAT DI MOBILE */}
         {isCalendarOpen && (
-          <CustomCalendar
-            selectedDate={travelDate}
-            onSelectDate={handleSelectDate}
-            onClose={() => setIsCalendarOpen(false)}
-          />
+          <>
+            <div
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[70] sm:hidden"
+              onClick={() => setIsCalendarOpen(false)}
+            />
+            <div className="fixed inset-0 sm:inset-auto sm:absolute sm:left-0 sm:top-full sm:mt-2 z-[75] flex items-center justify-center sm:block p-4 sm:p-0 pointer-events-none sm:pointer-events-auto">
+              <div className="w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 pointer-events-auto">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentCalendarMonth(
+                        new Date(
+                          currentCalendarMonth.getFullYear(),
+                          currentCalendarMonth.getMonth() - 1,
+                          1
+                        )
+                      );
+                    }}
+                    className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+                  >
+                    <i className="fa-solid fa-chevron-left text-xs"></i>
+                  </button>
+                  <span className="text-xs font-bold text-slate-800">
+                    {currentCalendarMonth.toLocaleDateString('id-ID', {
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentCalendarMonth(
+                        new Date(
+                          currentCalendarMonth.getFullYear(),
+                          currentCalendarMonth.getMonth() + 1,
+                          1
+                        )
+                      );
+                    }}
+                    className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors cursor-pointer"
+                  >
+                    <i className="fa-solid fa-chevron-right text-xs"></i>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-7 text-center mb-1">
+                  {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((dayName, idx) => (
+                    <span key={idx} className="text-[10px] font-bold text-slate-400">
+                      {dayName}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-7 gap-1 text-center">
+                  {calendarDays.map((dateObj, idx) => {
+                    if (!dateObj) return <div key={idx} className="h-8" />;
+                    const isoStr = formatDateToISO(dateObj);
+                    const isSelected = isoStr === travelDate;
+                    const isPast =
+                      dateObj <
+                      new Date(
+                        todayObj.getFullYear(),
+                        todayObj.getMonth(),
+                        todayObj.getDate()
+                      );
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        disabled={isPast}
+                        onClick={() => {
+                          setTravelDate(isoStr);
+                          setIsCalendarOpen(false);
+                        }}
+                        className={`h-8 rounded-lg text-xs font-bold flex items-center justify-center cursor-pointer transition-colors ${
+                          isSelected
+                            ? 'bg-[#0194F3] text-white shadow-sm'
+                            : isPast
+                            ? 'text-slate-300 cursor-not-allowed'
+                            : 'text-slate-700 hover:bg-sky-50 hover:text-[#0194F3]'
+                        }`}
+                      >
+                        {dateObj.getDate()}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

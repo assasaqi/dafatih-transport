@@ -152,7 +152,7 @@ const Home = () => {
   return (
     <div className="bg-[#F2F4F7] text-slate-800 min-h-screen">
       {/* HERO SECTION */}
-      <section className="relative min-h-[480px] md:min-h-[520px] flex items-center justify-center px-4 py-12 md:py-20 bg-slate-900 pt-20 sm:pt-24">
+      <section className="relative min-h-[480px] md:min-h-[520px] flex items-center justify-center px-3.5 sm:px-6 py-10 md:py-20 bg-slate-900 pt-20 sm:pt-24">
         <div className="absolute inset-0 z-0 overflow-hidden">
           {heroSlides.length > 0 ? (
             heroSlides.map((imagePath, index) => (
@@ -174,13 +174,98 @@ const Home = () => {
         </div>
 
         <div className="relative z-10 w-full max-w-6xl mx-auto">
-          <h1 className="text-center text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-8 drop-shadow-lg tracking-tight leading-snug">
+          <h1 className="text-center text-white text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-6 sm:mb-8 drop-shadow-lg tracking-tight leading-snug">
             Pilihan Terbaik Jelajahi Keindahan Lombok
           </h1>
 
-          <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-2xl border border-white/20 relative z-20">
-            {/* TAB NAVIGATION */}
-            <div className="flex gap-2 border-b border-slate-200 pb-3.5 mb-5 overflow-x-auto">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-2xl border border-slate-200/80 relative z-20">
+
+            {/* ======================================================== */}
+            {/* 1. TAB NAVIGASI KHUSUS MOBILE (IKON CIRCLE ALA PROFIL)    */}
+            {/* ======================================================== */}
+            <div className="block md:hidden bg-white rounded-2xl p-1 mb-4">
+              <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-2.5 px-1">
+                Pilih Layanan
+              </p>
+              <div className="grid grid-cols-3 gap-x-2 text-center items-start justify-items-center">
+                {/* TAB ANTAR-JEMPUT */}
+                <button
+                  type="button"
+                  onClick={() => handleTabClick('airport')}
+                  className="flex flex-col items-center group w-full cursor-pointer"
+                >
+                  <div
+                    className={`w-11 h-11 rounded-full flex items-center justify-center text-base transition-all mb-1 shrink-0 ${
+                      activeTab === 'airport'
+                        ? 'bg-[#0194F3] text-white shadow-md shadow-sky-500/20 scale-105'
+                        : 'bg-sky-50 text-[#0194F3] border border-sky-100 hover:bg-sky-100/80'
+                    }`}
+                  >
+                    <i className="fa-solid fa-plane-departure"></i>
+                  </div>
+                  <span
+                    className={`text-[10px] leading-tight truncate w-full px-0.5 ${
+                      activeTab === 'airport' ? 'font-extrabold text-[#0194F3]' : 'font-bold text-slate-700'
+                    }`}
+                  >
+                    Antar-Jemput
+                  </span>
+                </button>
+
+                {/* TAB SEWA MOBIL */}
+                <button
+                  type="button"
+                  onClick={() => handleTabClick('rental')}
+                  className="flex flex-col items-center group w-full cursor-pointer"
+                >
+                  <div
+                    className={`w-11 h-11 rounded-full flex items-center justify-center text-base transition-all mb-1 shrink-0 ${
+                      activeTab === 'rental'
+                        ? 'bg-[#0194F3] text-white shadow-md shadow-sky-500/20 scale-105'
+                        : 'bg-sky-50 text-[#0194F3] border border-sky-100 hover:bg-sky-100/80'
+                    }`}
+                  >
+                    <i className="fa-solid fa-car-side"></i>
+                  </div>
+                  <span
+                    className={`text-[10px] leading-tight truncate w-full px-0.5 ${
+                      activeTab === 'rental' ? 'font-extrabold text-[#0194F3]' : 'font-bold text-slate-700'
+                    }`}
+                  >
+                    Sewa Mobil
+                  </span>
+                </button>
+
+                {/* TAB PAKET TOUR */}
+                <button
+                  type="button"
+                  onClick={() => handleTabClick('tour')}
+                  className="flex flex-col items-center group w-full cursor-pointer"
+                >
+                  <div
+                    className={`w-11 h-11 rounded-full flex items-center justify-center text-base transition-all mb-1 shrink-0 ${
+                      activeTab === 'tour'
+                        ? 'bg-[#0194F3] text-white shadow-md shadow-sky-500/20 scale-105'
+                        : 'bg-sky-50 text-[#0194F3] border border-sky-100 hover:bg-sky-100/80'
+                    }`}
+                  >
+                    <i className="fa-solid fa-map-location-dot"></i>
+                  </div>
+                  <span
+                    className={`text-[10px] leading-tight truncate w-full px-0.5 ${
+                      activeTab === 'tour' ? 'font-extrabold text-[#0194F3]' : 'font-bold text-slate-700'
+                    }`}
+                  >
+                    Paket Tour
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* ======================================================== */}
+            {/* 2. TAB NAVIGASI KHUSUS DESKTOP / TABLET (DESAIN PILL)     */}
+            {/* ======================================================== */}
+            <div className="hidden md:flex gap-2 border-b border-slate-200 pb-3.5 mb-5 overflow-x-auto">
               <button
                 type="button"
                 className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-colors cursor-pointer ${
@@ -190,7 +275,7 @@ const Home = () => {
                 }`}
                 onClick={() => handleTabClick('airport')}
               >
-                <i className="fa-solid fa-plane-arrival"></i> Antar-Jemput
+                <i className="fa-solid fa-plane-departure"></i> Antar-Jemput
               </button>
               <button
                 type="button"
@@ -201,7 +286,7 @@ const Home = () => {
                 }`}
                 onClick={() => handleTabClick('rental')}
               >
-                <i className="fa-solid fa-car"></i> Sewa Mobil
+                <i className="fa-solid fa-car-side"></i> Sewa Mobil
               </button>
               <button
                 type="button"
@@ -212,7 +297,7 @@ const Home = () => {
                 }`}
                 onClick={() => handleTabClick('tour')}
               >
-                <i className="fa-solid fa-route"></i> Paket Tour Lombok
+                <i className="fa-solid fa-map-location-dot"></i> Paket Tour Lombok
               </button>
             </div>
 
