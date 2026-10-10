@@ -8,6 +8,7 @@ import MainLayout from '@/layouts/MainLayout';
 import Home from '@/pages/Home';
 import Tariffs from '@/pages/Tariffs';
 import Booking from '@/pages/Booking';
+import MyBookings from '@/pages/MyBookings'; // 👈 1. Impor Halaman MyBookings
 import Gallery from '@/pages/Gallery';
 import Blog from '@/pages/Blog';
 import Vehicles from '@/pages/Vehicles';
@@ -36,6 +37,7 @@ export default function AppRouter() {
             <Route path="/" element={<MainLayout><Home /></MainLayout>} />
             <Route path="/tarif" element={<MainLayout><Tariffs /></MainLayout>} />
             <Route path="/pesan" element={<MainLayout><Booking /></MainLayout>} />
+            <Route path="/pesanan-saya" element={<MainLayout><MyBookings /></MainLayout>} /> {/* 👈 2. Tambahkan Rute Pesanan Saya */}
             <Route path="/galeri" element={<MainLayout><Gallery /></MainLayout>} />
             <Route path="/blog" element={<MainLayout><Blog /></MainLayout>} />
             <Route path="/mobil" element={<MainLayout><Vehicles /></MainLayout>} />
