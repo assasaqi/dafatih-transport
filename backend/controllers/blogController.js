@@ -7,7 +7,7 @@ const deleteImageFile = (imageUrl) => {
   if (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('/uploads/')) {
     const filePath = path.join(__dirname, '..', imageUrl);
     fs.unlink(filePath, (err) => {
-      if (err) console.error('Gagal menghapus file lama:', err.message);
+      if (err && err.code !== 'ENOENT') console.error('Gagal menghapus file lama:', err.message);
     });
   }
 };
@@ -23,12 +23,14 @@ const createSlug = (text) => {
     .replace(/(^-|-$)+/g, '');
 };
 
-// Format data blog agar mendukung frontend (memiliki `image_url`)
+// Format data blog agar kompatibel dengan frontend (menyediakan `image_url` dan `imageUrl`)
 const formatBlog = (blog) => {
   if (!blog) return null;
+  const imgPath = blog.image_url || blog.imageUrl || '';
   return {
     ...blog,
-    image_url: blog.imageUrl || blog.image_url || ''
+    image_url: imgPath,
+    imageUrl: imgPath
   };
 };
 
@@ -79,9 +81,9 @@ exports.createBlog = async (req, res) => {
         slug,
         excerpt: excerpt || '',
         content,
-        imageUrl: uploadedImageUrl,
-        authorId: parsedAuthorId,
-        isPublished: parsedIsPublished
+        image_url: uploadedImageUrl,
+        author_id: parsedAuthorId,
+        is_published: parsedIsPublished
       }
     });
 
@@ -109,10 +111,10 @@ exports.updateBlog = async (req, res) => {
 
     const { title, excerpt, content, author_id, authorId, is_published, isPublished } = req.body;
 
-    // Menggunakan imageUrl sesuai dengan Prisma Client aktif
+    // Mengambil data artikel dari database menggunakan image_url
     const existing = await prisma.blog.findUnique({
       where: { id },
-      select: { imageUrl: true, title: true }
+      select: { image_url: true, title: true }
     });
 
     if (!existing) {
@@ -120,11 +122,11 @@ exports.updateBlog = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Artikel tidak ditemukan!' });
     }
 
-    let newImageUrl = existing.imageUrl;
+    let newImageUrl = existing.image_url;
     if (req.file) {
       newImageUrl = `/uploads/${req.file.filename}`;
-      if (existing.imageUrl) {
-        deleteImageFile(existing.imageUrl);
+      if (existing.image_url) {
+        deleteImageFile(existing.image_url);
       }
     }
 
@@ -140,15 +142,15 @@ exports.updateBlog = async (req, res) => {
 
     const rawIsPublished = is_published !== undefined ? is_published : isPublished;
     if (rawIsPublished !== undefined) {
-      updateData.isPublished = rawIsPublished === true || rawIsPublished === 'true' || rawIsPublished === '1' || rawIsPublished === 1;
+      updateData.is_published = rawIsPublished === true || rawIsPublished === 'true' || rawIsPublished === '1' || rawIsPublished === 1;
     }
 
     const rawAuthorId = author_id !== undefined ? author_id : authorId;
     if (rawAuthorId !== undefined) {
-      updateData.authorId = rawAuthorId && !isNaN(Number(rawAuthorId)) && Number(rawAuthorId) > 0 ? Number(rawAuthorId) : null;
+      updateData.author_id = rawAuthorId && !isNaN(Number(rawAuthorId)) && Number(rawAuthorId) > 0 ? Number(rawAuthorId) : null;
     }
 
-    updateData.imageUrl = newImageUrl;
+    updateData.image_url = newImageUrl;
 
     const updated = await prisma.blog.update({
       where: { id },
@@ -175,15 +177,15 @@ exports.deleteBlog = async (req, res) => {
 
     const existing = await prisma.blog.findUnique({
       where: { id },
-      select: { imageUrl: true }
+      select: { image_url: true }
     });
 
     if (!existing) return res.status(404).json({ success: false, message: 'Artikel tidak ditemukan!' });
 
     await prisma.blog.delete({ where: { id } });
 
-    if (existing.imageUrl) {
-      deleteImageFile(existing.imageUrl);
+    if (existing.image_url) {
+      deleteImageFile(existing.image_url);
     }
 
     res.json({ success: true, message: 'Artikel berhasil dihapus!' });
