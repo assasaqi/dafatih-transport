@@ -126,53 +126,77 @@ const Tariffs = () => {
     );
     const hasMore = currentLimit < filteredRoutes.length;
 
+    // Cek keberadaan filter aktif
+    const hasActiveFilter = Boolean(pickupFilter || dropoffFilter || searchQuery);
+
+    // Format Teks Filter Aktif
+    const formatFilterText = () => {
+        const parts = [];
+        if (pickupFilter) parts.push(pickupFilter);
+        if (dropoffFilter) parts.push(dropoffFilter);
+        if (!pickupFilter && !dropoffFilter && searchQuery) parts.push(`"${searchQuery}"`);
+        return parts.join(' ➔ ');
+    };
+
     return (
         <div className="w-full overflow-x-hidden min-h-screen bg-[#F2F4F7] text-slate-800 pt-24 sm:pt-28 pb-16">
             {/* Main Section */}
             <section className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
 
-                {/* Judul Halaman Rata Kiri */}
+                {/* Judul Halaman */}
                 <div className="mb-6">
                     <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                         Rute &amp; Tarif
                     </h1>
                 </div>
 
-                {/* Status Filter Aktif dari Home.jsx / Search Bar */}
-                {(pickupFilter || dropoffFilter || searchQuery) && (
-                    <div className="max-w-xl mx-auto mb-4 px-4 py-2.5 bg-sky-50 border border-sky-200 rounded-xl text-xs text-sky-800 flex items-center justify-between">
-                        <div>
-                            <span>Filter Aktif: </span>
-                            <span className="font-bold">
-                                {pickupFilter || dropoffFilter
-                                    ? `${pickupFilter || 'Semua Penjemputan'} ➔ ${dropoffFilter || 'Semua Tujuan'}`
-                                    : `Kata Kunci: "${searchQuery}"`}
-                            </span>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleResetFilter}
-                            className="text-sky-600 font-bold hover:underline text-[11px] cursor-pointer"
-                        >
-                            Reset Filter
-                        </button>
-                    </div>
-                )}
+                {/* BAR PENCARIAN DENGAN BADGE FILTER AKTIF DI DALAMNYA */}
+                <div className="mb-8">
+                    <div className="relative bg-white border border-slate-300/80 rounded-full px-4 sm:px-5 py-2.5 flex items-center gap-2.5 shadow-xs focus-within:border-[#0194F3] focus-within:ring-2 focus-within:ring-sky-100 transition-all">
 
-                {/* Search Bar Antar-Jemput */}
-                <div className="flex items-center gap-2.5 mb-6">
-                    <div className="relative flex items-center w-full max-w-xl mx-auto">
-                        <i className="fa-solid fa-magnifying-glass absolute left-3.5 text-slate-400 text-xs pointer-events-none"></i>
+                        <i className="fa-solid fa-magnifying-glass text-slate-400 text-sm sm:text-base shrink-0"></i>
+
+                        {/* BADGE FILTER AKTIF DI DALAM KOTAK INPUT */}
+                        {hasActiveFilter && (
+                            <div className="bg-[#f0f8ff] border border-[#bce3ff] text-[#0a355c] text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shrink-0 max-w-[200px] sm:max-w-[320px] truncate">
+                                <span className="truncate">Filter: {formatFilterText()}</span>
+                            </div>
+                        )}
+
+                        {/* INPUT PENCARIAN TEKS */}
                         <input
                             type="text"
-                            className="w-full h-10 pl-9 pr-8 rounded-full border border-slate-300 bg-white text-xs sm:text-sm text-slate-700 outline-none focus:border-[#0194F3] transition-colors shadow-xs"
-                            placeholder="Cari rute penjemputan / tujuan..."
                             value={searchQuery}
                             onChange={handleSearchChange}
+                            placeholder={hasActiveFilter ? "Cari rute lagi..." : "Cari rute penjemputan / tujuan..."}
+                            className="w-full bg-transparent text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none min-w-0"
                         />
+
+                        {/* TOMBOL CLEAR QUERY TEKS */}
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchQuery('')}
+                                className="text-slate-400 hover:text-slate-600 text-xs font-bold p-1 shrink-0"
+                            >
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        )}
+
+                        {/* TOMBOL RESET FILTER DI DALAM KOTAK INPUT */}
+                        {hasActiveFilter && (
+                            <button
+                                type="button"
+                                onClick={handleResetFilter}
+                                className="text-xs sm:text-sm text-[#0194F3] hover:text-sky-700 font-bold shrink-0 transition-colors cursor-pointer pl-2 border-l border-slate-200"
+                            >
+                                Reset Filter
+                            </button>
+                        )}
                     </div>
                 </div>
 
+                {/* INDIKATOR LOADING & ERROR */}
                 {loading && (
                     <div className="text-center py-12 text-slate-500">
                         <i className="fa-solid fa-spinner fa-spin mr-2 text-[#0194F3]"></i> Memuat tarif rute...
@@ -185,14 +209,25 @@ const Tariffs = () => {
                     </div>
                 )}
 
+                {/* HASIL KOSONG */}
                 {!loading && !error && displayedRoutes.length === 0 && (
-                    <div className="text-center py-12 text-slate-400">
-                        Tidak ada rute penjemputan yang ditemukan sesuai kriteria pencarian Anda.
+                    <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 my-6">
+                        <i className="fa-solid fa-route text-4xl text-slate-300 mb-3"></i>
+                        <p className="text-slate-600 font-bold text-sm">
+                            Tidak ada rute penjemputan yang ditemukan sesuai kriteria pencarian Anda.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={handleResetFilter}
+                            className="mt-3 text-xs bg-[#0194F3] text-white px-4 py-2 rounded-xl font-bold hover:bg-sky-600 transition-all cursor-pointer"
+                        >
+                            Tampilkan Semua Rute
+                        </button>
                     </div>
                 )}
 
+                {/* GRID KARTU RUTE */}
                 {!loading && !error && displayedRoutes.length > 0 && (
-                    /* Grid Kartu Rute */
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
                         {displayedRoutes.map((route) => (
                             <div

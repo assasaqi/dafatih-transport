@@ -61,7 +61,7 @@ const CarRentalForm = ({
     return Array.from(new Set(locs));
   }, [routes]);
 
-  // 2. Ekstrak Nama Mobil Unik (Mengambil dari field 'name' / 'nama_armada')
+  // 2. Ekstrak Nama Mobil Unik
   const uniqueArmadas = useMemo(() => {
     let rawList = [];
     if (Array.isArray(armadas) && armadas.length > 0) rawList = armadas;
@@ -78,10 +78,8 @@ const CarRentalForm = ({
 
         if (!item || typeof item !== 'object') return null;
 
-        // Abaikan data jika merupakan objek Rute Transfer
         if (item.pickup_location || item.dropoff_location) return null;
 
-        // Ambil nama mobil (Mendukung field `name` dari Halaman Mobil Anda)
         const name =
           item.name ||
           item.nama_armada ||
@@ -91,7 +89,7 @@ const CarRentalForm = ({
           item.armada_name;
 
         if (!name || typeof name !== 'string') return null;
-        if (name.includes(' - ')) return null; // Abort jika berupa Rute "A - B"
+        if (name.includes(' - ')) return null;
 
         return name.trim();
       })
@@ -103,19 +101,6 @@ const CarRentalForm = ({
   // 3. Submit Handler
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!rentalLocation) {
-      alert('Silakan pilih Lokasi Rental terlebih dahulu!');
-      return;
-    }
-    if (!armadaName) {
-      alert('Silakan pilih Nama Armada terlebih dahulu!');
-      return;
-    }
-    if (!rentalDuration) {
-      alert('Silakan pilih Durasi Rental terlebih dahulu!');
-      return;
-    }
 
     const formData = {
       type: 'rental',
@@ -146,6 +131,14 @@ const CarRentalForm = ({
     >
       {/* 1. LOKASI RENTAL */}
       <div className="relative" ref={rentalLocRef}>
+        <input
+          type="text"
+          className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
+          required
+          value={rentalLocation}
+          onChange={() => {}}
+          tabIndex={-1}
+        />
         <div
           onClick={() => {
             const nextState = !isRentalLocOpen;
@@ -233,6 +226,14 @@ const CarRentalForm = ({
 
       {/* 2. NAMA ARMADA */}
       <div className="relative" ref={armadaRef}>
+        <input
+          type="text"
+          className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
+          required
+          value={armadaName}
+          onChange={() => {}}
+          tabIndex={-1}
+        />
         <div
           onClick={() => {
             const nextState = !isArmadaOpen;
@@ -315,6 +316,14 @@ const CarRentalForm = ({
 
       {/* 3. DURASI RENTAL */}
       <div className="relative" ref={rentalDurRef}>
+        <input
+          type="text"
+          className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
+          required
+          value={rentalDuration}
+          onChange={() => {}}
+          tabIndex={-1}
+        />
         <div
           onClick={() => {
             const nextState = !isRentalDurOpen;

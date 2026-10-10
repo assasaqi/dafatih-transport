@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { getRoutes, createBooking } from '@/services/api';
 
 const FormAntarJemput = () => {
@@ -50,6 +51,22 @@ const FormAntarJemput = () => {
 
   const hoursList = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const minutesList = ['00', '15', '30', '45'];
+
+  // Helper untuk notifikasi SweetAlert2 yang ringkas & responsif di mobile
+  const showAlert = (message, icon = 'warning') => {
+    Swal.fire({
+      toast: true,
+      position: 'top',
+      icon: icon,
+      title: message,
+      showConfirmButton: false,
+      timer: 2500,
+      timerProgressBar: true,
+      customClass: {
+        popup: 'rounded-xl shadow-md border border-slate-200 text-xs font-bold text-slate-800 bg-white'
+      }
+    });
+  };
 
   useEffect(() => {
     getRoutes()
@@ -202,15 +219,15 @@ const FormAntarJemput = () => {
 
     const token = localStorage.getItem('token') || localStorage.getItem('clientToken');
     if (!token) {
-      alert('Silakan login terlebih dahulu untuk melakukan pemesanan!');
+      showAlert('Silakan login terlebih dahulu untuk melakukan pemesanan!', 'info');
       navigate('/login');
       return;
     }
 
-    if (!formData.pickupLoc) return alert('Silakan pilih lokasi penjemputan!');
-    if (!formData.dropLoc) return alert('Silakan pilih lokasi tujuan terlebih dahulu!');
-    if (!formData.pickupDate) return alert('Silakan pilih tanggal!');
-    if (!formData.pickupTime) return alert('Silakan pilih waktu!');
+    if (!formData.pickupLoc) return showAlert('Silakan pilih lokasi penjemputan!');
+    if (!formData.dropLoc) return showAlert('Silakan pilih lokasi tujuan terlebih dahulu!');
+    if (!formData.pickupDate) return showAlert('Silakan pilih tanggal!');
+    if (!formData.pickupTime) return showAlert('Silakan pilih waktu!');
 
     setIsLoading(true);
 

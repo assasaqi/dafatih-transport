@@ -306,7 +306,7 @@ const Navbar = () => {
                         >
                             Beranda
                         </NavLink>
-                        <NavLink
+                        {/* <NavLink
                             to="/mobil"
                             className={({ isActive }) =>
                                 `px-3 py-2 rounded-xl text-sm font-bold transition-all ${
@@ -315,8 +315,8 @@ const Navbar = () => {
                             }
                         >
                             Armada
-                        </NavLink>
-                        <NavLink
+                        </NavLink> */}
+                        {/* <NavLink
                             to="/tarif"
                             className={({ isActive }) =>
                                 `px-3 py-2 rounded-xl text-sm font-bold transition-all ${
@@ -325,7 +325,7 @@ const Navbar = () => {
                             }
                         >
                             Rute &amp; Tarif
-                        </NavLink>
+                        </NavLink> */}
                         <NavLink
                             to="/galeri"
                             className={({ isActive }) =>

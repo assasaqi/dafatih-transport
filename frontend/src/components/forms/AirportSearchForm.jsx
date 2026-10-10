@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CustomCalendar from '../common/CustomCalendar';
 
-const AirportTransferForm = ({
+const AirportSearchForm = ({
   routes = [],
   onSubmit,
   formatDisplayDate
@@ -25,7 +25,6 @@ const AirportTransferForm = ({
   const calendarRef = useRef(null);
   const passengerRef = useRef(null);
 
-  // Penanganan klik di luar komponen untuk menutup dropdown
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (pickupRef.current && !pickupRef.current.contains(e.target)) setIsPickupOpen(false);
@@ -44,13 +43,11 @@ const AirportTransferForm = ({
     setIsPassengerOpen(false);
   };
 
-  // Memoized Unique Pickup Locations
   const uniquePickupLocations = useMemo(() => {
     if (!Array.isArray(routes)) return [];
     return Array.from(new Set(routes.map((r) => r?.pickup_location).filter(Boolean)));
   }, [routes]);
 
-  // Memoized Available Dropoff Locations
   const availableDropoffLocations = useMemo(() => {
     if (!Array.isArray(routes)) return [];
     return Array.from(
@@ -98,24 +95,6 @@ const AirportTransferForm = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validasi Wajib Isi
-    if (!pickupInput) {
-      alert('Silakan pilih Lokasi Penjemputan terlebih dahulu!');
-      return;
-    }
-    if (!dropoffInput) {
-      alert('Silakan pilih Lokasi Tujuan terlebih dahulu!');
-      return;
-    }
-    if (!travelDate) {
-      alert('Silakan pilih Tanggal Perjalanan terlebih dahulu!');
-      return;
-    }
-    if (!passengers) {
-      alert('Silakan pilih Jumlah Penumpang terlebih dahulu!');
-      return;
-    }
-
     const formData = {
       pickup: pickupInput,
       dropoff: dropoffInput,
@@ -126,12 +105,10 @@ const AirportTransferForm = ({
       passengers
     };
 
-    // Panggil handler parent jika ada
     if (typeof onSubmit === 'function') {
       onSubmit(formData);
     }
 
-    // Arahkan ke Halaman /tarif dengan query params dan state
     const query = new URLSearchParams();
     query.append('type', 'transfer');
     if (pickupInput) query.append('pickup', pickupInput);
@@ -144,8 +121,16 @@ const AirportTransferForm = ({
 
   return (
     <form className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.5fr_1.5fr_1.2fr_1fr_auto] gap-3 items-center" onSubmit={handleSubmit}>
-      {/* 1. LOKASI PENJEMPUTAN */}
+      {/* LOKASI PENJEMPUTAN */}
       <div className="relative" ref={pickupRef}>
+        <input
+          type="text"
+          className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
+          required
+          value={pickupInput}
+          onChange={() => {}}
+          tabIndex={-1}
+        />
         <div
           onClick={() => {
             const nextState = !isPickupOpen;
@@ -196,8 +181,16 @@ const AirportTransferForm = ({
         )}
       </div>
 
-      {/* 2. LOKASI TUJUAN */}
+      {/* LOKASI TUJUAN */}
       <div className="relative" ref={dropoffRef}>
+        <input
+          type="text"
+          className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
+          required
+          value={dropoffInput}
+          onChange={() => {}}
+          tabIndex={-1}
+        />
         <div
           onClick={() => {
             const nextState = !isDropoffOpen;
@@ -250,8 +243,16 @@ const AirportTransferForm = ({
         )}
       </div>
 
-      {/* 3. TANGGAL PERJALANAN */}
+      {/* TANGGAL PERJALANAN */}
       <div className="relative" ref={calendarRef}>
+        <input
+          type="text"
+          className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
+          required
+          value={travelDate}
+          onChange={() => {}}
+          tabIndex={-1}
+        />
         <div
           onClick={() => {
             const nextState = !isCalendarOpen;
@@ -289,8 +290,16 @@ const AirportTransferForm = ({
         )}
       </div>
 
-      {/* 4. JUMLAH PENUMPANG */}
+      {/* JUMLAH PENUMPANG */}
       <div className="relative" ref={passengerRef}>
+        <input
+          type="text"
+          className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
+          required
+          value={passengers}
+          onChange={() => {}}
+          tabIndex={-1}
+        />
         <div
           onClick={() => {
             const nextState = !isPassengerOpen;
@@ -339,7 +348,7 @@ const AirportTransferForm = ({
         )}
       </div>
 
-      {/* 5. TOMBOL CARI */}
+      {/* TOMBOL CARI */}
       <button
         type="submit"
         className="w-full lg:w-auto h-full px-7 py-3.5 bg-[#00a2ff] hover:bg-blue-600 text-white font-bold text-sm rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
@@ -353,4 +362,4 @@ const AirportTransferForm = ({
   );
 };
 
-export default AirportTransferForm;
+export default AirportSearchForm;

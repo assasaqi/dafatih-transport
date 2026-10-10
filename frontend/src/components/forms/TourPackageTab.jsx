@@ -109,6 +109,14 @@ const TourPackageTab = ({
     >
       {/* 1. INPUT LOKASI PENJEMPUTAN */}
       <div className="relative" ref={pickupRef}>
+        <input
+          type="text"
+          className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
+          required
+          value={pickupLocation}
+          onChange={() => {}}
+          tabIndex={-1}
+        />
         <div
           onClick={() => {
             setIsPickupOpen(!isPickupOpen);
@@ -169,6 +177,14 @@ const TourPackageTab = ({
 
       {/* 2. INPUT LOKASI / DESTINASI WISATA */}
       <div className="relative" ref={destinationRef}>
+        <input
+          type="text"
+          className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
+          required
+          value={destination}
+          onChange={() => {}}
+          tabIndex={-1}
+        />
         <div
           onClick={() => {
             setIsDestinationOpen(!isDestinationOpen);
@@ -229,6 +245,14 @@ const TourPackageTab = ({
 
       {/* 3. INPUT TANGGAL WISATA */}
       <div className="relative" ref={calendarRef}>
+        <input
+          type="text"
+          className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
+          required
+          value={tourDate}
+          onChange={() => {}}
+          tabIndex={-1}
+        />
         <div
           onClick={() => {
             setIsCalendarOpen(!isCalendarOpen);
@@ -316,10 +340,12 @@ const TourPackageTab = ({
         )}
       </div>
 
-      {/* 4. TOMBOL CARI */}
+      {/* 4. TOMBOL CARI (DINONAKTIFKAN KARENA DATA TOUR BELUM ADA) */}
       <button
         type="submit"
-        className="w-full lg:w-auto h-full px-6 py-3.5 bg-[#0194F3] hover:bg-sky-600 text-white font-extrabold text-sm rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+        disabled
+        title="Layanan Paket Tour belum tersedia"
+        className="w-full lg:w-auto h-full px-6 py-3.5 bg-slate-300 text-slate-500 font-extrabold text-sm rounded-2xl shadow-none cursor-not-allowed flex items-center justify-center gap-2 shrink-0 transition-all opacity-70"
       >
         <i className="fa-solid fa-magnifying-glass"></i>
         <span>Cari</span>
