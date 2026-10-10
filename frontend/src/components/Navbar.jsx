@@ -92,7 +92,7 @@ const Navbar = () => {
                     />
                 </NavLink>
 
-                {/* Desktop Navigasi Utama (Background dihapus) */}
+                {/* Desktop Navigasi Utama */}
                 <nav className="hidden xl:flex items-center gap-6 px-2 py-2">
                     <NavLink
                         to="/"
@@ -141,7 +141,17 @@ const Navbar = () => {
                             `text-xs sm:text-sm font-bold transition-colors ${linkTextColor(isActive)}`
                         }
                     >
-                        Pesanan
+                        Buat Pesanan
+                    </NavLink>
+
+                    {/* Pesanan Saya di Menu Utama Desktop */}
+                    <NavLink
+                        to="/pesanan-saya"
+                        className={({ isActive }) =>
+                            `text-xs sm:text-sm font-bold transition-colors ${linkTextColor(isActive)}`
+                        }
+                    >
+                        Pesanan Saya
                     </NavLink>
                 </nav>
 
@@ -181,6 +191,16 @@ const Navbar = () => {
                                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
                                     <div className="py-2 text-xs font-bold text-slate-700 divide-y divide-slate-100">
                                         <div className="py-1">
+                                            {/* Pesanan Saya di Dropdown Profil Desktop (Icon Panah Dihapus) */}
+                                            <Link
+                                                to="/pesanan-saya"
+                                                onClick={() => setIsProfileMenuOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors"
+                                            >
+                                                <i className="fa-solid fa-receipt text-sm text-[#0194F3] w-5 text-center"></i>
+                                                <span>Pesanan Saya</span>
+                                            </Link>
+
                                             <Link
                                                 to="/profile/edit"
                                                 onClick={() => setIsProfileMenuOpen(false)}
@@ -189,6 +209,7 @@ const Navbar = () => {
                                                 <i className="fa-regular fa-user text-sm text-[#0194F3] w-5 text-center"></i>
                                                 <span>Edit Profil Saya</span>
                                             </Link>
+
                                             <Link
                                                 to="/payments"
                                                 onClick={() => setIsProfileMenuOpen(false)}
@@ -213,6 +234,7 @@ const Navbar = () => {
                                                     Baru!
                                                 </span>
                                             </Link>
+
                                             <Link
                                                 to="/promos"
                                                 onClick={() => setIsProfileMenuOpen(false)}
@@ -352,6 +374,16 @@ const Navbar = () => {
                                 <p className="px-3 text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">
                                     Akun Saya ({clientUser.name?.split(' ')[0]})
                                 </p>
+
+                                {/* Pesanan Saya di Menu Mobile (Icon Panah Dihapus) */}
+                                <Link
+                                    to="/pesanan-saya"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="flex items-center gap-3 px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 rounded-xl"
+                                >
+                                    <i className="fa-solid fa-receipt text-[#0194F3] w-4 text-center"></i>
+                                    <span>Pesanan Saya</span>
+                                </Link>
 
                                 <Link
                                     to="/profile/edit"
