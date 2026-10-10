@@ -143,16 +143,6 @@ const Navbar = () => {
                     >
                         Buat Pesanan
                     </NavLink>
-
-                    {/* Pesanan Saya di Menu Utama Desktop */}
-                    <NavLink
-                        to="/pesanan-saya"
-                        className={({ isActive }) =>
-                            `text-xs sm:text-sm font-bold transition-colors ${linkTextColor(isActive)}`
-                        }
-                    >
-                        Pesanan Saya
-                    </NavLink>
                 </nav>
 
                 {/* Header Actions Desktop */}

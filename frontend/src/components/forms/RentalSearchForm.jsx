@@ -1,174 +1,409 @@
-import React, { useState, useRef, useEffect } from 'react';
-import CustomCalendar from '../common/CustomCalendar';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const CarRentalForm = ({ routes = [], onSubmit, formatDisplayDate }) => {
+const CarRentalForm = ({
+  routes = [],
+  armadas = [],
+  vehicles = [],
+  cars = [],
+  onSubmit
+}) => {
+  const navigate = useNavigate();
+
+  // Form State
   const [rentalLocation, setRentalLocation] = useState('');
-  const [rentalStartDate, setRentalStartDate] = useState('');
+  const [armadaName, setArmadaName] = useState('');
   const [rentalDuration, setRentalDuration] = useState('');
 
+  // Dropdown Open/Close States
   const [isRentalLocOpen, setIsRentalLocOpen] = useState(false);
-  const [isRentalCalOpen, setIsRentalCalOpen] = useState(false);
+  const [isArmadaOpen, setIsArmadaOpen] = useState(false);
   const [isRentalDurOpen, setIsRentalDurOpen] = useState(false);
 
+  // Refs untuk Click Outside
   const rentalLocRef = useRef(null);
-  const rentalCalRef = useRef(null);
+  const armadaRef = useRef(null);
   const rentalDurRef = useRef(null);
 
+  // Menutup dropdown saat klik di luar area
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (rentalLocRef.current && !rentalLocRef.current.contains(e.target)) setIsRentalLocOpen(false);
-      if (rentalCalRef.current && !rentalCalRef.current.contains(e.target)) setIsRentalCalOpen(false);
-      if (rentalDurRef.current && !rentalDurRef.current.contains(e.target)) setIsRentalDurOpen(false);
+      if (rentalLocRef.current && !rentalLocRef.current.contains(e.target)) {
+        setIsRentalLocOpen(false);
+      }
+      if (armadaRef.current && !armadaRef.current.contains(e.target)) {
+        setIsArmadaOpen(false);
+      }
+      if (rentalDurRef.current && !rentalDurRef.current.contains(e.target)) {
+        setIsRentalDurOpen(false);
+      }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const uniqueLocations = Array.from(
-    new Set(routes.map((r) => r.pickup_location).filter(Boolean))
-  );
+  const closeAllDropdowns = () => {
+    setIsRentalLocOpen(false);
+    setIsArmadaOpen(false);
+    setIsRentalDurOpen(false);
+  };
 
+  // 1. Ekstrak Lokasi Unik dari Props Routes
+  const uniqueLocations = useMemo(() => {
+    let list = Array.isArray(routes) ? routes : routes?.data || [];
+    if (!Array.isArray(list)) return [];
+
+    const locs = list
+      .map((r) => r?.pickup_location || r?.location || r?.nama_lokasi || r?.kota)
+      .filter(Boolean);
+
+    return Array.from(new Set(locs));
+  }, [routes]);
+
+  // 2. Ekstrak Nama Mobil Unik (Mengambil dari field 'name' / 'nama_armada')
+  const uniqueArmadas = useMemo(() => {
+    let rawList = [];
+    if (Array.isArray(armadas) && armadas.length > 0) rawList = armadas;
+    else if (Array.isArray(vehicles) && vehicles.length > 0) rawList = vehicles;
+    else if (Array.isArray(cars) && cars.length > 0) rawList = cars;
+
+    if (!Array.isArray(rawList) || rawList.length === 0) return [];
+
+    const extractedNames = rawList
+      .map((item) => {
+        if (typeof item === 'string') {
+          return item.includes(' - ') ? null : item.trim();
+        }
+
+        if (!item || typeof item !== 'object') return null;
+
+        // Abaikan data jika merupakan objek Rute Transfer
+        if (item.pickup_location || item.dropoff_location) return null;
+
+        // Ambil nama mobil (Mendukung field `name` dari Halaman Mobil Anda)
+        const name =
+          item.name ||
+          item.nama_armada ||
+          item.nama_mobil ||
+          item.car_name ||
+          item.vehicle_name ||
+          item.armada_name;
+
+        if (!name || typeof name !== 'string') return null;
+        if (name.includes(' - ')) return null; // Abort jika berupa Rute "A - B"
+
+        return name.trim();
+      })
+      .filter(Boolean);
+
+    return Array.from(new Set(extractedNames));
+  }, [armadas, vehicles, cars]);
+
+  // 3. Submit Handler
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({ location: rentalLocation, startDate: rentalStartDate, duration: rentalDuration });
+
+    if (!rentalLocation) {
+      alert('Silakan pilih Lokasi Rental terlebih dahulu!');
+      return;
+    }
+    if (!armadaName) {
+      alert('Silakan pilih Nama Armada terlebih dahulu!');
+      return;
+    }
+    if (!rentalDuration) {
+      alert('Silakan pilih Durasi Rental terlebih dahulu!');
+      return;
+    }
+
+    const formData = {
+      type: 'rental',
+      location: rentalLocation,
+      pickupLoc: rentalLocation,
+      armada: armadaName,
+      armadaName: armadaName,
+      duration: rentalDuration
+    };
+
+    if (typeof onSubmit === 'function') {
+      onSubmit(formData);
+    }
+
+    const query = new URLSearchParams();
+    query.append('type', 'rental');
+    query.append('location', rentalLocation);
+    query.append('armada', armadaName);
+    query.append('duration', rentalDuration);
+
+    navigate(`/mobil?${query.toString()}`, { state: formData });
   };
 
   return (
-    <form className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-[2fr_1.5fr_1.5fr_auto] gap-3 items-center" onSubmit={handleSubmit}>
-      {/* Lokasi Rental Dropdown */}
+    <form
+      className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-[2fr_1.8fr_1.5fr_auto] gap-3 items-center"
+      onSubmit={handleSubmit}
+    >
+      {/* 1. LOKASI RENTAL */}
       <div className="relative" ref={rentalLocRef}>
         <div
           onClick={() => {
-            setIsRentalLocOpen(!isRentalLocOpen);
-            setIsRentalCalOpen(false);
-            setIsRentalDurOpen(false);
+            const nextState = !isRentalLocOpen;
+            closeAllDropdowns();
+            setIsRentalLocOpen(nextState);
           }}
-          className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
-            isRentalLocOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
+          className={`border rounded-2xl p-3 bg-white flex flex-col justify-center cursor-pointer transition-all ${
+            isRentalLocOpen
+              ? 'border-[#00a2ff] ring-2 ring-sky-100'
+              : 'border-slate-300 hover:border-slate-400'
           }`}
         >
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-            Lokasi Rental
+            LOKASI RENTAL
           </span>
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <i className="fa-solid fa-location-dot text-[#0194F3] text-sm shrink-0"></i>
-              <span className={`text-xs sm:text-sm font-semibold truncate ${rentalLocation ? 'text-slate-900' : 'text-slate-400'}`}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <svg
+                className="w-5 h-5 text-[#00a2ff] shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth="2.2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              <span
+                className={`text-xs sm:text-sm font-bold truncate ${
+                  rentalLocation ? 'text-slate-800' : 'text-slate-400'
+                }`}
+              >
                 {rentalLocation || 'Pilih Lokasi Rental'}
               </span>
             </div>
-            <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isRentalLocOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
+            <svg
+              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                isRentalLocOpen ? 'rotate-180 text-[#00a2ff]' : ''
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth="2"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
           </div>
         </div>
 
         {isRentalLocOpen && (
-          <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden animate-in fade-in duration-150">
-            <div className="max-h-56 overflow-y-auto py-1">
-              {uniqueLocations.length > 0 ? (
-                uniqueLocations.map((loc, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => { setRentalLocation(loc); setIsRentalLocOpen(false); }}
-                    className={`px-3 py-2 text-xs font-semibold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
-                      rentalLocation === loc ? 'text-[#0194F3] bg-sky-50/50 font-bold' : 'text-slate-700'
-                    }`}
-                  >
-                    <span>{loc}</span>
-                    {rentalLocation === loc && <i className="fa-solid fa-check text-xs"></i>}
-                  </div>
-                ))
-              ) : (
-                <div className="px-3 py-3 text-xs text-slate-400 text-center">Tidak ada lokasi tersedia</div>
-              )}
-            </div>
+          <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] max-h-56 overflow-y-auto py-1">
+            {uniqueLocations.length > 0 ? (
+              uniqueLocations.map((loc, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    setRentalLocation(loc);
+                    setIsRentalLocOpen(false);
+                  }}
+                  className={`px-3.5 py-2.5 text-xs font-bold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
+                    rentalLocation === loc
+                      ? 'text-[#00a2ff] bg-sky-50/50'
+                      : 'text-slate-700'
+                  }`}
+                >
+                  <span>{loc}</span>
+                </div>
+              ))
+            ) : (
+              <div className="px-3 py-3 text-xs text-slate-400 text-center font-semibold">
+                Tidak ada lokasi tersedia
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Tanggal Rental Dropdown */}
-      <div className="relative" ref={rentalCalRef}>
+      {/* 2. NAMA ARMADA */}
+      <div className="relative" ref={armadaRef}>
         <div
           onClick={() => {
-            setIsRentalCalOpen(!isRentalCalOpen);
-            setIsRentalLocOpen(false);
-            setIsRentalDurOpen(false);
+            const nextState = !isArmadaOpen;
+            closeAllDropdowns();
+            setIsArmadaOpen(nextState);
           }}
-          className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
-            isRentalCalOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
+          className={`border rounded-2xl p-3 bg-white flex flex-col justify-center cursor-pointer transition-all ${
+            isArmadaOpen
+              ? 'border-[#00a2ff] ring-2 ring-sky-100'
+              : 'border-slate-300 hover:border-slate-400'
           }`}
         >
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-            Tanggal Mulai Rental
+            NAMA ARMADA
           </span>
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <i className="fa-solid fa-calendar-days text-[#0194F3] text-sm shrink-0"></i>
-              <span className={`text-xs sm:text-sm font-semibold truncate ${rentalStartDate ? 'text-slate-900' : 'text-slate-400'}`}>
-                {rentalStartDate ? formatDisplayDate(rentalStartDate) : 'Pilih Tanggal'}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <svg
+                className="w-5 h-5 text-[#00a2ff] shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8 17a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zM3 9l2-4h10l2 4M3 9h18v7a1 1 0 01-1 1h-1a2 2 0 01-4 0H9a2 2 0 01-4 0H4a1 1 0 01-1-1V9z"
+                />
+              </svg>
+              <span
+                className={`text-xs sm:text-sm font-bold truncate ${
+                  armadaName ? 'text-slate-800' : 'text-slate-400'
+                }`}
+              >
+                {armadaName || 'Pilih Nama Armada'}
               </span>
             </div>
-            <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isRentalCalOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
+            <svg
+              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                isArmadaOpen ? 'rotate-180 text-[#00a2ff]' : ''
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth="2"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
           </div>
         </div>
 
-        {isRentalCalOpen && (
-          <CustomCalendar
-            selectedDate={rentalStartDate}
-            onSelectDate={setRentalStartDate}
-            onClose={() => setIsRentalCalOpen(false)}
-          />
+        {isArmadaOpen && (
+          <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] max-h-56 overflow-y-auto py-1">
+            {uniqueArmadas.length > 0 ? (
+              uniqueArmadas.map((armada, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    setArmadaName(armada);
+                    setIsArmadaOpen(false);
+                  }}
+                  className={`px-3.5 py-2.5 text-xs font-bold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
+                    armadaName === armada
+                      ? 'text-[#00a2ff] bg-sky-50/50'
+                      : 'text-slate-700'
+                  }`}
+                >
+                  <span>{armada}</span>
+                </div>
+              ))
+            ) : (
+              <div className="px-3 py-3 text-xs text-slate-400 text-center font-semibold">
+                Tidak ada armada tersedia
+              </div>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Durasi Dropdown */}
+      {/* 3. DURASI RENTAL */}
       <div className="relative" ref={rentalDurRef}>
         <div
           onClick={() => {
-            setIsRentalDurOpen(!isRentalDurOpen);
-            setIsRentalLocOpen(false);
-            setIsRentalCalOpen(false);
+            const nextState = !isRentalDurOpen;
+            closeAllDropdowns();
+            setIsRentalDurOpen(nextState);
           }}
-          className={`border rounded-xl p-2.5 bg-white flex flex-col cursor-pointer transition-all ${
-            isRentalDurOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
+          className={`border rounded-2xl p-3 bg-white flex flex-col justify-center cursor-pointer transition-all ${
+            isRentalDurOpen
+              ? 'border-[#00a2ff] ring-2 ring-sky-100'
+              : 'border-slate-300 hover:border-slate-400'
           }`}
         >
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-            Durasi Rental
+            DURASI RENTAL
           </span>
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <i className="fa-solid fa-clock text-[#0194F3] text-sm shrink-0"></i>
-              <span className={`text-xs sm:text-sm font-semibold truncate ${rentalDuration ? 'text-slate-900' : 'text-slate-400'}`}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <svg
+                className="w-5 h-5 text-[#00a2ff] shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth="2.2"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span
+                className={`text-xs sm:text-sm font-bold truncate ${
+                  rentalDuration ? 'text-slate-800' : 'text-slate-400'
+                }`}
+              >
                 {rentalDuration ? `${rentalDuration} Hari` : 'Pilih Durasi'}
               </span>
             </div>
-            <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isRentalDurOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
+            <svg
+              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                isRentalDurOpen ? 'rotate-180 text-[#00a2ff]' : ''
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth="2"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
           </div>
         </div>
 
         {isRentalDurOpen && (
-          <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden py-1 animate-in fade-in duration-150">
+          <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden py-1">
             {['1', '2', '3', '4', '5', '6', '7'].map((day) => (
               <div
                 key={day}
-                onClick={() => { setRentalDuration(day); setIsRentalDurOpen(false); }}
-                className={`px-3 py-2 text-xs font-semibold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
-                  rentalDuration === day ? 'text-[#0194F3] bg-sky-50/50 font-bold' : 'text-slate-700'
+                onClick={() => {
+                  setRentalDuration(day);
+                  setIsRentalDurOpen(false);
+                }}
+                className={`px-3.5 py-2.5 text-xs font-bold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
+                  rentalDuration === day
+                    ? 'text-[#00a2ff] bg-sky-50/50'
+                    : 'text-slate-700'
                 }`}
               >
                 <span>{day} Hari</span>
-                {rentalDuration === day && <i className="fa-solid fa-check text-xs"></i>}
               </div>
             ))}
           </div>
         )}
       </div>
 
+      {/* 4. TOMBOL CARI */}
       <button
         type="submit"
-        className="w-full lg:w-auto h-full px-6 py-3 bg-[#0194F3] hover:bg-blue-600 text-white font-bold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+        className="w-full lg:w-auto h-full px-7 py-3.5 bg-[#00a2ff] hover:bg-blue-600 text-white font-bold text-sm rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
       >
-        <i className="fa-solid fa-magnifying-glass"></i>
+        <svg
+          className="w-4 h-4 text-white"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          strokeWidth="2.5"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
+        </svg>
         <span>Cari</span>
       </button>
     </form>

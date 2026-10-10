@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHome } from '@/context/HomeContext';
-import { getRoutes, getBlogs } from '@/services/api';
+import { getRoutes, getBlogs, getVehicles } from '@/services/api';
 import RouteCard from '@/components/cards/RouteCard';
 
 // Import Komponen Form dari folder forms
@@ -29,6 +29,7 @@ const Home = () => {
 
   const [routes, setRoutes] = useState([]);
   const [blogs, setBlogs] = useState([]);
+  const [vehicles, setVehicles] = useState([]); // State untuk menampung data armada/mobil
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -45,14 +46,27 @@ const Home = () => {
   const [showRightBtn, setShowRightBtn] = useState(true);
 
   useEffect(() => {
-    Promise.all([getRoutes(), getBlogs()])
-      .then(([routesRes, blogsRes]) => {
+    // Ambil data Rute, Blog, dan Mobil sekaligus
+    Promise.all([
+      getRoutes(),
+      getBlogs(),
+      getVehicles().catch(() => ({ data: { success: false, data: [] } }))
+    ])
+      .then(([routesRes, blogsRes, vehiclesRes]) => {
         if (routesRes.data?.success && Array.isArray(routesRes.data.data)) {
           setRoutes(routesRes.data.data);
         }
         if (blogsRes.data?.success && Array.isArray(blogsRes.data.data)) {
           setBlogs(blogsRes.data.data.slice(0, 3));
         }
+
+        // Simpan data armada/mobil
+        if (vehiclesRes.data?.success && Array.isArray(vehiclesRes.data.data)) {
+          setVehicles(vehiclesRes.data.data);
+        } else if (Array.isArray(vehiclesRes?.data)) {
+          setVehicles(vehiclesRes.data);
+        }
+
         setIsLoading(false);
       })
       .catch((err) => {
@@ -202,9 +216,15 @@ const Home = () => {
               </button>
             </div>
 
-            {/* TAB CONTENT (MENGGUNAKAN KOMPONEN FORM DARI FOLDER FORMS) */}
+            {/* TAB CONTENT */}
             {activeTab === 'airport' && <AirportSearchForm routes={routes} />}
-            {activeTab === 'rental' && <RentalSearchForm routes={routes} />}
+            {activeTab === 'rental' && (
+              <RentalSearchForm
+                routes={routes}
+                armadas={vehicles}
+                vehicles={vehicles}
+              />
+            )}
             {activeTab === 'tour' && <TourPackageTab />}
           </div>
         </div>
