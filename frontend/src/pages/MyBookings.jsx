@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Import resmi dari src/services/api.js
 import API, { getBookings } from '../services/api';
 
 const MyBookings = () => {
+  const navigate = useNavigate();
+
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -13,12 +16,21 @@ const MyBookings = () => {
 
   const fetchBookingsData = async () => {
     setLoading(true);
+
+    // 1. Cek Token: Jika tidak ada, langsung alihkan ke halaman /login
+    const token = localStorage.getItem('token') || localStorage.getItem('clientToken');
+
+    if (!token) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
     try {
       let response;
       try {
         response = await getBookings();
       } catch (err) {
-        if (err.response?.status === 404 || err.response?.status === 403) {
+        if (err.response?.status === 404) {
           response = await API.get('/client/bookings');
         } else {
           throw err;
@@ -34,8 +46,17 @@ const MyBookings = () => {
       }
     } catch (error) {
       console.error('Gagal mengambil data booking dari API:', error);
-      const errorMsg = error.response?.data?.message || 'Gagal memuat riwayat pesanan dari server.';
-      showMessage('error', errorMsg);
+
+      // 2. Jika Token Kadaluarsa / Tidak Valid (401/403), hapus token & langsung alihkan ke /login
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('clientToken');
+        navigate('/login', { replace: true });
+        return;
+      } else {
+        const errorMsg = error.response?.data?.message || 'Gagal memuat riwayat pesanan dari server.';
+        showMessage('error', errorMsg);
+      }
       setBookings([]);
     } finally {
       setLoading(false);
