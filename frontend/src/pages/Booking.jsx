@@ -38,14 +38,6 @@ const Booking = () => {
             <h1 className="text-base sm:text-xl font-extrabold text-slate-900">
               Cek &amp; Pesan Layanan
             </h1>
-            <button
-              type="button"
-              onClick={() => navigate('/riwayat-booking')}
-              className="flex items-center gap-1.5 text-slate-600 hover:text-[#0194F3] text-xs font-semibold transition-colors cursor-pointer"
-            >
-              <i className="fa-solid fa-receipt text-xs"></i>
-              <span>Riwayat Pesanan</span>
-            </button>
           </div>
 
           <div>
@@ -105,8 +97,7 @@ const Booking = () => {
                     Pesan Layanan Transportasi &amp; Wisata Lombok
                   </h3>
                   <p className="text-[11px] sm:text-xs text-sky-100 leading-normal">
-                    Lengkapi formulir pemesanan di bawah ini atau pilih dari <button type="button" onClick={() => navigate('/tarif')} className="underline font-bold hover:text-white cursor-pointer">Daftar Tarif</button>.
-                  </p>
+                    Lengkapi formulir pemesanan di bawah ini.</p>
                 </div>
               </div>
               <button
