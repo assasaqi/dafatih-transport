@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { getVehicles, createBooking } from '@/services/api';
 
-const FormSewaMobil = ({ onOpenModal }) => {
+const FormSewaMobil = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -13,22 +14,26 @@ const FormSewaMobil = ({ onOpenModal }) => {
   };
 
   const todayObj = new Date();
+  const [vehicles, setVehicles] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const initialForm = {
     custName: '',
     custWa: '',
     jenisLayanan: 'Sewa Mobil',
+    vehicleId: null,
     armada: '',
     pickupDate: '',
-    pickupTime: '',
+    pickupTime: '08:00',
     pickupLoc: '',
-    duration: '',
-    passengers: '',
+    duration: '1 Hari',
+    passengers: '1',
     price: 0
   };
 
   const [formData, setFormData] = useState(initialForm);
 
+  const [isArmadaOpen, setIsArmadaOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
 
@@ -39,28 +44,43 @@ const FormSewaMobil = ({ onOpenModal }) => {
     new Date(todayObj.getFullYear(), todayObj.getMonth(), 1)
   );
 
+  const armadaRef = useRef(null);
   const calendarRef = useRef(null);
   const timePickerRef = useRef(null);
 
   const hoursList = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const minutesList = ['00', '15', '30', '45'];
 
-  // HANYA MENERIMA DATA DARI PAGE MOBIL / CARD MOBIL HOME
+  // Memuat daftar armada dari API
+  useEffect(() => {
+    getVehicles()
+      .then((res) => {
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          setVehicles(res.data.data);
+        } else if (Array.isArray(res.data)) {
+          setVehicles(res.data);
+        }
+      })
+      .catch((err) => console.error('Gagal memuat data armada:', err));
+  }, []);
+
+  // Menerima data dari lokasi/halaman daftar mobil
   useEffect(() => {
     if (location.state && Object.keys(location.state).length > 0) {
       const stateData = location.state;
+      const isRentalData = stateData.jenisLayanan === 'Sewa Mobil' || !!stateData.carType || !!stateData.namaArmada || !!stateData.vehicle_id || !!stateData.id;
 
-      const isRentalData = stateData.jenisLayanan === 'Sewa Mobil' || !!stateData.carType || !!stateData.namaArmada || !!stateData.duration;
+      if (!isRentalData) return;
 
-      if (!isRentalData) {
-        return; // ABAIKAN JIKA BUKAN DATA SEWA MOBIL
-      }
+      const matchedName = stateData.carType || stateData.namaArmada || stateData.name || stateData.model || '';
+      const matchedPrice = Number(stateData.price || stateData.harga || stateData.price_per_day || 0);
 
       setFormData((prev) => ({
         ...prev,
         jenisLayanan: 'Sewa Mobil',
-        armada: stateData.carType || stateData.namaArmada || prev.armada,
-        price: Number(stateData.price || stateData.harga || prev.price || 0),
+        vehicleId: stateData.vehicle_id || stateData.vehicleId || stateData.id || prev.vehicleId,
+        armada: matchedName || prev.armada,
+        price: matchedPrice > 0 ? matchedPrice : prev.price,
         pickupDate: stateData.date || stateData.startDate || prev.pickupDate,
         pickupLoc: stateData.pickup || stateData.location || prev.pickupLoc,
         duration: stateData.duration || prev.duration,
@@ -79,6 +99,7 @@ const FormSewaMobil = ({ onOpenModal }) => {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
+      if (armadaRef.current && !armadaRef.current.contains(e.target)) setIsArmadaOpen(false);
       if (calendarRef.current && !calendarRef.current.contains(e.target)) setIsCalendarOpen(false);
       if (timePickerRef.current && !timePickerRef.current.contains(e.target)) setIsTimePickerOpen(false);
     };
@@ -90,6 +111,20 @@ const FormSewaMobil = ({ onOpenModal }) => {
     setFormData(initialForm);
     setSelectedHour('08');
     setSelectedMinute('00');
+    navigate(location.pathname, { replace: true, state: {} });
+  };
+
+  const handleSelectArmada = (veh) => {
+    const vehName = veh.name || veh.model || veh.carType || 'Armada Mobil';
+    const vehPrice = Number(veh.price || veh.price_per_day || veh.harga || 0);
+
+    setFormData((prev) => ({
+      ...prev,
+      vehicleId: veh.id,
+      armada: vehName,
+      price: vehPrice > 0 ? vehPrice : prev.price
+    }));
+    setIsArmadaOpen(false);
   };
 
   const generateCalendarDays = () => {
@@ -105,16 +140,6 @@ const FormSewaMobil = ({ onOpenModal }) => {
   };
 
   const calendarDays = generateCalendarDays();
-
-  const handlePrevMonth = (e) => {
-    e.stopPropagation();
-    setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - 1, 1));
-  };
-
-  const handleNextMonth = (e) => {
-    e.stopPropagation();
-    setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 1));
-  };
 
   const formatDisplayDate = (dateStr) => {
     if (!dateStr) return '';
@@ -141,15 +166,68 @@ const FormSewaMobil = ({ onOpenModal }) => {
     setIsTimePickerOpen(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const token = localStorage.getItem('token') || localStorage.getItem('clientToken');
+    if (!token) {
+      alert('Silakan login terlebih dahulu untuk melakukan pemesanan!');
+      navigate('/login');
+      return;
+    }
+
     if (!formData.pickupLoc) return alert('Silakan isi lokasi penjemputan / hotel!');
-    if (!formData.armada) return alert('Silakan isi jenis/nama armada mobil!');
+    if (!formData.armada) return alert('Silakan pilih armada / mobil!');
     if (!formData.pickupDate) return alert('Silakan pilih tanggal!');
     if (!formData.pickupTime) return alert('Silakan pilih waktu!');
 
-    onOpenModal(formData);
+    setIsLoading(true);
+
+    const selectedVeh = vehicles.find(
+      (v) => (v.name || v.model || '').toLowerCase().trim() === (formData.armada || '').toLowerCase().trim()
+    );
+
+    const newBookingPayload = {
+      service_type: 'Sewa_Mobil',
+      serviceType: 'Sewa_Mobil',
+
+      vehicle_id: formData.vehicleId || selectedVeh?.id ? Number(formData.vehicleId || selectedVeh?.id) : null,
+      vehicleId: formData.vehicleId || selectedVeh?.id ? Number(formData.vehicleId || selectedVeh?.id) : null,
+
+      customer_name: formData.custName || 'Pelanggan',
+      customerName: formData.custName || 'Pelanggan',
+      customer_phone: formData.custWa || '-',
+      customerPhone: formData.custWa || '-',
+
+      pickup_address: formData.pickupLoc,
+      pickupAddress: formData.pickupLoc,
+      pickup_location: formData.pickupLoc,
+
+      pickup_date: formData.pickupDate,
+      pickupDate: formData.pickupDate,
+      pickup_time: formData.pickupTime,
+      pickupTime: formData.pickupTime,
+
+      passenger_count: Number(formData.passengers || 1),
+      passengerCount: Number(formData.passengers || 1),
+      total_price: Number(formData.price || 0),
+      totalPrice: Number(formData.price || 0),
+
+      notes: `Durasi: ${formData.duration || '1 Hari'}`,
+      status: 'pending'
+    };
+
+    try {
+      await createBooking(newBookingPayload);
+    } catch (error) {
+      console.warn('API error/offline, data disimpan ke LocalStorage.', error);
+    } finally {
+      const existingTemp = JSON.parse(localStorage.getItem('temp_bookings') || '[]');
+      localStorage.setItem('temp_bookings', JSON.stringify([newBookingPayload, ...existingTemp]));
+
+      setIsLoading(false);
+      navigate('/pesanan-saya', { state: { newBooking: newBookingPayload } });
+    }
   };
 
   return (
@@ -169,6 +247,21 @@ const FormSewaMobil = ({ onOpenModal }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+        {/* INPUT TAMPILAN JENIS LAYANAN */}
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] sm:text-xs font-bold text-slate-700">Jenis Layanan *</label>
+          <div className="relative flex items-center">
+            <input
+              type="text"
+              name="jenisLayanan"
+              value={formData.jenisLayanan}
+              readOnly
+              className="w-full h-10 px-3 bg-slate-100/80 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-[#0194F3] outline-none cursor-not-allowed"
+            />
+            <i className="fa-solid fa-lock absolute right-3 text-slate-400 text-xs"></i>
+          </div>
+        </div>
+
         {/* BARIS 1: NAMA & WA */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
           <div className="flex flex-col gap-1">
@@ -210,30 +303,70 @@ const FormSewaMobil = ({ onOpenModal }) => {
 
         {/* BARIS 2: LOKASI & ARMADA */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+          {/* LOKASI JEMPUT */}
           <div className="flex flex-col gap-1">
             <label className="text-[11px] sm:text-xs font-bold text-slate-700">Lokasi Penjemputan / Hotel *</label>
-            <input
-              type="text"
-              name="pickupLoc"
-              required
-              placeholder="Contoh: Bandara LOP / Hotel Senggigi"
-              value={formData.pickupLoc}
-              onChange={handleChange}
-              className="w-full h-10 px-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] bg-white"
-            />
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                name="pickupLoc"
+                required
+                placeholder="Contoh: Bandara LOP / Hotel Senggigi"
+                value={formData.pickupLoc}
+                onChange={handleChange}
+                className="w-full h-10 px-3 pr-8 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] bg-white"
+              />
+              {formData.pickupLoc && (
+                <button type="button" className="absolute right-2.5 text-slate-400 hover:text-slate-600 p-1 cursor-pointer" onClick={() => handleClear('pickupLoc')}>&times;</button>
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] sm:text-xs font-bold text-slate-700">Armada / Mobil *</label>
-            <input
-              type="text"
-              name="armada"
-              required
-              placeholder="Contoh: Avanza / Innova Reborn / HiAce"
-              value={formData.armada}
-              onChange={handleChange}
-              className="w-full h-10 px-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] bg-white"
-            />
+          {/* PILIH ARMADA MOBIL */}
+          <div className="relative" ref={armadaRef}>
+            <label className="text-[11px] sm:text-xs font-bold text-slate-700 mb-1 block">Armada / Mobil *</label>
+            <div
+              onClick={() => { setIsArmadaOpen(!isArmadaOpen); setIsCalendarOpen(false); setIsTimePickerOpen(false); }}
+              className={`border rounded-xl p-2.5 bg-white flex items-center justify-between cursor-pointer transition-all ${isArmadaOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'}`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <i className="fa-solid fa-car text-[#0194F3] text-sm shrink-0"></i>
+                <span className={`text-xs sm:text-sm font-semibold truncate ${formData.armada ? 'text-slate-900' : 'text-slate-400'}`}>
+                  {formData.armada || 'Pilih Armada Mobil'}
+                </span>
+              </div>
+              <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isArmadaOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
+            </div>
+
+            {isArmadaOpen && (
+              <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden">
+                <div className="max-h-56 overflow-y-auto py-1">
+                  {vehicles.length > 0 ? (
+                    vehicles.map((v, idx) => {
+                      const vName = v.name || v.model || v.carType || 'Mobil';
+                      const isSelected = formData.armada === vName;
+                      return (
+                        <div
+                          key={v.id || idx}
+                          onClick={() => handleSelectArmada(v)}
+                          className={`px-3 py-2.5 text-xs font-semibold cursor-pointer flex items-center justify-between hover:bg-sky-50 ${isSelected ? 'text-[#0194F3] bg-sky-50/50 font-bold' : 'text-slate-700'}`}
+                        >
+                          <div className="flex flex-col">
+                            <span>{vName}</span>
+                            <span className="text-[10px] text-slate-400 font-normal">
+                              {v.price || v.price_per_day ? `Rp ${new Intl.NumberFormat('id-ID').format(v.price || v.price_per_day)} / hari` : 'Harga menyesuaikan'}
+                            </span>
+                          </div>
+                          {isSelected && <i className="fa-solid fa-check text-xs"></i>}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="px-3 py-3 text-xs text-slate-400 text-center">Tidak ada data armada</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -243,7 +376,7 @@ const FormSewaMobil = ({ onOpenModal }) => {
           <div className="relative" ref={calendarRef}>
             <label className="text-[11px] sm:text-xs font-bold text-slate-700 mb-1 block">Tanggal Mulai Rental *</label>
             <div
-              onClick={() => { setIsCalendarOpen(!isCalendarOpen); setIsTimePickerOpen(false); }}
+              onClick={() => { setIsCalendarOpen(!isCalendarOpen); setIsArmadaOpen(false); setIsTimePickerOpen(false); }}
               className={`border rounded-xl p-2.5 bg-white flex items-center justify-between cursor-pointer transition-all ${isCalendarOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'}`}
             >
               <div className="flex items-center gap-2 min-w-0">
@@ -258,9 +391,9 @@ const FormSewaMobil = ({ onOpenModal }) => {
             {isCalendarOpen && (
               <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 z-[60] p-4">
                 <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-                  <button type="button" onClick={handlePrevMonth} className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600"><i className="fa-solid fa-chevron-left text-xs"></i></button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - 1, 1)); }} className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600"><i className="fa-solid fa-chevron-left text-xs"></i></button>
                   <span className="text-xs font-bold text-slate-800">{currentCalendarMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span>
-                  <button type="button" onClick={handleNextMonth} className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600"><i className="fa-solid fa-chevron-right text-xs"></i></button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 1)); }} className="w-7 h-7 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600"><i className="fa-solid fa-chevron-right text-xs"></i></button>
                 </div>
                 <div className="grid grid-cols-7 text-center mb-1">
                   {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((dayName, idx) => (
@@ -288,7 +421,7 @@ const FormSewaMobil = ({ onOpenModal }) => {
           <div className="relative" ref={timePickerRef}>
             <label className="text-[11px] sm:text-xs font-bold text-slate-700 mb-1 block">Waktu Penjemputan *</label>
             <div
-              onClick={() => { setIsTimePickerOpen(!isTimePickerOpen); setIsCalendarOpen(false); }}
+              onClick={() => { setIsTimePickerOpen(!isTimePickerOpen); setIsArmadaOpen(false); setIsCalendarOpen(false); }}
               className={`border rounded-xl p-2.5 bg-white flex items-center justify-between cursor-pointer transition-all ${isTimePickerOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'}`}
             >
               <div className="flex items-center gap-2 min-w-0">
@@ -348,9 +481,22 @@ const FormSewaMobil = ({ onOpenModal }) => {
                 Pilih Mobil
               </button>
             )}
-            <button type="submit" className="w-full sm:w-auto px-5 py-2.5 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center justify-center gap-2">
-              <span>Lanjutkan Pemesanan</span>
-              <i className="fa-solid fa-arrow-right text-xs"></i>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full sm:w-auto px-5 py-2.5 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <i className="fa-solid fa-spinner fa-spin text-xs"></i>
+                  <span>Memproses...</span>
+                </>
+              ) : (
+                <>
+                  <span>Lanjutkan Pemesanan</span>
+                  <i className="fa-solid fa-arrow-right text-xs"></i>
+                </>
+              )}
             </button>
           </div>
         </div>

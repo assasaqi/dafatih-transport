@@ -197,9 +197,15 @@ const FormAntarJemput = () => {
     setIsTimePickerOpen(false);
   };
 
-  // KIRIM DATA KE BACKEND API & PINDAH KEMUDIAN KE RIWAYAT BOOKING
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const token = localStorage.getItem('token') || localStorage.getItem('clientToken');
+    if (!token) {
+      alert('Silakan login terlebih dahulu untuk melakukan pemesanan!');
+      navigate('/login');
+      return;
+    }
 
     if (!formData.pickupLoc) return alert('Silakan pilih lokasi penjemputan!');
     if (!formData.dropLoc) return alert('Silakan pilih lokasi tujuan terlebih dahulu!');
@@ -208,35 +214,54 @@ const FormAntarJemput = () => {
 
     setIsLoading(true);
 
+    const selectedRoute = routes.find(
+      (r) =>
+        (r.pickup_location || r.origin || '').toLowerCase().trim() === (formData.pickupLoc || '').toLowerCase().trim() &&
+        (r.dropoff_location || r.destination || '').toLowerCase().trim() === (formData.dropLoc || '').toLowerCase().trim()
+    );
+
     const newBookingPayload = {
-      id: Date.now(),
+      service_type: 'Antar_Jemput',
+      serviceType: 'Antar_Jemput',
+
+      vehicle_id: null,
+      vehicleId: null,
+
+      customer_name: formData.custName || 'Pelanggan',
       customerName: formData.custName || 'Pelanggan',
+      customer_phone: formData.custWa || '-',
       customerPhone: formData.custWa || '-',
-      serviceType: 'Antar-Jemput',
-      pickupLocation: formData.pickupLoc,
-      dropoffLocation: formData.dropLoc,
+
+      route_id: selectedRoute?.id ? Number(selectedRoute.id) : null,
+      routeId: selectedRoute?.id ? Number(selectedRoute.id) : null,
+      pickup_address: formData.pickupLoc,
+      pickupAddress: formData.pickupLoc,
+      pickup_location: formData.pickupLoc,
+      dropoff_location: formData.dropLoc,
+
+      pickup_date: formData.pickupDate,
       pickupDate: formData.pickupDate,
+      pickup_time: formData.pickupTime,
       pickupTime: formData.pickupTime,
-      passengers: Number(formData.passengers || 1),
-      price: Number(formData.price || 0),
-      status: 'pending',
-      createdAt: new Date().toISOString()
+
+      passenger_count: Number(formData.passengers || 1),
+      passengerCount: Number(formData.passengers || 1),
+      total_price: Number(formData.price || 0),
+      totalPrice: Number(formData.price || 0),
+
+      status: 'pending'
     };
 
     try {
-      // 1. Kirim data ke API backend
       await createBooking(newBookingPayload);
     } catch (error) {
-      console.warn('API error/offline, data disimpan ke LocalStorage.');
+      console.warn('API error/offline, data disimpan ke LocalStorage.', error);
     } finally {
-      // 2. Cadangkan data ke LocalStorage browser
       const existingTemp = JSON.parse(localStorage.getItem('temp_bookings') || '[]');
       localStorage.setItem('temp_bookings', JSON.stringify([newBookingPayload, ...existingTemp]));
 
       setIsLoading(false);
-
-      // 3. DIARAHKAN LANGSUNG KE PAGE RIWAYAT BOOKING
-      navigate('/riwayat-booking', { state: { newBooking: newBookingPayload } });
+      navigate('/pesanan-saya', { state: { newBooking: newBookingPayload } });
     }
   };
 
@@ -257,6 +282,21 @@ const FormAntarJemput = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+        {/* INPUT TAMPILAN JENIS LAYANAN */}
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] sm:text-xs font-bold text-slate-700">Jenis Layanan *</label>
+          <div className="relative flex items-center">
+            <input
+              type="text"
+              name="jenisLayanan"
+              value={formData.jenisLayanan}
+              readOnly
+              className="w-full h-10 px-3 bg-slate-100/80 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-[#0194F3] outline-none cursor-not-allowed"
+            />
+            <i className="fa-solid fa-lock absolute right-3 text-slate-400 text-xs"></i>
+          </div>
+        </div>
+
         {/* BARIS 1: NAMA & WA */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
           <div className="flex flex-col gap-1">

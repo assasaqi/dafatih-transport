@@ -14,10 +14,20 @@ const AdminBookings = () => {
         setLoading(true);
         getBookings()
             .then((res) => {
-                if (res.data?.success) setBookings(res.data.data || []);
+                let data = [];
+                if (res.data?.success && Array.isArray(res.data.data)) {
+                    data = res.data.data;
+                } else if (Array.isArray(res.data)) {
+                    data = res.data;
+                }
+                setBookings(data);
                 setLoading(false);
             })
-            .catch(() => setLoading(false));
+            .catch((err) => {
+                console.error('Gagal mengambil data booking:', err);
+                setBookings([]);
+                setLoading(false);
+            });
     };
 
     useEffect(() => {
@@ -30,24 +40,68 @@ const AdminBookings = () => {
             showToast('Status pemesanan berhasil diperbarui!', 'success');
             loadBookings();
         } catch (err) {
-            showToast('Gagal mengubah status pemesanan.', 'error');
+            showToast('Gagal memperbarui status di database.', 'error');
         }
     };
 
     const handleDelete = async (id, code) => {
-        if (window.confirm(`Hapus transaksi pemesanan [${code}] ini?`)) {
+        if (window.confirm(`Hapus transaksi pemesanan [${code || id}] ini?`)) {
             try {
                 await deleteBooking(id);
                 showToast('Transaksi pemesanan berhasil dihapus!', 'success');
                 loadBookings();
             } catch (err) {
-                showToast('Gagal menghapus transaksi.', 'error');
+                showToast('Gagal menghapus transaksi dari database.', 'error');
             }
         }
     };
 
+    // Helper format Tampilan Jenis Layanan
+    const formatServiceTypeLabel = (typeStr) => {
+        if (!typeStr) return 'Antar-Jemput';
+        const clean = typeStr.toString().replace(/_/g, ' ').toLowerCase();
+        if (clean.includes('sewa')) return 'Sewa Mobil';
+        if (clean.includes('antar')) return 'Antar-Jemput';
+        if (clean.includes('tour') || clean.includes('paket')) return 'Paket Tour';
+        return typeStr;
+    };
+
+    // Helper format Tanggal
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '-';
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            return d.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch {
+            return dateStr;
+        }
+    };
+
+    // Helper format Waktu (HH:mm)
+    const formatTime = (timeVal) => {
+        if (!timeVal) return '-';
+        if (typeof timeVal === 'string' && timeVal.includes('T')) {
+            const dateObj = new Date(timeVal);
+            if (!isNaN(dateObj.getTime())) {
+                const hours = String(dateObj.getUTCHours()).padStart(2, '0');
+                const minutes = String(dateObj.getUTCMinutes()).padStart(2, '0');
+                return `${hours}:${minutes}`;
+            }
+        }
+        if (typeof timeVal === 'string') {
+            return timeVal.substring(0, 5);
+        }
+        return timeVal;
+    };
+
     const getStatusBadge = (status) => {
-        switch (status) {
+        const s = (status || 'pending').toLowerCase();
+        switch (s) {
             case 'confirmed':
                 return 'bg-emerald-50 text-emerald-700 border-emerald-200';
             case 'completed':
@@ -100,13 +154,14 @@ const AdminBookings = () => {
                 ) : (
                     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs sm:text-sm border-collapse min-w-[650px]">
+                            <table className="w-full text-left text-xs sm:text-sm border-collapse min-w-[800px]">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
                                         <th className="py-3.5 px-4">Kode Booking</th>
                                         <th className="py-3.5 px-4">Pelanggan</th>
-                                        <th className="py-3.5 px-4">Telepon / WA</th>
-                                        <th className="py-3.5 px-4">Rute / Penjemputan</th>
+                                        <th className="py-3.5 px-4">Layanan</th>
+                                        <th className="py-3.5 px-4">Detail Pemesanan</th>
+                                        <th className="py-3.5 px-4">Tarif</th>
                                         <th className="py-3.5 px-4">Status</th>
                                         <th className="py-3.5 px-4 text-center w-20">Aksi</th>
                                     </tr>
@@ -114,59 +169,130 @@ const AdminBookings = () => {
                                 <tbody className="divide-y divide-slate-100 font-medium">
                                     {bookings.length === 0 ? (
                                         <tr>
-                                            <td colSpan="6" className="text-center py-12 text-slate-400">
+                                            <td colSpan="7" className="text-center py-12 text-slate-400">
                                                 Belum ada data pemesanan yang masuk.
                                             </td>
                                         </tr>
                                     ) : (
-                                        bookings.map((b) => (
-                                            <tr key={b.id} className="hover:bg-slate-50/80 transition-colors">
-                                                <td className="py-3.5 px-4 font-extrabold text-[#0194F3]">
-                                                    {b.booking_code}
-                                                </td>
-                                                <td className="py-3.5 px-4 font-bold text-slate-900">
-                                                    {b.customer_name}
-                                                </td>
-                                                <td className="py-3.5 px-4 text-slate-600">
-                                                    <a
-                                                        href={`https://wa.me/${b.customer_phone?.replace(/[^0-9]/g, '')}`}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="hover:text-[#0194F3] inline-flex items-center gap-1.5 font-semibold"
-                                                    >
-                                                        <i className="fa-brands fa-whatsapp text-emerald-500"></i>
-                                                        {b.customer_phone}
-                                                    </a>
-                                                </td>
-                                                <td className="py-3.5 px-4 text-slate-700">
-                                                    <span className="font-semibold">{b.pickup_location}</span>
-                                                    <i className="fa-solid fa-arrow-right text-[10px] text-slate-400 mx-2"></i>
-                                                    <span className="font-semibold">{b.dropoff_location}</span>
-                                                </td>
-                                                <td className="py-3.5 px-4">
-                                                    <select
-                                                        value={b.status}
-                                                        onChange={(e) => handleStatusChange(b.id, e.target.value)}
-                                                        className={`text-xs font-bold px-2.5 py-1.5 rounded-xl border outline-none cursor-pointer ${getStatusBadge(b.status)}`}
-                                                    >
-                                                        <option value="pending">Pending</option>
-                                                        <option value="confirmed">Confirmed</option>
-                                                        <option value="completed">Completed</option>
-                                                        <option value="cancelled">Cancelled</option>
-                                                    </select>
-                                                </td>
-                                                <td className="py-3.5 px-4 text-center">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDelete(b.id, b.booking_code)}
-                                                        className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors flex items-center justify-center cursor-pointer mx-auto"
-                                                        title="Hapus Transaksi"
-                                                    >
-                                                        <i className="fa-solid fa-trash-can text-xs"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
+                                        bookings.map((b, index) => {
+                                            const bookingCode = b.booking_code || b.bookingCode || b.code || `DFT-${b.id || index + 1}`;
+                                            const custName = b.customer_name || b.customerName || b.custName || 'Pelanggan';
+                                            const custPhone = b.customer_phone || b.customerPhone || b.custWa || '-';
+                                            const rawServiceType = b.service_type || b.serviceType || b.jenisLayanan || '';
+                                            const serviceLabel = formatServiceTypeLabel(rawServiceType);
+
+                                            // Relasi & Lokasi
+                                            const vehicleName = b.vehicle?.name || b.vehicle?.model || b.armada || b.carType || b.car_name || '';
+                                            const tourName = b.tour_package?.name || b.tour_package?.title || b.tourName || '';
+
+                                            const pickupLoc = b.pickup_address || b.pickupAddress || b.pickup_location || b.pickupLocation || b.route?.pickup_location || b.route?.origin || '-';
+                                            const dropLoc = b.dropoff_location || b.dropoffLocation || b.route?.dropoff_location || b.route?.destination || '-';
+
+                                            const passengerCount = b.passenger_count || b.passengerCount || b.passengers || 1;
+                                            const priceVal = Number(b.total_price || b.totalPrice || b.price || 0);
+                                            const currentStatus = (b.status || 'pending').toLowerCase();
+
+                                            return (
+                                                <tr key={b.id || index} className="hover:bg-slate-50/80 transition-colors">
+                                                    {/* Kode Booking */}
+                                                    <td className="py-3.5 px-4 font-extrabold text-[#0194F3] whitespace-nowrap">
+                                                        {bookingCode}
+                                                    </td>
+
+                                                    {/* Pelanggan */}
+                                                    <td className="py-3.5 px-4">
+                                                        <div className="font-bold text-slate-900">{custName}</div>
+                                                        <a
+                                                            href={`https://wa.me/${custPhone.replace(/[^0-9]/g, '')}`}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="text-slate-500 hover:text-[#0194F3] inline-flex items-center gap-1 text-[11px] font-semibold mt-0.5"
+                                                        >
+                                                            <i className="fa-brands fa-whatsapp text-emerald-500"></i>
+                                                            <span>{custPhone}</span>
+                                                        </a>
+                                                    </td>
+
+                                                    {/* Layanan */}
+                                                    <td className="py-3.5 px-4 whitespace-nowrap">
+                                                        <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-sky-50 text-[#0194F3] border border-sky-100">
+                                                            {serviceLabel}
+                                                        </span>
+                                                    </td>
+
+                                                    {/* Detail Pemesanan */}
+                                                    <td className="py-3.5 px-4 text-slate-700">
+                                                        {serviceLabel === 'Sewa Mobil' && (
+                                                            <div>
+                                                                <span className="font-bold text-slate-900 block">{vehicleName || 'Unit Mobil'}</span>
+                                                                <span className="text-xs text-slate-500">Lokasi Jemput: {pickupLoc}</span>
+                                                            </div>
+                                                        )}
+
+                                                        {serviceLabel === 'Paket Tour' && (
+                                                            <div>
+                                                                <span className="font-bold text-slate-900 block">{tourName || 'Paket Wisata'}</span>
+                                                                <span className="text-xs text-slate-500">Lokasi Jemput: {pickupLoc}</span>
+                                                            </div>
+                                                        )}
+
+                                                        {serviceLabel === 'Antar-Jemput' && (
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className="font-semibold text-slate-800">{pickupLoc}</span>
+                                                                <i className="fa-solid fa-arrow-right text-[10px] text-slate-400"></i>
+                                                                <span className="font-semibold text-slate-800">{dropLoc}</span>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
+                                                            <span>
+                                                                <i className="fa-regular fa-calendar-days text-[#0194F3] mr-1"></i>
+                                                                {formatDate(b.pickup_date || b.pickupDate)}
+                                                            </span>
+                                                            <span>
+                                                                <i className="fa-regular fa-clock text-[#0194F3] mr-1"></i>
+                                                                {formatTime(b.pickup_time || b.pickupTime)}
+                                                            </span>
+                                                            <span>
+                                                                <i className="fa-solid fa-user-group text-slate-400 mr-1"></i>
+                                                                {passengerCount} Psg
+                                                            </span>
+                                                        </div>
+                                                    </td>
+
+                                                    {/* Tarif */}
+                                                    <td className="py-3.5 px-4 font-extrabold text-slate-900 whitespace-nowrap">
+                                                        {priceVal > 0 ? `Rp ${new Intl.NumberFormat('id-ID').format(priceVal)}` : '-'}
+                                                    </td>
+
+                                                    {/* Status */}
+                                                    <td className="py-3.5 px-4 whitespace-nowrap">
+                                                        <select
+                                                            value={currentStatus}
+                                                            onChange={(e) => handleStatusChange(b.id, e.target.value)}
+                                                            className={`text-xs font-bold px-2.5 py-1.5 rounded-xl border outline-none cursor-pointer ${getStatusBadge(currentStatus)}`}
+                                                        >
+                                                            <option value="pending">Pending</option>
+                                                            <option value="confirmed">Confirmed</option>
+                                                            <option value="completed">Completed</option>
+                                                            <option value="cancelled">Cancelled</option>
+                                                        </select>
+                                                    </td>
+
+                                                    {/* Aksi */}
+                                                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDelete(b.id, bookingCode)}
+                                                            className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors flex items-center justify-center cursor-pointer mx-auto"
+                                                            title="Hapus Transaksi"
+                                                        >
+                                                            <i className="fa-solid fa-trash-can text-xs"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     )}
                                 </tbody>
                             </table>

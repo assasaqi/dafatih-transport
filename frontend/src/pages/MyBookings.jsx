@@ -47,7 +47,7 @@ const MyBookings = () => {
     } catch (error) {
       console.error('Gagal mengambil data booking dari API:', error);
 
-      // 2. Jika Token Kadaluarsa / Tidak Valid (401/403), hapus token & langsung alihkan ke /login
+      // 2. Jika Token Kadaluarsa / Tidak Valid (401/403), hapus token & alihkan ke /login
       if (error.response?.status === 401 || error.response?.status === 403) {
         localStorage.removeItem('token');
         localStorage.removeItem('clientToken');
@@ -79,7 +79,10 @@ const MyBookings = () => {
     }));
   };
 
-  const renderStatusBadge = (status) => {
+  // Normalisasi string status ke UPPERCASE agar cocok dengan statusMap
+  const renderStatusBadge = (statusStr) => {
+    const rawStatus = (statusStr || 'PENDING').toUpperCase();
+
     const statusMap = {
       PENDING: { label: 'Menunggu Pembayaran', bg: 'bg-amber-500/10 text-amber-700 border-amber-300' },
       WAITING_CONFIRMATION: { label: 'Menunggu Verifikasi', bg: 'bg-sky-500/10 text-sky-700 border-sky-300' },
@@ -89,7 +92,7 @@ const MyBookings = () => {
       CANCELLED: { label: 'Dibatalkan', bg: 'bg-rose-500/10 text-rose-700 border-rose-300' }
     };
 
-    const current = statusMap[status] || { label: status || 'PENDING', bg: 'bg-slate-100 text-slate-700 border-slate-300' };
+    const current = statusMap[rawStatus] || { label: rawStatus, bg: 'bg-slate-100 text-slate-700 border-slate-300' };
 
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${current.bg}`}>
@@ -98,8 +101,10 @@ const MyBookings = () => {
     );
   };
 
-  const renderStatusStepper = (status) => {
-    if (status === 'CANCELLED') {
+  const renderStatusStepper = (statusStr) => {
+    const st = (statusStr || 'PENDING').toUpperCase();
+
+    if (st === 'CANCELLED') {
       return (
         <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-center text-xs text-rose-700 font-medium my-2">
           Pesanan ini telah dibatalkan.
@@ -114,15 +119,15 @@ const MyBookings = () => {
       { key: 'COMPLETED', label: '4. Selesai' }
     ];
 
-    const getStepIndex = (st) => {
-      if (st === 'PENDING') return 0;
-      if (st === 'WAITING_CONFIRMATION') return 1;
-      if (st === 'CONFIRMED' || st === 'PAID') return 2;
-      if (st === 'COMPLETED') return 3;
+    const getStepIndex = (statusKey) => {
+      if (statusKey === 'PENDING') return 0;
+      if (statusKey === 'WAITING_CONFIRMATION') return 1;
+      if (statusKey === 'CONFIRMED' || statusKey === 'PAID') return 2;
+      if (statusKey === 'COMPLETED') return 3;
       return 0;
     };
 
-    const activeIndex = getStepIndex(status);
+    const activeIndex = getStepIndex(st);
 
     return (
       <div className="w-full bg-slate-50 border border-slate-200/60 rounded-xl p-3 my-3">
@@ -147,6 +152,55 @@ const MyBookings = () => {
         </div>
       </div>
     );
+  };
+
+  // Helper Format Tanggal (e.g. 15 Mar 2026)
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Helper Format Jam (HH:mm)
+  const formatTime = (timeVal) => {
+    if (!timeVal) return '';
+    if (typeof timeVal === 'string' && timeVal.includes('T')) {
+      const dateObj = new Date(timeVal);
+      if (!isNaN(dateObj.getTime())) {
+        const hours = String(dateObj.getUTCHours()).padStart(2, '0');
+        const minutes = String(dateObj.getUTCMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+      }
+    }
+    if (typeof timeVal === 'string') {
+      return timeVal.substring(0, 5);
+    }
+    return timeVal;
+  };
+
+  // Helper Format Judul Layanan
+  const getBookingTitle = (item) => {
+    if (item.route?.title || item.route?.name) return item.route.title || item.route.name;
+    if (item.tour_package?.title || item.tour_package?.name || item.tourPackage?.title) {
+      return item.tour_package?.title || item.tour_package?.name || item.tourPackage?.title;
+    }
+    if (item.vehicle?.name || item.vehicle?.model) return `Sewa ${item.vehicle.name || item.vehicle.model}`;
+
+    const rawService = (item.service_type || item.serviceType || '').replace(/_/g, ' ').toLowerCase();
+    if (rawService.includes('sewa')) return 'Sewa Mobil';
+    if (rawService.includes('antar')) return 'Antar-Jemput';
+    if (rawService.includes('tour') || rawService.includes('paket')) return 'Paket Tour Wisata';
+
+    return item.packageName || item.title || 'Layanan Transportasi & Wisata';
   };
 
   return (
@@ -206,8 +260,19 @@ const MyBookings = () => {
               ) : (
                 <div className="space-y-4">
                   {bookings.map((item) => {
-                    const bookingId = item.id || item.bookingCode || item.code;
+                    const bookingCode = item.booking_code || item.bookingCode || item.code || `DFT-${item.id}`;
+                    const bookingId = item.id || bookingCode;
                     const isExpanded = !!expandedBookingIds[bookingId];
+
+                    const totalPrice = Number(item.total_price || item.totalPrice || item.price || 0);
+                    const pickupDateStr = formatDate(item.pickup_date || item.pickupDate);
+                    const pickupTimeStr = formatTime(item.pickup_time || item.pickupTime);
+
+                    const vehicleName = item.vehicle?.name || item.vehicle?.model || item.vehicleName || 'Armada Standar';
+                    const passengerCount = item.passenger_count || item.passengerCount || item.passengers || 1;
+
+                    const pickupAddress = item.pickup_address || item.pickupAddress || item.pickup_location || item.pickupLocation || item.route?.pickup_location || item.route?.origin || '-';
+                    const dropoffAddress = item.dropoff_location || item.dropoffLocation || item.route?.dropoff_location || item.route?.destination || '-';
 
                     return (
                       <div
@@ -218,21 +283,19 @@ const MyBookings = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                                #{bookingId}
+                                #{bookingCode}
                               </span>
                               {renderStatusBadge(item.status)}
                             </div>
                             <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                              {item.route?.title || item.route?.name || item.packageName || item.title || item.tourPackage?.title || 'Layanan Transportasi & Wisata'}
+                              {getBookingTitle(item)}
                             </h2>
                             <p className="text-xs text-slate-500 flex items-center gap-1.5">
                               <i className="far fa-calendar-alt text-sky-500"></i>{' '}
-                              {item.pickupDate
-                                ? new Date(item.pickupDate).toLocaleString('id-ID', {
-                                    dateStyle: 'medium',
-                                    timeStyle: 'short'
-                                  })
-                                : '-'}
+                              <span>{pickupDateStr}</span>
+                              {pickupTimeStr && (
+                                <span className="ml-1 font-semibold text-slate-700">Pukul {pickupTimeStr}</span>
+                              )}
                             </p>
                           </div>
 
@@ -240,7 +303,7 @@ const MyBookings = () => {
                             <div className="text-right">
                               <span className="text-[10px] font-bold text-slate-400 uppercase block">Total</span>
                               <span className="text-base sm:text-lg font-extrabold text-[#00a2ff]">
-                                Rp {(item.totalPrice || item.price || item.total_price || 0).toLocaleString('id-ID')}
+                                Rp {totalPrice.toLocaleString('id-ID')}
                               </span>
                             </div>
 
@@ -272,7 +335,7 @@ const MyBookings = () => {
                                   Armada Kendaraan
                                 </span>
                                 <p className="font-semibold text-slate-800 mt-0.5 flex items-center gap-1">
-                                  <i className="fas fa-bus text-sky-500"></i> {item.vehicle?.name || item.vehicle?.type || item.vehicleName || 'Armada Standar'}
+                                  <i className="fas fa-bus text-sky-500"></i> {vehicleName}
                                 </p>
                               </div>
 
@@ -281,7 +344,7 @@ const MyBookings = () => {
                                   Jumlah Penumpang
                                 </span>
                                 <p className="font-semibold text-slate-800 mt-0.5 flex items-center gap-1">
-                                  <i className="fas fa-users text-sky-500"></i> {item.passengerCount || item.passengers || 1} Orang
+                                  <i className="fas fa-users text-sky-500"></i> {passengerCount} Orang
                                 </p>
                               </div>
 
@@ -289,8 +352,8 @@ const MyBookings = () => {
                                 <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                   Lokasi Penjemputan
                                 </span>
-                                <p className="font-semibold text-slate-800 mt-0.5 truncate flex items-center gap-1" title={item.pickupLocation}>
-                                  <i className="fas fa-location-dot text-rose-500"></i> {item.pickupLocation || '-'}
+                                <p className="font-semibold text-slate-800 mt-0.5 truncate flex items-center gap-1" title={pickupAddress}>
+                                  <i className="fas fa-location-dot text-rose-500"></i> {pickupAddress}
                                 </p>
                               </div>
 
@@ -298,8 +361,8 @@ const MyBookings = () => {
                                 <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                   Lokasi Tujuan
                                 </span>
-                                <p className="font-semibold text-slate-800 mt-0.5 truncate flex items-center gap-1" title={item.dropoffLocation}>
-                                  <i className="fas fa-flag-checkered text-emerald-500"></i> {item.dropoffLocation || '-'}
+                                <p className="font-semibold text-slate-800 mt-0.5 truncate flex items-center gap-1" title={dropoffAddress}>
+                                  <i className="fas fa-flag-checkered text-emerald-500"></i> {dropoffAddress}
                                 </p>
                               </div>
                             </div>
