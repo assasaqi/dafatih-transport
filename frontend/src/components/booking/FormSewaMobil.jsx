@@ -16,6 +16,7 @@ const FormSewaMobil = () => {
   const todayObj = new Date();
   const [vehicles, setVehicles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [pricePerDay, setPricePerDay] = useState(0);
 
   const initialForm = {
     custName: '',
@@ -27,7 +28,6 @@ const FormSewaMobil = () => {
     pickupTime: '08:00',
     pickupLoc: '',
     duration: '1 Hari',
-    passengers: '1',
     price: 0
   };
 
@@ -51,6 +51,9 @@ const FormSewaMobil = () => {
   const hoursList = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const minutesList = ['00', '15', '30', '45'];
 
+  // Pilihan Durasi Rental
+  const durationOptions = Array.from({ length: 7 }, (_, i) => `${i + 1} Hari`);
+
   // Memuat daftar armada dari API
   useEffect(() => {
     getVehicles()
@@ -73,18 +76,23 @@ const FormSewaMobil = () => {
       if (!isRentalData) return;
 
       const matchedName = stateData.carType || stateData.namaArmada || stateData.name || stateData.model || '';
-      const matchedPrice = Number(stateData.price || stateData.harga || stateData.price_per_day || 0);
+      const unitPrice = Number(stateData.price || stateData.price_per_day || stateData.harga || 0);
+      const rawDuration = stateData.duration ? (typeof stateData.duration === 'number' ? `${stateData.duration} Hari` : stateData.duration) : '1 Hari';
+      const durNum = parseInt(rawDuration) || 1;
+
+      if (unitPrice > 0) {
+        setPricePerDay(unitPrice);
+      }
 
       setFormData((prev) => ({
         ...prev,
         jenisLayanan: 'Sewa Mobil',
         vehicleId: stateData.vehicle_id || stateData.vehicleId || stateData.id || prev.vehicleId,
         armada: matchedName || prev.armada,
-        price: matchedPrice > 0 ? matchedPrice : prev.price,
+        duration: rawDuration,
+        price: stateData.totalPrice || (unitPrice > 0 ? unitPrice * durNum : prev.price),
         pickupDate: stateData.date || stateData.startDate || prev.pickupDate,
-        pickupLoc: stateData.pickup || stateData.location || prev.pickupLoc,
-        duration: stateData.duration || prev.duration,
-        passengers: stateData.passengers || prev.passengers
+        pickupLoc: stateData.pickup || stateData.location || prev.pickupLoc
       }));
     }
   }, [location.state]);
@@ -111,20 +119,34 @@ const FormSewaMobil = () => {
     setFormData(initialForm);
     setSelectedHour('08');
     setSelectedMinute('00');
+    setPricePerDay(0);
     navigate(location.pathname, { replace: true, state: {} });
   };
 
   const handleSelectArmada = (veh) => {
     const vehName = veh.name || veh.model || veh.carType || 'Armada Mobil';
-    const vehPrice = Number(veh.price || veh.price_per_day || veh.harga || 0);
+    const unitPrice = Number(veh.price_per_day || veh.price || veh.harga || 0);
+    const durNum = parseInt(formData.duration) || 1;
 
+    setPricePerDay(unitPrice);
     setFormData((prev) => ({
       ...prev,
       vehicleId: veh.id,
       armada: vehName,
-      price: vehPrice > 0 ? vehPrice : prev.price
+      price: unitPrice > 0 ? unitPrice * durNum : prev.price
     }));
     setIsArmadaOpen(false);
+  };
+
+  const handleDurationChange = (e) => {
+    const newDuration = e.target.value;
+    const durNum = parseInt(newDuration) || 1;
+
+    setFormData((prev) => ({
+      ...prev,
+      duration: newDuration,
+      price: pricePerDay > 0 ? pricePerDay * durNum : prev.price
+    }));
   };
 
   const generateCalendarDays = () => {
@@ -208,8 +230,6 @@ const FormSewaMobil = () => {
       pickup_time: formData.pickupTime,
       pickupTime: formData.pickupTime,
 
-      passenger_count: Number(formData.passengers || 1),
-      passengerCount: Number(formData.passengers || 1),
       total_price: Number(formData.price || 0),
       totalPrice: Number(formData.price || 0),
 
@@ -370,8 +390,8 @@ const FormSewaMobil = () => {
           </div>
         </div>
 
-        {/* BARIS 3: TANGGAL & WAKTU */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+        {/* BARIS 3: TANGGAL, WAKTU & DURASI RENTAL */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
           {/* KALENDER */}
           <div className="relative" ref={calendarRef}>
             <label className="text-[11px] sm:text-xs font-bold text-slate-700 mb-1 block">Tanggal Mulai Rental *</label>
@@ -463,6 +483,27 @@ const FormSewaMobil = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* DURASI RENTAL */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] sm:text-xs font-bold text-slate-700">Durasi Rental *</label>
+            <div className="relative flex items-center">
+              <i className="fa-solid fa-clock-rotate-left absolute left-3 text-[#0194F3] text-sm pointer-events-none"></i>
+              <select
+                name="duration"
+                value={formData.duration}
+                onChange={handleDurationChange}
+                className="w-full h-10 pl-9 pr-8 bg-white rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] cursor-pointer appearance-none"
+              >
+                {durationOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+              <i className="fa-solid fa-chevron-down absolute right-3 text-slate-400 text-xs pointer-events-none"></i>
+            </div>
           </div>
         </div>
 
