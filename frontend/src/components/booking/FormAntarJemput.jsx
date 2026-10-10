@@ -23,7 +23,7 @@ const FormAntarJemput = () => {
     custWa: '',
     jenisLayanan: 'Antar-Jemput',
     pickupDate: '',
-    pickupTime: '08:00',
+    pickupTime: '',
     pickupLoc: '',
     dropLoc: '',
     passengers: '1',
@@ -52,7 +52,6 @@ const FormAntarJemput = () => {
   const hoursList = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const minutesList = ['00', '15', '30', '45'];
 
-  // Helper untuk notifikasi SweetAlert2 yang ringkas & responsif di mobile
   const showAlert = (message, icon = 'warning') => {
     Swal.fire({
       toast: true,
@@ -94,6 +93,7 @@ const FormAntarJemput = () => {
         dropLoc: incomingDrop || prev.dropLoc,
         price: incomingPrice > 0 ? incomingPrice : prev.price,
         pickupDate: stateData.date || stateData.travelDate || prev.pickupDate,
+        pickupTime: stateData.time || stateData.pickupTime || prev.pickupTime,
         passengers: stateData.passengers || prev.passengers
       }));
     }
@@ -207,6 +207,23 @@ const FormAntarJemput = () => {
 
   const handleClear = (field) => {
     setFormData((prev) => ({ ...prev, [field]: '' }));
+  };
+
+  const handleToggleTimePicker = () => {
+    if (!isTimePickerOpen) {
+      if (formData.pickupTime) {
+        const [h, m] = formData.pickupTime.split(':');
+        if (h) setSelectedHour(h);
+        if (m) setSelectedMinute(m);
+      } else {
+        setSelectedHour('08');
+        setSelectedMinute('00');
+      }
+    }
+    setIsTimePickerOpen(!isTimePickerOpen);
+    setIsPickupOpen(false);
+    setIsDropoffOpen(false);
+    setIsCalendarOpen(false);
   };
 
   const handleApplyTime = () => {
@@ -641,18 +658,13 @@ const FormAntarJemput = () => {
             )}
           </div>
 
-          {/* WAKTU */}
+          {/* WAKTU PENJEMPUTAN */}
           <div className="relative" ref={timePickerRef}>
             <label className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">
               Waktu Penjemputan *
             </label>
             <div
-              onClick={() => {
-                setIsTimePickerOpen(!isTimePickerOpen);
-                setIsPickupOpen(false);
-                setIsDropoffOpen(false);
-                setIsCalendarOpen(false);
-              }}
+              onClick={handleToggleTimePicker}
               className={`border rounded-xl p-2.5 sm:p-3 bg-white flex items-center justify-between cursor-pointer transition-all ${
                 isTimePickerOpen
                   ? 'border-[#0194F3] ring-2 ring-sky-100'
