@@ -8,16 +8,17 @@ import MainLayout from '@/layouts/MainLayout';
 import Home from '@/pages/Home';
 import Tariffs from '@/pages/Tariffs';
 import Booking from '@/pages/Booking';
-import MyBookings from '@/pages/MyBookings'; // 👈 1. Impor Halaman MyBookings
+import MyBookings from '@/pages/MyBookings';
 import Gallery from '@/pages/Gallery';
 import Blog from '@/pages/Blog';
 import Vehicles from '@/pages/Vehicles';
 import NotFound from '@/pages/NotFound';
 import AuthTest from '@/pages/AuthTest';
 
-// Halaman Klien (Auth)
+// Halaman Klien (Auth & Profile)
 import Login from '@/pages/client/Login';
 import Register from '@/pages/client/Register';
+import Profile from '@/pages/client/Profile'; // 👈 1. Impor Halaman Profil Client
 
 // Impor Halaman Admin & Proteksi Route
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -33,11 +34,13 @@ import AdminProfile from '@/pages/admin/AdminProfile';
 export default function AppRouter() {
     return (
         <Routes>
-            {/* Rute Publik (Dibungkus dengan MainLayout) */}
+            {/* Rute Publik & Klien (Dibungkus dengan MainLayout) */}
             <Route path="/" element={<MainLayout><Home /></MainLayout>} />
             <Route path="/tarif" element={<MainLayout><Tariffs /></MainLayout>} />
             <Route path="/pesan" element={<MainLayout><Booking /></MainLayout>} />
-            <Route path="/pesanan-saya" element={<MainLayout><MyBookings /></MainLayout>} /> {/* 👈 2. Tambahkan Rute Pesanan Saya */}
+            <Route path="/pesanan-saya" element={<MainLayout><MyBookings /></MainLayout>} />
+            <Route path="/profile" element={<MainLayout><Profile /></MainLayout>} /> {/* 👈 2. Tambahkan Rute Profil */}
+            <Route path="/profile/edit" element={<MainLayout><Profile /></MainLayout>} />
             <Route path="/galeri" element={<MainLayout><Gallery /></MainLayout>} />
             <Route path="/blog" element={<MainLayout><Blog /></MainLayout>} />
             <Route path="/mobil" element={<MainLayout><Vehicles /></MainLayout>} />

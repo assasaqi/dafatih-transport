@@ -138,7 +138,7 @@ const AirportSearchForm = ({
             setIsPickupOpen(nextState);
           }}
           className={`border rounded-2xl p-3 bg-white flex flex-col justify-center cursor-pointer transition-all ${
-            isPickupOpen ? 'border-[#00a2ff] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
+            isPickupOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
           }`}
         >
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -146,17 +146,12 @@ const AirportSearchForm = ({
           </span>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <svg className="w-5 h-5 text-[#00a2ff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+              <i className="fa-solid fa-location-dot text-[#0194F3] text-sm shrink-0"></i>
               <span className={`text-xs sm:text-sm font-bold truncate ${pickupInput ? 'text-slate-800' : 'text-slate-400'}`}>
                 {pickupInput || 'Pilih Penjemputan'}
               </span>
             </div>
-            <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isPickupOpen ? 'rotate-180 text-[#00a2ff]' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+            <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isPickupOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
           </div>
         </div>
 
@@ -168,10 +163,11 @@ const AirportSearchForm = ({
                   key={idx}
                   onClick={() => handleSelectPickup(loc)}
                   className={`px-3.5 py-2.5 text-xs font-bold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
-                    pickupInput === loc ? 'text-[#00a2ff] bg-sky-50/50' : 'text-slate-700'
+                    pickupInput === loc ? 'text-[#0194F3] bg-sky-50/50' : 'text-slate-700'
                   }`}
                 >
                   <span>{loc}</span>
+                  {pickupInput === loc && <i className="fa-solid fa-check text-xs text-[#0194F3]"></i>}
                 </div>
               ))
             ) : (
@@ -198,7 +194,7 @@ const AirportSearchForm = ({
             setIsDropoffOpen(nextState);
           }}
           className={`border rounded-2xl p-3 bg-white flex flex-col justify-center cursor-pointer transition-all ${
-            isDropoffOpen ? 'border-[#00a2ff] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
+            isDropoffOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
           }`}
         >
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -206,16 +202,12 @@ const AirportSearchForm = ({
           </span>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <svg className="w-5 h-5 text-[#00a2ff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-              </svg>
+              <i className="fa-solid fa-flag-checkered text-[#0194F3] text-sm shrink-0"></i>
               <span className={`text-xs sm:text-sm font-bold truncate ${dropoffInput ? 'text-slate-800' : 'text-slate-400'}`}>
                 {dropoffInput || 'Pilih Tujuan'}
               </span>
             </div>
-            <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isDropoffOpen ? 'rotate-180 text-[#00a2ff]' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+            <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isDropoffOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
           </div>
         </div>
 
@@ -230,10 +222,11 @@ const AirportSearchForm = ({
                     setIsDropoffOpen(false);
                   }}
                   className={`px-3.5 py-2.5 text-xs font-bold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
-                    dropoffInput === loc ? 'text-[#00a2ff] bg-sky-50/50' : 'text-slate-700'
+                    dropoffInput === loc ? 'text-[#0194F3] bg-sky-50/50' : 'text-slate-700'
                   }`}
                 >
                   <span>{loc}</span>
+                  {dropoffInput === loc && <i className="fa-solid fa-check text-xs text-[#0194F3]"></i>}
                 </div>
               ))
             ) : (
@@ -260,7 +253,7 @@ const AirportSearchForm = ({
             setIsCalendarOpen(nextState);
           }}
           className={`border rounded-2xl p-3 bg-white flex flex-col justify-center cursor-pointer transition-all ${
-            isCalendarOpen ? 'border-[#00a2ff] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
+            isCalendarOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
           }`}
         >
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -268,16 +261,12 @@ const AirportSearchForm = ({
           </span>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <svg className="w-5 h-5 text-[#00a2ff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+              <i className="fa-solid fa-calendar-days text-[#0194F3] text-sm shrink-0"></i>
               <span className={`text-xs sm:text-sm font-bold truncate ${travelDate ? 'text-slate-800' : 'text-slate-400'}`}>
                 {renderFormattedDate(travelDate)}
               </span>
             </div>
-            <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isCalendarOpen ? 'rotate-180 text-[#00a2ff]' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+            <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isCalendarOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
           </div>
         </div>
 
@@ -307,7 +296,7 @@ const AirportSearchForm = ({
             setIsPassengerOpen(nextState);
           }}
           className={`border rounded-2xl p-3 bg-white flex flex-col justify-center cursor-pointer transition-all ${
-            isPassengerOpen ? 'border-[#00a2ff] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
+            isPassengerOpen ? 'border-[#0194F3] ring-2 ring-sky-100' : 'border-slate-300 hover:border-slate-400'
           }`}
         >
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -315,16 +304,12 @@ const AirportSearchForm = ({
           </span>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <svg className="w-5 h-5 text-[#00a2ff] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
+              <i className="fa-solid fa-users text-[#0194F3] text-sm shrink-0"></i>
               <span className={`text-xs sm:text-sm font-bold truncate ${passengers ? 'text-slate-800' : 'text-slate-400'}`}>
                 {passengers ? `${passengers} Orang` : 'Pilih Penumpang'}
               </span>
             </div>
-            <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isPassengerOpen ? 'rotate-180 text-[#00a2ff]' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+            <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isPassengerOpen ? 'rotate-180 text-[#0194F3]' : ''}`}></i>
           </div>
         </div>
 
@@ -338,10 +323,11 @@ const AirportSearchForm = ({
                   setIsPassengerOpen(false);
                 }}
                 className={`px-3.5 py-2.5 text-xs font-bold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
-                  passengers === num ? 'text-[#00a2ff] bg-sky-50/50' : 'text-slate-700'
+                  passengers === num ? 'text-[#0194F3] bg-sky-50/50' : 'text-slate-700'
                 }`}
               >
                 <span>{num} Orang {num === '4' ? '(Maksimal)' : ''}</span>
+                {passengers === num && <i className="fa-solid fa-check text-xs text-[#0194F3]"></i>}
               </div>
             ))}
           </div>
@@ -351,11 +337,9 @@ const AirportSearchForm = ({
       {/* TOMBOL CARI */}
       <button
         type="submit"
-        className="w-full lg:w-auto h-full px-7 py-3.5 bg-[#00a2ff] hover:bg-blue-600 text-white font-bold text-sm rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+        className="w-full lg:w-auto h-full px-7 py-3.5 bg-[#0194F3] hover:bg-sky-600 text-white font-bold text-sm rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
       >
-        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
+        <i className="fa-solid fa-magnifying-glass text-white text-xs"></i>
         <span>Cari</span>
       </button>
     </form>

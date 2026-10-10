@@ -10,39 +10,63 @@ const MobileBottomNav = () => {
     }
 
     return (
-        <>
-            <style>{`
-        .mobile-bottom-nav { display: none; }
-        @media (max-width: 992px) {
-          .mobile-bottom-nav {
-            display: flex;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            background: #ffffff;
-            border-top: 1px solid rgba(0, 0, 0, 0.08);
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-            z-index: 1500;
-            justify-content: space-around;
-            align-items: center;
-          }
-          .mobile-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; height: 100%; text-decoration: none; color: #94a3b8; font-size: 0.68rem; font-weight: 600; }
-          .mobile-nav-item i { font-size: 1.15rem; margin-bottom: 2px; }
-          .mobile-nav-item.active { color: #0284c7; }
-        }
-      `}</style>
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 h-[62px] bg-white border-t border-slate-200/90 shadow-[0_-2px_12px_rgba(0,0,0,0.05)] z-[1500] flex justify-around items-center pb-[env(safe-area-inset-bottom,0px)]">
+            <NavLink
+                to="/"
+                end
+                className={({ isActive }) =>
+                    `flex flex-col items-center justify-center flex-1 h-full text-[11px] font-bold transition-colors ${
+                        isActive ? 'text-[#0194F3]' : 'text-slate-500 hover:text-slate-700'
+                    }`
+                }
+            >
+                <i className="fa-solid fa-house text-lg mb-0.5"></i>
+                <span>Beranda</span>
+            </NavLink>
 
-            <div className="mobile-bottom-nav">
-                <NavLink to="/" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-house"></i><span>Beranda</span></NavLink>
-                {/* <NavLink to="/tarif" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-table-list"></i><span>Tarif</span></NavLink> */}
-                {/* <NavLink to="/mobil" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-car"></i><span>Mobil</span></NavLink> */}
-                <NavLink to="/pesan" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-circle-plus"></i><span>Pesan</span></NavLink>
-                {/* <NavLink to="/galeri" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-images"></i><span>Galeri</span></NavLink>
-                <NavLink to="/blog" className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}><i className="fa-solid fa-blog"></i><span>Blog</span></NavLink> */}
-            </div>
-        </>
+            {/* <NavLink to="/tarif" className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-[11px] font-bold transition-colors ${isActive ? 'text-[#0194F3]' : 'text-slate-500'}`}><i className="fa-solid fa-table-list text-lg mb-0.5"></i><span>Tarif</span></NavLink> */}
+            {/* <NavLink to="/mobil" className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-[11px] font-bold transition-colors ${isActive ? 'text-[#0194F3]' : 'text-slate-500'}`}><i className="fa-solid fa-car text-lg mb-0.5"></i><span>Mobil</span></NavLink> */}
+
+            <NavLink
+                to="/pesan"
+                className={({ isActive }) =>
+                    `flex flex-col items-center justify-center flex-1 h-full text-[11px] font-bold transition-colors ${
+                        isActive ? 'text-[#0194F3]' : 'text-slate-500 hover:text-slate-700'
+                    }`
+                }
+            >
+                <i className="fa-solid fa-circle-plus text-lg mb-0.5"></i>
+                <span>Pesan</span>
+            </NavLink>
+
+            <NavLink
+                to="/pesanan-saya"
+                className={({ isActive }) =>
+                    `flex flex-col items-center justify-center flex-1 h-full text-[11px] font-bold transition-colors ${
+                        isActive ? 'text-[#0194F3]' : 'text-slate-500 hover:text-slate-700'
+                    }`
+                }
+            >
+                <i className="fa-solid fa-receipt text-lg mb-0.5"></i>
+                <span>Transaksi</span>
+            </NavLink>
+
+            {/* Tombol Profil Mengarah ke Route /profile */}
+            <NavLink
+                to="/profile"
+                className={({ isActive }) =>
+                    `flex flex-col items-center justify-center flex-1 h-full text-[11px] font-bold transition-colors ${
+                        isActive ? 'text-[#0194F3]' : 'text-slate-500 hover:text-slate-700'
+                    }`
+                }
+            >
+                <i className="fa-solid fa-user text-lg mb-0.5"></i>
+                <span>Profil</span>
+            </NavLink>
+
+            {/* <NavLink to="/galeri" className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-[11px] font-bold transition-colors ${isActive ? 'text-[#0194F3]' : 'text-slate-500'}`}><i className="fa-solid fa-images text-lg mb-0.5"></i><span>Galeri</span></NavLink> */}
+            {/* <NavLink to="/blog" className={({ isActive }) => `flex flex-col items-center justify-center flex-1 h-full text-[11px] font-bold transition-colors ${isActive ? 'text-[#0194F3]' : 'text-slate-500'}`}><i className="fa-solid fa-blog text-lg mb-0.5"></i><span>Blog</span></NavLink> */}
+        </div>
     );
 };
 

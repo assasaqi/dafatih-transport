@@ -147,7 +147,7 @@ const CarRentalForm = ({
           }}
           className={`border rounded-2xl p-3 bg-white flex flex-col justify-center cursor-pointer transition-all ${
             isRentalLocOpen
-              ? 'border-[#00a2ff] ring-2 ring-sky-100'
+              ? 'border-[#0194F3] ring-2 ring-sky-100'
               : 'border-slate-300 hover:border-slate-400'
           }`}
         >
@@ -156,24 +156,7 @@ const CarRentalForm = ({
           </span>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <svg
-                className="w-5 h-5 text-[#00a2ff] shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth="2.2"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
+              <i className="fa-solid fa-location-dot text-[#0194F3] text-sm shrink-0"></i>
               <span
                 className={`text-xs sm:text-sm font-bold truncate ${
                   rentalLocation ? 'text-slate-800' : 'text-slate-400'
@@ -182,17 +165,11 @@ const CarRentalForm = ({
                 {rentalLocation || 'Pilih Lokasi Rental'}
               </span>
             </div>
-            <svg
-              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                isRentalLocOpen ? 'rotate-180 text-[#00a2ff]' : ''
+            <i
+              className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${
+                isRentalLocOpen ? 'rotate-180 text-[#0194F3]' : ''
               }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+            ></i>
           </div>
         </div>
 
@@ -208,11 +185,14 @@ const CarRentalForm = ({
                   }}
                   className={`px-3.5 py-2.5 text-xs font-bold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
                     rentalLocation === loc
-                      ? 'text-[#00a2ff] bg-sky-50/50'
+                      ? 'text-[#0194F3] bg-sky-50/50'
                       : 'text-slate-700'
                   }`}
                 >
                   <span>{loc}</span>
+                  {rentalLocation === loc && (
+                    <i className="fa-solid fa-check text-xs text-[#0194F3]"></i>
+                  )}
                 </div>
               ))
             ) : (
@@ -242,7 +222,7 @@ const CarRentalForm = ({
           }}
           className={`border rounded-2xl p-3 bg-white flex flex-col justify-center cursor-pointer transition-all ${
             isArmadaOpen
-              ? 'border-[#00a2ff] ring-2 ring-sky-100'
+              ? 'border-[#0194F3] ring-2 ring-sky-100'
               : 'border-slate-300 hover:border-slate-400'
           }`}
         >
@@ -251,19 +231,7 @@ const CarRentalForm = ({
           </span>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <svg
-                className="w-5 h-5 text-[#00a2ff] shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth="2"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8 17a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zM3 9l2-4h10l2 4M3 9h18v7a1 1 0 01-1 1h-1a2 2 0 01-4 0H9a2 2 0 01-4 0H4a1 1 0 01-1-1V9z"
-                />
-              </svg>
+              <i className="fa-solid fa-car text-[#0194F3] text-sm shrink-0"></i>
               <span
                 className={`text-xs sm:text-sm font-bold truncate ${
                   armadaName ? 'text-slate-800' : 'text-slate-400'
@@ -272,17 +240,11 @@ const CarRentalForm = ({
                 {armadaName || 'Pilih Nama Armada'}
               </span>
             </div>
-            <svg
-              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                isArmadaOpen ? 'rotate-180 text-[#00a2ff]' : ''
+            <i
+              className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${
+                isArmadaOpen ? 'rotate-180 text-[#0194F3]' : ''
               }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+            ></i>
           </div>
         </div>
 
@@ -298,11 +260,14 @@ const CarRentalForm = ({
                   }}
                   className={`px-3.5 py-2.5 text-xs font-bold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
                     armadaName === armada
-                      ? 'text-[#00a2ff] bg-sky-50/50'
+                      ? 'text-[#0194F3] bg-sky-50/50'
                       : 'text-slate-700'
                   }`}
                 >
                   <span>{armada}</span>
+                  {armadaName === armada && (
+                    <i className="fa-solid fa-check text-xs text-[#0194F3]"></i>
+                  )}
                 </div>
               ))
             ) : (
@@ -332,7 +297,7 @@ const CarRentalForm = ({
           }}
           className={`border rounded-2xl p-3 bg-white flex flex-col justify-center cursor-pointer transition-all ${
             isRentalDurOpen
-              ? 'border-[#00a2ff] ring-2 ring-sky-100'
+              ? 'border-[#0194F3] ring-2 ring-sky-100'
               : 'border-slate-300 hover:border-slate-400'
           }`}
         >
@@ -341,16 +306,7 @@ const CarRentalForm = ({
           </span>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <svg
-                className="w-5 h-5 text-[#00a2ff] shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth="2.2"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
+              <i className="fa-solid fa-clock-rotate-left text-[#0194F3] text-sm shrink-0"></i>
               <span
                 className={`text-xs sm:text-sm font-bold truncate ${
                   rentalDuration ? 'text-slate-800' : 'text-slate-400'
@@ -359,17 +315,11 @@ const CarRentalForm = ({
                 {rentalDuration ? `${rentalDuration} Hari` : 'Pilih Durasi'}
               </span>
             </div>
-            <svg
-              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                isRentalDurOpen ? 'rotate-180 text-[#00a2ff]' : ''
+            <i
+              className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${
+                isRentalDurOpen ? 'rotate-180 text-[#0194F3]' : ''
               }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+            ></i>
           </div>
         </div>
 
@@ -384,11 +334,14 @@ const CarRentalForm = ({
                 }}
                 className={`px-3.5 py-2.5 text-xs font-bold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
                   rentalDuration === day
-                    ? 'text-[#00a2ff] bg-sky-50/50'
+                    ? 'text-[#0194F3] bg-sky-50/50'
                     : 'text-slate-700'
                 }`}
               >
                 <span>{day} Hari</span>
+                {rentalDuration === day && (
+                  <i className="fa-solid fa-check text-xs text-[#0194F3]"></i>
+                )}
               </div>
             ))}
           </div>
@@ -398,21 +351,9 @@ const CarRentalForm = ({
       {/* 4. TOMBOL CARI */}
       <button
         type="submit"
-        className="w-full lg:w-auto h-full px-7 py-3.5 bg-[#00a2ff] hover:bg-blue-600 text-white font-bold text-sm rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+        className="w-full lg:w-auto h-full px-7 py-3.5 bg-[#0194F3] hover:bg-sky-600 text-white font-bold text-sm rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
       >
-        <svg
-          className="w-4 h-4 text-white"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          strokeWidth="2.5"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
+        <i className="fa-solid fa-magnifying-glass text-white text-xs"></i>
         <span>Cari</span>
       </button>
     </form>

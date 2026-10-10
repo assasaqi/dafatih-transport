@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext'; // Import AuthContext
+import { useAuth } from '@/context/AuthContext';
 
 // Import aset logo
 import logoImg from '/logo/logo.png';
@@ -10,7 +10,7 @@ const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const dropdownRef = useRef(null);
-    const { user: clientUser, logout } = useAuth(); // Pakai AuthContext
+    const { user: clientUser, logout } = useAuth();
 
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -51,7 +51,7 @@ const Navbar = () => {
     }, [location]);
 
     const handleLogout = () => {
-        logout(); // Panggil logout dari AuthContext
+        logout();
         setIsProfileMenuOpen(false);
         setIsMobileMenuOpen(false);
         navigate('/login');
@@ -92,8 +92,8 @@ const Navbar = () => {
                     />
                 </NavLink>
 
-                {/* Desktop Navigasi Utama */}
-                <nav className="hidden xl:flex items-center gap-6 px-2 py-2">
+                {/* Desktop & Laptop Navigasi Utama (Muncul mulai ukuran lg/1024px) */}
+                <nav className="hidden lg:flex items-center gap-6 px-2 py-2">
                     <NavLink
                         to="/"
                         end
@@ -145,8 +145,8 @@ const Navbar = () => {
                     </NavLink>
                 </nav>
 
-                {/* Header Actions Desktop */}
-                <div className="hidden md:flex items-center gap-3 shrink-0">
+                {/* Header Actions Laptop/Desktop (Posisi Sebelah Kanan, Muncul mulai lg/1024px) */}
+                <div className="hidden lg:flex items-center gap-3 shrink-0">
                     {clientUser ? (
                         <div className="relative" ref={dropdownRef}>
                             <button
@@ -176,12 +176,11 @@ const Navbar = () => {
                                 } ${isProfileMenuOpen ? 'rotate-180' : ''}`}></i>
                             </button>
 
-                            {/* Dropdown Menu Desktop */}
+                            {/* Dropdown Menu Desktop & Laptop */}
                             {isProfileMenuOpen && (
                                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
                                     <div className="py-2 text-xs font-bold text-slate-700 divide-y divide-slate-100">
                                         <div className="py-1">
-                                            {/* Pesanan Saya di Dropdown Profil Desktop (Icon Panah Dihapus) */}
                                             <Link
                                                 to="/pesanan-saya"
                                                 onClick={() => setIsProfileMenuOpen(false)}
@@ -275,11 +274,11 @@ const Navbar = () => {
                     )}
                 </div>
 
-                {/* Tombol Hamburger Mobile */}
+                {/* Tombol Hamburger (Hanya untuk Mobile & Tablet < 1024px) */}
                 <button
                     type="button"
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className={`xl:hidden text-xl p-2 rounded-xl cursor-pointer transition-colors ${
+                    className={`lg:hidden text-xl p-2 rounded-xl cursor-pointer transition-colors ${
                         isHomePage && !isScrolled && !isMobileMenuOpen
                             ? 'text-white hover:text-sky-300'
                             : 'text-slate-700 hover:text-[#0194F3]'
@@ -290,9 +289,9 @@ const Navbar = () => {
 
             </div>
 
-            {/* Menu Mobile & Tablet */}
+            {/* Menu Drawer Mobile & Tablet */}
             {isMobileMenuOpen && (
-                <div className="xl:hidden bg-white/95 backdrop-blur-lg border-b border-slate-200/80 px-4 py-4 space-y-4 shadow-xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-top-2 duration-200">
+                <div className="lg:hidden bg-white/95 backdrop-blur-lg border-b border-slate-200/80 px-4 py-4 space-y-4 shadow-xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-top-2 duration-200">
                     <div className="flex flex-col space-y-1">
                         <p className="px-3 text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1">Navigasi Utama</p>
                         <NavLink
@@ -354,7 +353,7 @@ const Navbar = () => {
                                 }`
                             }
                         >
-                            Pesanan
+                            Buat Pesanan
                         </NavLink>
                     </div>
 
@@ -365,7 +364,6 @@ const Navbar = () => {
                                     Akun Saya ({clientUser.name?.split(' ')[0]})
                                 </p>
 
-                                {/* Pesanan Saya di Menu Mobile (Icon Panah Dihapus) */}
                                 <Link
                                     to="/pesanan-saya"
                                     onClick={() => setIsMobileMenuOpen(false)}
