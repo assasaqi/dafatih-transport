@@ -42,7 +42,7 @@ const RouteCard = ({ route, travelDate, onSelectRoute }) => {
     } else {
       navigate('/pesan', {
         state: {
-          jenisLayanan: 'Antar-Jemput', // Key penentu agar tidak masuk ke form mobil/tour
+          jenisLayanan: 'Antar-Jemput',
           pickup: route.pickup_location,
           dropoff: route.dropoff_location,
           price: Number(route.price || 0),
@@ -55,10 +55,11 @@ const RouteCard = ({ route, travelDate, onSelectRoute }) => {
   return (
     <div
       onClick={handleCardClick}
-      className="snap-start shrink-0 w-[260px] sm:w-[280px] lg:w-[calc(25%-15px)] group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 border border-slate-200/80 cursor-pointer flex flex-col justify-between"
+      className="snap-start shrink-0 w-[calc(50%-6px)] sm:w-[280px] lg:w-[calc(25%-15px)] group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 border border-slate-200/80 cursor-pointer flex flex-col justify-between"
     >
       <div>
-        <div className="relative h-40 sm:h-44 overflow-hidden bg-slate-100">
+        {/* Gambar disesuaikan proporsinya di mobile (h-28) */}
+        <div className="relative h-28 sm:h-44 overflow-hidden bg-slate-100">
           <img
             src={getImageUrl(route)}
             alt={`${route.pickup_location} - ${route.dropoff_location}`}
@@ -68,21 +69,22 @@ const RouteCard = ({ route, travelDate, onSelectRoute }) => {
           />
         </div>
 
-        <div className="p-3.5 sm:p-4">
-          <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#0194F3] transition-colors line-clamp-1 mb-1">
+        {/* Padding dan font disesuaikan di mobile agar teks tidak terpotong */}
+        <div className="p-2.5 sm:p-4">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#0194F3] transition-colors line-clamp-2 sm:line-clamp-1 mb-1 leading-snug">
             {route.pickup_location} - {route.dropoff_location}
           </h3>
 
           {travelDate && (
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mb-2 font-medium">
-              <i className="fa-regular fa-calendar text-[10px] text-amber-600"></i>
+            <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-400 mb-1.5 sm:mb-2 font-medium">
+              <i className="fa-regular fa-calendar text-[9px] sm:text-[10px] text-amber-600"></i>
               <span>{formatDisplayDate(travelDate)}</span>
             </div>
           )}
 
-          <div className="pt-1">
-            <span className="text-base sm:text-lg font-extrabold text-[#F96D01] block leading-tight">
-              Rp {Number(route.price).toLocaleString('id-ID')}
+          <div className="pt-0.5 sm:pt-1">
+            <span className="text-xs sm:text-lg font-extrabold text-[#F96D01] block leading-tight">
+              Rp {Number(route.price || 0).toLocaleString('id-ID')}
             </span>
           </div>
         </div>

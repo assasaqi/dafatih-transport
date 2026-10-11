@@ -48,16 +48,23 @@ const Home = () => {
   useEffect(() => {
     // Ambil data Rute, Blog, dan Mobil sekaligus
     Promise.all([
-      getRoutes(),
-      getBlogs(),
+      getRoutes().catch(() => ({ data: { success: false, data: [] } })),
+      getBlogs().catch(() => ({ data: { success: false, data: [] } })),
       getVehicles().catch(() => ({ data: { success: false, data: [] } }))
     ])
       .then(([routesRes, blogsRes, vehiclesRes]) => {
+        // Simpan data Rute
         if (routesRes.data?.success && Array.isArray(routesRes.data.data)) {
           setRoutes(routesRes.data.data);
+        } else if (Array.isArray(routesRes?.data)) {
+          setRoutes(routesRes.data);
         }
+
+        // Simpan data Blog (3 artikel terbaru)
         if (blogsRes.data?.success && Array.isArray(blogsRes.data.data)) {
           setBlogs(blogsRes.data.data.slice(0, 3));
+        } else if (Array.isArray(blogsRes?.data)) {
+          setBlogs(blogsRes.data.slice(0, 3));
         }
 
         // Simpan data armada/mobil
@@ -94,17 +101,17 @@ const Home = () => {
       const p = searchFilter.pickup.toLowerCase().trim();
       const d = searchFilter.dropoff.toLowerCase().trim();
       routesList = routesList.filter((r) => {
-        const pickLoc = (r.pickup_location || '').toLowerCase();
-        const dropLoc = (r.dropoff_location || '').toLowerCase();
-        const matchPickup = p === '' || pickLoc === p;
-        const matchDrop = d === '' || dropLoc === d;
+        const pickLoc = (r.pickup_location || r.origin || '').toLowerCase();
+        const dropLoc = (r.dropoff_location || r.destination || '').toLowerCase();
+        const matchPickup = p === '' || pickLoc.includes(p);
+        const matchDrop = d === '' || dropLoc.includes(d);
         return matchPickup && matchDrop;
       });
     } else if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       routesList = routesList.filter((r) => {
-        const pickLoc = (r.pickup_location || '').toLowerCase();
-        const dropLoc = (r.dropoff_location || '').toLowerCase();
+        const pickLoc = (r.pickup_location || r.origin || '').toLowerCase();
+        const dropLoc = (r.dropoff_location || r.destination || '').toLowerCase();
         return pickLoc.includes(q) || dropLoc.includes(q);
       });
     }
@@ -142,8 +149,8 @@ const Home = () => {
     navigate('/pesan', {
       state: {
         jenisLayanan: 'Antar-Jemput',
-        pickup: route.pickup_location,
-        dropoff: route.dropoff_location,
+        pickup: route.pickup_location || route.origin,
+        dropoff: route.dropoff_location || route.destination,
         price: Number(route.price || 0)
       }
     });
@@ -180,15 +187,12 @@ const Home = () => {
 
           <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-2xl border border-slate-200/80 relative z-20">
 
-            {/* ======================================================== */}
-            {/* 1. TAB NAVIGASI KHUSUS MOBILE (IKON CIRCLE ALA PROFIL)    */}
-            {/* ======================================================== */}
+            {/* TAB NAVIGASI MOBILE */}
             <div className="block md:hidden bg-white rounded-2xl p-1 mb-4">
               <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-2.5 px-1">
                 Pilih Layanan
               </p>
               <div className="grid grid-cols-3 gap-x-2 text-center items-start justify-items-center">
-                {/* TAB ANTAR-JEMPUT */}
                 <button
                   type="button"
                   onClick={() => handleTabClick('airport')}
@@ -212,7 +216,6 @@ const Home = () => {
                   </span>
                 </button>
 
-                {/* TAB SEWA MOBIL */}
                 <button
                   type="button"
                   onClick={() => handleTabClick('rental')}
@@ -236,7 +239,6 @@ const Home = () => {
                   </span>
                 </button>
 
-                {/* TAB PAKET TOUR */}
                 <button
                   type="button"
                   onClick={() => handleTabClick('tour')}
@@ -262,9 +264,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* ======================================================== */}
-            {/* 2. TAB NAVIGASI KHUSUS DESKTOP / TABLET (DESAIN PILL)     */}
-            {/* ======================================================== */}
+            {/* TAB NAVIGASI DESKTOP */}
             <div className="hidden md:flex gap-2 border-b border-slate-200 pb-3.5 mb-5 overflow-x-auto">
               <button
                 type="button"
@@ -302,7 +302,12 @@ const Home = () => {
             </div>
 
             {/* TAB CONTENT */}
-            {activeTab === 'airport' && <AirportSearchForm routes={routes} />}
+            {activeTab === 'airport' && (
+              <AirportSearchForm
+                routes={routes}
+                onSearch={(filter) => setSearchFilter(filter)}
+              />
+            )}
             {activeTab === 'rental' && (
               <RentalSearchForm
                 routes={routes}
