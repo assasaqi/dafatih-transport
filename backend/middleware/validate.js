@@ -49,15 +49,49 @@ const vehicleSchema = z.object({
   status: z.enum(['AVAILABLE', 'BOOKED', 'MAINTENANCE']).optional(),
 });
 
-// 5. Skema Booking / Pemesanan
+// 5. Skema Booking / Pemesanan (Disesuaikan agar Toleran Snake_case, CamelCase, & Nullable)
 const bookingSchema = z.object({
-  customerName: z.string().min(3, 'Nama pemesan minimal 3 karakter').max(100),
-  customerEmail: z.string().email('Format email tidak valid'),
-  customerPhone: z.string().min(10, 'Nomor telepon minimal 10 digit'),
-  vehicleId: z.string().optional(),
-  routeId: z.string().optional(),
-  startDate: z.string().min(1, 'Tanggal mulai wajib diisi'),
-  totalPrice: z.coerce.number().positive('Total harga harus angka positif').optional(),
+  customerName: z.string().optional(),
+  customer_name: z.string().optional(),
+
+  customerPhone: z.string().optional(),
+  customer_phone: z.string().optional(),
+
+  customerEmail: z.string().email('Format email tidak valid').nullable().optional(),
+  customer_email: z.string().email('Format email tidak valid').nullable().optional(),
+
+  serviceType: z.string().optional(),
+  service_type: z.string().optional(),
+
+  vehicleId: z.coerce.number().nullable().optional(),
+  vehicle_id: z.coerce.number().nullable().optional(),
+
+  routeId: z.coerce.number().nullable().optional(),
+  route_id: z.coerce.number().nullable().optional(),
+
+  tourPackageId: z.coerce.number().nullable().optional(),
+  tour_package_id: z.coerce.number().nullable().optional(),
+
+  startDate: z.string().optional(),
+  pickupDate: z.string().optional(),
+  pickup_date: z.string().optional(),
+
+  pickupTime: z.string().optional(),
+  pickup_time: z.string().optional(),
+
+  pickupAddress: z.string().optional(),
+  pickup_address: z.string().optional(),
+  pickup_location: z.string().optional(),
+  dropoff_location: z.string().optional(),
+
+  passengerCount: z.coerce.number().optional(),
+  passenger_count: z.coerce.number().optional(),
+
+  totalPrice: z.coerce.number().optional(),
+  total_price: z.coerce.number().optional(),
+
+  notes: z.string().optional(),
+  status: z.string().optional(),
 });
 
 // 6. Skema Blog / Artikel

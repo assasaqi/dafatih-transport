@@ -21,6 +21,7 @@ const FormAntarJemput = () => {
   const initialForm = {
     custName: '',
     custWa: '',
+    custEmail: '',
     jenisLayanan: 'Antar-Jemput',
     pickupDate: '',
     pickupTime: '',
@@ -67,6 +68,25 @@ const FormAntarJemput = () => {
     });
   };
 
+  // Pre-fill data user dari localStorage jika sudah login
+  useEffect(() => {
+    try {
+      const storedClient = localStorage.getItem('clientUser') || localStorage.getItem('user');
+      if (storedClient) {
+        const user = JSON.parse(storedClient);
+        setFormData((prev) => ({
+          ...prev,
+          custName: prev.custName || user.name || user.fullName || '',
+          custWa: prev.custWa || user.phone || user.whatsapp || '',
+          custEmail: prev.custEmail || user.email || ''
+        }));
+      }
+    } catch (e) {
+      console.error('Gagal membaca data profil lokal:', e);
+    }
+  }, []);
+
+  // Fetch daftar rute dari backend
   useEffect(() => {
     getRoutes()
       .then((res) => {
@@ -79,6 +99,7 @@ const FormAntarJemput = () => {
       .catch((err) => console.error('Gagal memuat rute:', err));
   }, []);
 
+  // Sync state dari navigasi (misal dari halaman /tarif)
   useEffect(() => {
     if (location.state) {
       const stateData = location.state;
@@ -94,11 +115,12 @@ const FormAntarJemput = () => {
         price: incomingPrice > 0 ? incomingPrice : prev.price,
         pickupDate: stateData.date || stateData.travelDate || prev.pickupDate,
         pickupTime: stateData.time || stateData.pickupTime || prev.pickupTime,
-        passengers: stateData.passengers || prev.passengers
+        passengers: String(stateData.passengers || prev.passengers || '1')
       }));
     }
   }, [location.state]);
 
+  // Click outside listener untuk modal/popover
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (pickupRef.current && !pickupRef.current.contains(e.target)) setIsPickupOpen(false);
@@ -241,40 +263,53 @@ const FormAntarJemput = () => {
       return;
     }
 
+    if (!formData.custName.trim()) return showAlert('Silakan isi nama pemesan!');
+    if (!formData.custWa.trim()) return showAlert('Silakan isi nomor WhatsApp!');
     if (!formData.pickupLoc) return showAlert('Silakan pilih lokasi penjemputan!');
-    if (!formData.dropLoc) return showAlert('Silakan pilih lokasi tujuan terlebih dahulu!');
+    if (!formData.dropLoc) return showAlert('Silakan pilih lokasi tujuan!');
     if (!formData.pickupDate) return showAlert('Silakan pilih tanggal!');
     if (!formData.pickupTime) return showAlert('Silakan pilih waktu!');
 
-    setIsLoading(true);
-
+    // Cari rute terkait di daftar rute
     const selectedRoute = routes.find(
       (r) =>
         (r.pickup_location || r.origin || '').toLowerCase().trim() === (formData.pickupLoc || '').toLowerCase().trim() &&
         (r.dropoff_location || r.destination || '').toLowerCase().trim() === (formData.dropLoc || '').toLowerCase().trim()
     );
 
+    const validRouteId = selectedRoute?.id ? Number(selectedRoute.id) : undefined;
+
+    setIsLoading(true);
+
+    // Payload disesuaikan penuh dengan Zod Validator & Prisma Controller Backend
     const newBookingPayload = {
-      service_type: 'Antar_Jemput',
-      serviceType: 'Antar_Jemput',
+      service_type: 'Antar Jemput',
+      serviceType: 'Antar Jemput',
 
-      vehicle_id: null,
-      vehicleId: null,
+      vehicle_id: undefined,
+      vehicleId: undefined,
 
-      customer_name: formData.custName || 'Pelanggan',
-      customerName: formData.custName || 'Pelanggan',
-      customer_phone: formData.custWa || '-',
-      customerPhone: formData.custWa || '-',
+      customer_name: formData.custName.trim(),
+      customerName: formData.custName.trim(),
+      customer_phone: formData.custWa.trim(),
+      customerPhone: formData.custWa.trim(),
 
-      route_id: selectedRoute?.id ? Number(selectedRoute.id) : null,
-      routeId: selectedRoute?.id ? Number(selectedRoute.id) : null,
-      pickup_address: formData.pickupLoc,
-      pickupAddress: formData.pickupLoc,
+      customer_email: formData.custEmail?.trim() || undefined,
+      customerEmail: formData.custEmail?.trim() || undefined,
+
+      route_id: validRouteId,
+      routeId: validRouteId,
+
+      pickup_address: `${formData.pickupLoc} ke ${formData.dropLoc}`,
+      pickupAddress: `${formData.pickupLoc} ke ${formData.dropLoc}`,
       pickup_location: formData.pickupLoc,
       dropoff_location: formData.dropLoc,
 
       pickup_date: formData.pickupDate,
       pickupDate: formData.pickupDate,
+      start_date: formData.pickupDate,
+      startDate: formData.pickupDate,
+
       pickup_time: formData.pickupTime,
       pickupTime: formData.pickupTime,
 
@@ -287,9 +322,13 @@ const FormAntarJemput = () => {
     };
 
     try {
-      await createBooking(newBookingPayload);
+      const response = await createBooking(newBookingPayload);
+      if (response.data?.success) {
+        showAlert('Pemesanan berhasil dibuat!', 'success');
+      }
     } catch (error) {
-      console.warn('API error/offline, data disimpan ke LocalStorage.', error);
+      console.error('Error detail saat submit booking:', error.response?.data || error.message);
+      showAlert(error.response?.data?.message || 'Gagal mengirim ke server, disimpan di penyimpanan lokal.', 'warning');
     } finally {
       const existingTemp = JSON.parse(localStorage.getItem('temp_bookings') || '[]');
       localStorage.setItem('temp_bookings', JSON.stringify([newBookingPayload, ...existingTemp]));
@@ -323,21 +362,44 @@ const FormAntarJemput = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* JENIS LAYANAN (LOCKED BADGE FIELD) */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-            Jenis Layanan
-          </label>
-          <div className="relative flex items-center">
-            <div className="w-full h-11 px-3.5 bg-sky-50/60 rounded-xl border border-sky-100 flex items-center justify-between">
-              <span className="text-xs sm:text-sm font-bold text-[#0194F3] flex items-center gap-2">
-                <i className="fa-solid fa-car-side text-[#0194F3]"></i>
-                {formData.jenisLayanan}
-              </span>
-              <span className="text-[10px] font-bold text-sky-600 bg-sky-100/80 px-2 py-0.5 rounded-md flex items-center gap-1">
-                <i className="fa-solid fa-lock text-[9px]"></i>
-                Otomatis
-              </span>
+        {/* JENIS LAYANAN & JUMLAH PENUMPANG */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="sm:col-span-2 flex flex-col gap-1">
+            <label className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              Jenis Layanan
+            </label>
+            <div className="relative flex items-center">
+              <div className="w-full h-11 px-3.5 bg-sky-50/60 rounded-xl border border-sky-100 flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-bold text-[#0194F3] flex items-center gap-2">
+                  <i className="fa-solid fa-car-side text-[#0194F3]"></i>
+                  {formData.jenisLayanan}
+                </span>
+                <span className="text-[10px] font-bold text-sky-600 bg-sky-100/80 px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <i className="fa-solid fa-lock text-[9px]"></i>
+                  Otomatis
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              Penumpang *
+            </label>
+            <div className="relative flex items-center">
+              <i className="fa-solid fa-users text-slate-400 text-xs absolute left-3.5"></i>
+              <select
+                name="passengers"
+                value={formData.passengers}
+                onChange={handleChange}
+                className="w-full h-11 pl-9 pr-8 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] focus:ring-2 focus:ring-sky-100 transition-all bg-white cursor-pointer"
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                  <option key={num} value={num}>
+                    {num} Orang
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -571,7 +633,7 @@ const FormAntarJemput = () => {
               ></i>
             </div>
 
-            {/* MODAL KALENDER TERPUSAT DI MOBILE */}
+            {/* MODAL KALENDER */}
             {isCalendarOpen && (
               <>
                 <div
@@ -697,7 +759,7 @@ const FormAntarJemput = () => {
               ></i>
             </div>
 
-            {/* MODAL PEMILIH WAKTU TERPUSAT DI MOBILE */}
+            {/* MODAL PEMILIH WAKTU */}
             {isTimePickerOpen && (
               <>
                 <div
@@ -807,7 +869,7 @@ const FormAntarJemput = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full sm:w-auto px-6 py-2.5 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center justify-center gap-2 transition-all"
+              className="w-full sm:w-auto px-6 py-2.5 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center justify-center gap-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>

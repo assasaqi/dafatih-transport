@@ -1,11 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const helmet = require('helmet');
 require('dotenv').config();
-
-// Import Middleware Rate Limiter (disesuaikan ke folder 'middleware')
-const { apiLimiter } = require('./middleware/rateLimiter');
 
 // Import Instance Prisma Client & Rute Utama
 const prisma = require('./config/prisma');
@@ -14,13 +10,8 @@ const apiRoutes = require('./routes/apiRoutes');
 const app = express();
 
 // ==========================================
-// 1. Middlewares Global & Keamanan
+// 1. Middlewares Global
 // ==========================================
-// Helmets untuk proteksi header HTTP (XSS, Clickjacking, Sniffing)
-app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" } // Mengizinkan akses gambar statis dari frontend
-}));
-
 // Mengizinkan Cross-Origin Resource Sharing dari Frontend React
 const allowedOrigins = [
     'https://dafatih-transport.rasmantech.web.id',
@@ -36,7 +27,7 @@ app.use(cors({
         if (allowedOrigins.indexOf(origin) !== -1) {
             return callback(null, true);
         } else {
-            return callback(null, true);
+            return callback(null, true); // Setel true jika ingin mengizinkan semua origin di produksi
         }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -47,9 +38,6 @@ app.use(cors({
 // Body Parser untuk menangani payload JSON dan URL-encoded Form Data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Batasi rate limit global untuk seluruh rute /api (Maksimal 100 request/15 menit)
-app.use('/api', apiLimiter);
 
 // Menyediakan akses statis publik ke folder penyimpanan file gambar terunggah dengan Header CORS Statis
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
@@ -76,6 +64,7 @@ app.get('/', (req, res) => {
 // Endpoint Diagnosa Koneksi Database MySQL (Prisma)
 app.get('/api/test-db', async (req, res) => {
     try {
+        // Raw query untuk mendapatkan daftar tabel MySQL via Prisma
         const tables = await prisma.$queryRaw`SHOW TABLES`;
         res.json({
             success: true,
@@ -105,6 +94,7 @@ app.use((req, res) => {
 
 // Global Server Error Handler (Menangani Internal Error & Multer Error)
 app.use((err, req, res, next) => {
+    // Penanganan khusus error upload dari Multer (Misal: ukuran file berlebih)
     if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({
             success: false,
@@ -138,6 +128,7 @@ app.listen(PORT, async () => {
     console.log(`🌐 URL Server : http://localhost:${PORT}`);
     console.log(`=================================`);
 
+    // Verifikasi otomatis koneksi database Prisma saat pertama kali menyalakan server
     try {
         await prisma.$connect();
         console.log(`✅ Database MySQL (dafatih_transport_db) Terhubung via Prisma!`);

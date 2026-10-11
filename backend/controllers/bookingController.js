@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const { ServiceType } = require('@prisma/client');
 
 // Helper untuk format respon booking (fleksibel snake_case & camelCase)
 const formatBooking = (item) => {
@@ -35,25 +36,44 @@ const parsePickupTime = (timeStr) => {
   return new Date(`1970-01-01T${cleanTime}Z`);
 };
 
-// Disesuaikan dengan ENUM Database MySQL ('Sewa Mobil', 'Antar Jemput', 'Paket Tour')
+// Disesuaikan dengan Enum ServiceType Prisma (ANTAR_JEMPUT, SEWA_MOBIL, PAKET_TOUR)
 const parseServiceType = (typeStr) => {
-  if (!typeStr) return 'Sewa Mobil';
-  const clean = typeStr.toString().replace(/_/g, ' ').trim();
-  const validTypes = ['Sewa Mobil', 'Antar Jemput', 'Paket Tour'];
+  if (!typeStr) typeStr = 'SEWA_MOBIL';
+  const clean = typeStr.toString().trim();
+  const normalized = clean.toLowerCase().replace(/[\s_]+/g, '');
 
-  const match = validTypes.find(t => t.toLowerCase() === clean.toLowerCase());
-  return match || 'Sewa Mobil';
+  // 1. Pencocokan langsung dengan Enum resmi Prisma
+  if (ServiceType && typeof ServiceType === 'object') {
+    const matchedKey = Object.keys(ServiceType).find(key => {
+      const kClean = key.toLowerCase().replace(/[\s_]+/g, '');
+      const vClean = String(ServiceType[key]).toLowerCase().replace(/[\s_]+/g, '');
+      return kClean === normalized || vClean === normalized;
+    });
+
+    if (matchedKey) {
+      return ServiceType[matchedKey];
+    }
+  }
+
+  // 2. Fallback pencocokan manual ke nilai Enum standar Prisma
+  if (normalized.includes('antar') || normalized.includes('jemput')) {
+    return 'ANTAR_JEMPUT';
+  }
+  if (normalized.includes('paket') || normalized.includes('tour')) {
+    return 'PAKET_TOUR';
+  }
+  return 'SEWA_MOBIL';
 };
 
 const parseBookingStatus = (statusStr) => {
-  const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+  const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled', 'rejected'];
   if (statusStr && validStatuses.includes(statusStr.toLowerCase())) {
     return statusStr.toLowerCase();
   }
   return 'pending';
 };
 
-// Helper internal untuk fetch include relasi secara aman (mencegah error 500)
+// Helper internal untuk fetch include relasi secara aman
 const fetchBookingsWithInclude = async (queryOptions = {}) => {
   try {
     return await prisma.booking.findMany({
@@ -93,7 +113,7 @@ exports.getAllBookings = async (req, res) => {
   }
 };
 
-// 2. Buat Booking Baru (Dengan Transaksi & Proteksi Concurrency/Double Booking)
+// 2. Buat Booking Baru (Dengan Transaksi & Proteksi Double Booking)
 exports.createBooking = async (req, res) => {
   try {
     const {
@@ -105,7 +125,7 @@ exports.createBooking = async (req, res) => {
       route_id, routeId,
       tour_package_id, tourPackageId,
       passenger_count, passengerCount,
-      pickup_date, pickupDate,
+      pickup_date, pickupDate, startDate,
       pickup_time, pickupTime,
       pickup_address, pickupAddress, pickup_location,
       notes,
@@ -115,7 +135,7 @@ exports.createBooking = async (req, res) => {
     const name = customer_name || customerName;
     const phone = customer_phone || customerPhone;
     const address = pickup_address || pickupAddress || pickup_location;
-    const rawDate = pickup_date || pickupDate;
+    const rawDate = pickup_date || pickupDate || startDate;
     const rawTime = pickup_time || pickupTime;
 
     if (!name || !phone || !rawDate) {
@@ -133,30 +153,26 @@ exports.createBooking = async (req, res) => {
 
     const parsedDate = new Date(rawDate);
 
-    // Menggunakan Prisma Interactive Transaction untuk mengisolasi proses validasi dan penyimpan data
+    // Prisma Transaction untuk menjamin konsistensi
     const newBooking = await prisma.$transaction(async (tx) => {
-      // Pengecekan Benturan Jadwal (Double-Booking Check) jika kendaraan dipilih
+      // Pengecekan Benturan Jadwal jika armada dipilih
       if (validVehicleId) {
-        let existingBooking = null;
+        let existingBooking = await tx.booking.findFirst({
+          where: {
+            vehicle_id: validVehicleId,
+            status: { notIn: ['cancelled', 'rejected'] },
+            pickup_date: parsedDate
+          }
+        }).catch(() => null);
 
-        try {
-          // Percobaan 1: Menggunakan nama kolom snake_case
-          existingBooking = await tx.booking.findFirst({
-            where: {
-              vehicle_id: validVehicleId,
-              status: { notIn: ['cancelled', 'rejected'] },
-              pickup_date: parsedDate
-            }
-          });
-        } catch (e) {
-          // Percobaan 2: Fallback ke nama kolom camelCase jika skema DB berbeda
+        if (!existingBooking) {
           existingBooking = await tx.booking.findFirst({
             where: {
               vehicleId: validVehicleId,
               status: { notIn: ['cancelled', 'rejected'] },
               pickupDate: parsedDate
             }
-          });
+          }).catch(() => null);
         }
 
         if (existingBooking) {
@@ -164,8 +180,8 @@ exports.createBooking = async (req, res) => {
         }
       }
 
-      // Pembuatan Record Booking Baru
-      const bookingDataSnake = {
+      // Format payload murni snake_case dengan Enum service_type yang tepat
+      const bookingData = {
         booking_code,
         customer_name: name,
         customer_phone: phone,
@@ -183,29 +199,7 @@ exports.createBooking = async (req, res) => {
         status: 'pending'
       };
 
-      try {
-        return await tx.booking.create({ data: bookingDataSnake });
-      } catch (err) {
-        // Fallback camelCase
-        const bookingDataCamel = {
-          bookingCode: booking_code,
-          customerName: name,
-          customerPhone: phone,
-          customerEmail: customer_email || customerEmail || null,
-          serviceType: parseServiceType(service_type || serviceType),
-          vehicleId: validVehicleId,
-          routeId: validRouteId,
-          tourPackageId: validTourPackageId,
-          passengerCount: Number(passenger_count || passengerCount) || 1,
-          pickupDate: parsedDate,
-          pickupTime: parsePickupTime(rawTime),
-          pickupAddress: address || '',
-          notes: notes || '',
-          totalPrice: price ? parseFloat(price) : 0,
-          status: 'pending'
-        };
-        return await tx.booking.create({ data: bookingDataCamel });
-      }
+      return await tx.booking.create({ data: bookingData });
     });
 
     return res.status(201).json({
@@ -224,7 +218,14 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    console.error('Error pada createBooking:', error);
+    if (error.code === 'P2003') {
+      return res.status(400).json({
+        success: false,
+        message: 'Gagal membuat booking: ID Relasi yang dimasukkan (seperti Rute/Armada) tidak ditemukan di database.'
+      });
+    }
+
+    console.error('Error detail pada createBooking:', error);
     return res.status(500).json({
       success: false,
       message: 'Gagal membuat booking: ' + error.message
