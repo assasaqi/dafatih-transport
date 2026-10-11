@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { getBookings } from '@/services/api';
 
 // Import aset logo dari folder public/logo
 import logoImg from '/logo/logo.png';
@@ -8,6 +9,8 @@ const AdminNavbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [hasNewBookings, setHasNewBookings] = useState(false);
+    const [pendingCount, setPendingCount] = useState(0);
 
     // Ambil & parse data admin dari localStorage
     const getAdminData = () => {
@@ -27,6 +30,46 @@ const AdminNavbar = () => {
 
     const adminData = getAdminData();
     const displayName = adminData.name || adminData.email || 'Admin';
+
+    // Cek pesanan masuk berstatus pending
+    const checkNewBookings = () => {
+        getBookings()
+            .then((res) => {
+                const list = Array.isArray(res.data?.data)
+                    ? res.data.data
+                    : Array.isArray(res.data)
+                    ? res.data
+                    : [];
+
+                const pendingList = list.filter(
+                    (b) => (b.status || '').toLowerCase() === 'pending'
+                );
+
+                setPendingCount(pendingList.length);
+                setHasNewBookings(pendingList.length > 0);
+            })
+            .catch(() => {
+                // Fallback cek temp_bookings di localStorage jika API error/offline
+                try {
+                    const temp = JSON.parse(localStorage.getItem('temp_bookings') || '[]');
+                    const pendingTemp = temp.filter(
+                        (b) => (b.status || '').toLowerCase() === 'pending'
+                    );
+                    setPendingCount(pendingTemp.length);
+                    setHasNewBookings(pendingTemp.length > 0);
+                } catch (e) {
+                    setHasNewBookings(false);
+                    setPendingCount(0);
+                }
+            });
+    };
+
+    useEffect(() => {
+        checkNewBookings();
+        // Cek pembaruan pesanan setiap 15 detik
+        const interval = setInterval(checkNewBookings, 15000);
+        return () => clearInterval(interval);
+    }, []);
 
     const handleLogout = () => {
         localStorage.removeItem('adminToken');
@@ -48,24 +91,36 @@ const AdminNavbar = () => {
 
     return (
         <>
-            {/* Header Mobile Tipis */}
-            <div className="md:hidden sticky top-0 left-0 w-full bg-slate-900 text-white px-4 py-3 flex justify-between items-center z-40 shadow-md">
+            {/* Header Mobile Fixed (Tidak ikut tergulir saat scroll) */}
+            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-slate-900 text-white px-4 flex justify-between items-center z-40 shadow-md">
                 <Link to="/admin/dashboard" className="flex items-center">
                     <img
                         src={logoImg}
                         alt="Dafatih Transport Logo"
-                        className="h-14 w-auto object-contain"
+                        className="h-12 w-auto object-contain"
                     />
                 </Link>
+
                 <button
                     type="button"
-                    className="text-white text-xl p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer focus:outline-hidden"
+                    className="relative text-white text-xl p-2 rounded-lg hover:bg-slate-800 cursor-pointer focus:outline-hidden transition-colors"
                     onClick={() => setIsSidebarOpen(true)}
                     aria-label="Buka Menu Sidebar"
                 >
                     <i className="fa-solid fa-bars"></i>
+
+                    {/* Indikator Pesanan Baru di Tombol Hamburger Mobile */}
+                    {hasNewBookings && (
+                        <span className="absolute top-1.5 right-1.5 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border-2 border-slate-900"></span>
+                        </span>
+                    )}
                 </button>
             </div>
+
+            {/* Spacer mobile agar konten di bawah tidak tertutup header fixed */}
+            <div className="h-16 md:hidden" />
 
             {/* Backdrop Gelap Mobile */}
             {isSidebarOpen && (
@@ -88,7 +143,7 @@ const AdminNavbar = () => {
                             <img
                                 src={logoImg}
                                 alt="Dafatih Transport Logo"
-                                className="h-16 w-auto object-contain"
+                                className="h-14 w-auto object-contain"
                             />
                         </Link>
                         <button
@@ -101,12 +156,14 @@ const AdminNavbar = () => {
                     </div>
 
                     {/* Navigasi Menu */}
-                    <nav className="flex flex-col gap-1 p-3 overflow-y-auto max-h-[calc(100vh-175px)]">
+                    <nav className="flex flex-col gap-1 p-3 overflow-y-auto max-h-[calc(100vh-160px)]">
                         <div className="px-3 py-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                             Menu Utama
                         </div>
                         {navItems.map((item) => {
                             const isActive = location.pathname === item.path;
+                            const isBookingMenu = item.path === '/admin/bookings';
+
                             return (
                                 <Link
                                     key={item.path}
@@ -124,16 +181,24 @@ const AdminNavbar = () => {
                                         }`}></i>
                                         <span>{item.label}</span>
                                     </div>
-                                    {isActive && <div className="w-1.5 h-1.5 rounded-full bg-white shadow-xs" />}
+
+                                    {/* Indikator Lencana Pesanan Baru pada Menu Pemesanan */}
+                                    {isBookingMenu && hasNewBookings ? (
+                                        <span className="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full min-w-5 h-5 flex items-center justify-center animate-pulse shadow-xs">
+                                            {pendingCount > 0 ? pendingCount : '!'}
+                                        </span>
+                                    ) : (
+                                        isActive && <div className="w-1.5 h-1.5 rounded-full bg-white shadow-xs" />
+                                    )}
                                 </Link>
                             );
                         })}
                     </nav>
                 </div>
 
-                {/* Footer Profil & Logout */}
-                <div className="p-4 bg-slate-950 border-t border-slate-800/80 flex flex-col gap-3">
-                    <div className="flex items-center gap-2.5 px-1 py-0.5">
+                {/* Footer Profil Admin & Tombol Keluar (Icon Only) */}
+                <div className="p-3.5 bg-slate-950 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 px-1 py-0.5 min-w-0 flex-1">
                         <div className="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/20 text-[#0194F3] flex items-center justify-center shrink-0">
                             <i className="fa-solid fa-user-gear text-xs"></i>
                         </div>
@@ -148,13 +213,14 @@ const AdminNavbar = () => {
                         </div>
                     </div>
 
+                    {/* Tombol Keluar Akun Tanpa Teks (Icon Only) */}
                     <button
                         type="button"
                         onClick={handleLogout}
-                        className="w-full bg-red-600/90 hover:bg-red-600 text-white py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+                        title="Keluar Akun"
+                        className="w-9 h-9 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center shrink-0 shadow-xs"
                     >
                         <i className="fa-solid fa-right-from-bracket"></i>
-                        <span>Keluar Akun</span>
                     </button>
                 </div>
             </aside>

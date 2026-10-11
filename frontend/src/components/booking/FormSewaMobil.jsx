@@ -23,6 +23,7 @@ const FormSewaMobil = () => {
   const initialForm = {
     custName: '',
     custWa: '',
+    custEmail: '',
     jenisLayanan: 'Sewa Mobil',
     vehicleId: null,
     armada: '',
@@ -38,7 +39,6 @@ const FormSewaMobil = () => {
   const [isArmadaOpen, setIsArmadaOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
-  const [isDurationOpen, setIsDurationOpen] = useState(false);
 
   const [selectedHour, setSelectedHour] = useState('08');
   const [selectedMinute, setSelectedMinute] = useState('00');
@@ -50,13 +50,9 @@ const FormSewaMobil = () => {
   const armadaRef = useRef(null);
   const calendarRef = useRef(null);
   const timePickerRef = useRef(null);
-  const durationRef = useRef(null);
 
   const hoursList = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const minutesList = ['00', '15', '30', '45'];
-
-  // Pilihan Durasi Rental (Hari)
-  const durationOptions = Array.from({ length: 7 }, (_, i) => `${i + 1} Hari`);
 
   const showAlert = (message, icon = 'warning') => {
     Swal.fire({
@@ -72,6 +68,24 @@ const FormSewaMobil = () => {
       }
     });
   };
+
+  // Pre-fill data user dari localStorage jika sudah login
+  useEffect(() => {
+    try {
+      const storedClient = localStorage.getItem('clientUser') || localStorage.getItem('user');
+      if (storedClient) {
+        const user = JSON.parse(storedClient);
+        setFormData((prev) => ({
+          ...prev,
+          custName: prev.custName || user.name || user.fullName || '',
+          custWa: prev.custWa || user.phone || user.whatsapp || '',
+          custEmail: prev.custEmail || user.email || ''
+        }));
+      }
+    } catch (e) {
+      console.error('Gagal membaca data profil lokal:', e);
+    }
+  }, []);
 
   useEffect(() => {
     getVehicles()
@@ -120,7 +134,6 @@ const FormSewaMobil = () => {
       if (armadaRef.current && !armadaRef.current.contains(e.target)) setIsArmadaOpen(false);
       if (calendarRef.current && !calendarRef.current.contains(e.target)) setIsCalendarOpen(false);
       if (timePickerRef.current && !timePickerRef.current.contains(e.target)) setIsTimePickerOpen(false);
-      if (durationRef.current && !durationRef.current.contains(e.target)) setIsDurationOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -134,7 +147,6 @@ const FormSewaMobil = () => {
     setIsArmadaOpen(false);
     setIsCalendarOpen(false);
     setIsTimePickerOpen(false);
-    setIsDurationOpen(false);
     navigate(location.pathname, { replace: true, state: {} });
   };
 
@@ -153,15 +165,16 @@ const FormSewaMobil = () => {
     setIsArmadaOpen(false);
   };
 
-  const handleSelectDuration = (opt) => {
-    const durNum = parseInt(opt) || 0;
+  const handleDurationChange = (e) => {
+    const val = e.target.value;
+    const durNum = parseInt(val) || 0;
+    const durStr = durNum > 0 ? `${durNum} Hari` : '';
 
     setFormData((prev) => ({
       ...prev,
-      duration: opt,
+      duration: durStr,
       price: pricePerDay > 0 && durNum > 0 ? pricePerDay * durNum : prev.price
     }));
-    setIsDurationOpen(false);
   };
 
   const generateCalendarDays = () => {
@@ -212,7 +225,6 @@ const FormSewaMobil = () => {
     setIsTimePickerOpen(!isTimePickerOpen);
     setIsArmadaOpen(false);
     setIsCalendarOpen(false);
-    setIsDurationOpen(false);
   };
 
   const handleApplyTime = () => {
@@ -230,11 +242,14 @@ const FormSewaMobil = () => {
       return;
     }
 
-    if (!formData.pickupLoc) return showAlert('Silakan isi lokasi penjemputan / hotel!');
-    if (!formData.armada) return showAlert('Silakan pilih armada / mobil!');
-    if (!formData.pickupDate) return showAlert('Silakan pilih tanggal penjemputan!');
+    // Validasi notifikasi jika form belum terisi
+    if (!formData.custName.trim()) return showAlert('Silakan isi nama pemesan!');
+    if (!formData.custWa.trim()) return showAlert('Silakan isi nomor WhatsApp!');
+    if (!formData.pickupLoc.trim()) return showAlert('Silakan isi lokasi penjemputan / hotel!');
+    if (!formData.armada) return showAlert('Silakan pilih armada / mobil terlebih dahulu!');
+    if (!formData.pickupDate) return showAlert('Silakan pilih tanggal mulai rental!');
     if (!formData.pickupTime) return showAlert('Silakan pilih waktu penjemputan!');
-    if (!formData.duration) return showAlert('Silakan pilih durasi rental!');
+    if (!formData.duration || parseInt(formData.duration) <= 0) return showAlert('Silakan isi durasi rental (jumlah hari)!');
 
     setIsLoading(true);
 
@@ -242,17 +257,21 @@ const FormSewaMobil = () => {
       (v) => (v.name || v.model || '').toLowerCase().trim() === (formData.armada || '').toLowerCase().trim()
     );
 
+    const validVehicleId = formData.vehicleId || selectedVeh?.id ? Number(formData.vehicleId || selectedVeh?.id) : undefined;
+
     const newBookingPayload = {
       service_type: 'Sewa_Mobil',
       serviceType: 'Sewa_Mobil',
 
-      vehicle_id: formData.vehicleId || selectedVeh?.id ? Number(formData.vehicleId || selectedVeh?.id) : null,
-      vehicleId: formData.vehicleId || selectedVeh?.id ? Number(formData.vehicleId || selectedVeh?.id) : null,
+      vehicle_id: validVehicleId,
+      vehicleId: validVehicleId,
 
-      customer_name: formData.custName || 'Pelanggan',
-      customerName: formData.custName || 'Pelanggan',
-      customer_phone: formData.custWa || '-',
-      customerPhone: formData.custWa || '-',
+      customer_name: formData.custName.trim(),
+      customerName: formData.custName.trim(),
+      customer_phone: formData.custWa.trim(),
+      customerPhone: formData.custWa.trim(),
+      customer_email: formData.custEmail?.trim() || undefined,
+      customerEmail: formData.custEmail?.trim() || undefined,
 
       pickup_address: formData.pickupLoc,
       pickupAddress: formData.pickupLoc,
@@ -260,6 +279,9 @@ const FormSewaMobil = () => {
 
       pickup_date: formData.pickupDate,
       pickupDate: formData.pickupDate,
+      start_date: formData.pickupDate,
+      startDate: formData.pickupDate,
+
       pickup_time: formData.pickupTime,
       pickupTime: formData.pickupTime,
 
@@ -271,9 +293,13 @@ const FormSewaMobil = () => {
     };
 
     try {
-      await createBooking(newBookingPayload);
+      const response = await createBooking(newBookingPayload);
+      if (response.data?.success) {
+        showAlert('Pemesanan sewa mobil berhasil dibuat!', 'success');
+      }
     } catch (error) {
       console.warn('API error/offline, data disimpan ke LocalStorage.', error);
+      showAlert(error.response?.data?.message || 'Gagal mengirim ke server, disimpan di penyimpanan lokal.', 'warning');
     } finally {
       const existingTemp = JSON.parse(localStorage.getItem('temp_bookings') || '[]');
       localStorage.setItem('temp_bookings', JSON.stringify([newBookingPayload, ...existingTemp]));
@@ -421,7 +447,6 @@ const FormSewaMobil = () => {
                 setIsArmadaOpen(!isArmadaOpen);
                 setIsCalendarOpen(false);
                 setIsTimePickerOpen(false);
-                setIsDurationOpen(false);
               }}
               className={`border rounded-xl p-2.5 sm:p-3 bg-white flex items-center justify-between cursor-pointer transition-all ${
                 isArmadaOpen
@@ -496,7 +521,6 @@ const FormSewaMobil = () => {
                 setIsCalendarOpen(!isCalendarOpen);
                 setIsArmadaOpen(false);
                 setIsTimePickerOpen(false);
-                setIsDurationOpen(false);
               }}
               className={`border rounded-xl p-2.5 sm:p-3 bg-white flex items-center justify-between cursor-pointer transition-all ${
                 isCalendarOpen
@@ -732,62 +756,27 @@ const FormSewaMobil = () => {
             )}
           </div>
 
-          {/* DURASI RENTAL (HARI) - CUSTOM DROPDOWN */}
-          <div className="relative" ref={durationRef}>
+          {/* DURASI RENTAL (HARI) - INPUT LANGSUNG */}
+          <div className="flex flex-col gap-1">
             <label className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">
               Durasi Rental *
             </label>
-            <div
-              onClick={() => {
-                setIsDurationOpen(!isDurationOpen);
-                setIsArmadaOpen(false);
-                setIsCalendarOpen(false);
-                setIsTimePickerOpen(false);
-              }}
-              className={`border rounded-xl p-2.5 sm:p-3 bg-white flex items-center justify-between cursor-pointer transition-all ${
-                isDurationOpen
-                  ? 'border-[#0194F3] ring-2 ring-sky-100'
-                  : 'border-slate-300 hover:border-slate-400'
-              }`}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <i className="fa-solid fa-clock-rotate-left text-[#0194F3] text-sm shrink-0"></i>
-                <span
-                  className={`text-xs sm:text-sm font-semibold truncate ${
-                    formData.duration ? 'text-slate-900' : 'text-slate-400'
-                  }`}
-                >
-                  {formData.duration || 'Pilih Durasi'}
-                </span>
-              </div>
-              <i
-                className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${
-                  isDurationOpen ? 'rotate-180 text-[#0194F3]' : ''
-                }`}
-              ></i>
+            <div className="relative flex items-center">
+              <i className="fa-solid fa-clock-rotate-left text-[#0194F3] text-xs absolute left-3.5"></i>
+              <input
+                type="number"
+                min="1"
+                max="30"
+                required
+                placeholder="Contoh: 1"
+                value={formData.duration ? parseInt(formData.duration) || '' : ''}
+                onChange={handleDurationChange}
+                className="w-full h-11 pl-9 pr-12 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] focus:ring-2 focus:ring-sky-100 transition-all"
+              />
+              <span className="absolute right-3.5 text-xs font-bold text-slate-400 pointer-events-none">
+                Hari
+              </span>
             </div>
-
-            {isDurationOpen && (
-              <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden">
-                <div className="max-h-56 overflow-y-auto py-1">
-                  {durationOptions.map((opt) => {
-                    const isSelected = formData.duration === opt;
-                    return (
-                      <div
-                        key={opt}
-                        onClick={() => handleSelectDuration(opt)}
-                        className={`px-3.5 py-2.5 text-xs font-semibold cursor-pointer flex items-center justify-between hover:bg-sky-50 transition-colors ${
-                          isSelected ? 'text-[#0194F3] bg-sky-50/50 font-bold' : 'text-slate-700'
-                        }`}
-                      >
-                        <span>{opt}</span>
-                        {isSelected && <i className="fa-solid fa-check text-xs text-[#0194F3]"></i>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -817,7 +806,7 @@ const FormSewaMobil = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full sm:w-auto px-6 py-2.5 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center justify-center gap-2 transition-all"
+              className="w-full sm:w-auto px-6 py-2.5 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center justify-center gap-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>

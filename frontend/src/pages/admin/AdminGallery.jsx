@@ -118,7 +118,7 @@ const AdminGallery = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 text-slate-800 md:pl-60 transition-all relative">
+        <div className="min-h-screen bg-[#F2F4F7] text-slate-800 md:pl-60 transition-all relative">
             <AdminNavbar />
 
             <Toast
@@ -128,13 +128,15 @@ const AdminGallery = () => {
                 onClose={hideToast}
             />
 
-            <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80">
+            <main className="p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-6">
+                {/* HEADER DASHBOARD */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200/80">
                     <div>
-                        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                            Kelola Galeri Foto
+                        <h2 className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                            <i className="fa-solid fa-images text-[#0194F3]"></i>
+                            <span>Kelola Galeri Foto</span>
                         </h2>
-                        <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                        <p className="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5 sm:mt-1">
                             Unggah dan edit foto kegiatan serta destinasi wisata Pulau Lombok.
                         </p>
                     </div>
@@ -142,105 +144,104 @@ const AdminGallery = () => {
                     <button
                         type="button"
                         onClick={() => handleOpenModal()}
-                        className="bg-[#0194F3] hover:bg-sky-600 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap self-start sm:self-auto"
+                        className="bg-[#0194F3] hover:bg-sky-600 text-white px-3.5 py-2.5 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap self-start sm:self-auto"
                     >
-                        <i className="fa-solid fa-plus text-xs"></i>
+                        <i className="fa-solid fa-plus text-[10px] sm:text-xs"></i>
                         <span>Tambah Foto Baru</span>
                     </button>
                 </div>
 
-                {loading ? (
-                    <div className="text-center py-16 text-slate-500 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
-                        <i className="fa-solid fa-spinner fa-spin text-xl text-[#0194F3] mr-2"></i>
-                        <span className="text-xs font-semibold">Memuat galeri...</span>
-                    </div>
-                ) : (
-                    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs">
-                        <div className="overflow-x-auto min-h-[220px] p-1">
-                            <table className="w-full text-left text-xs sm:text-sm border-collapse min-w-[500px]">
+                {/* TABEL GALERI */}
+                <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                    {loading ? (
+                        <div className="text-center py-12 sm:py-16 text-slate-500 text-xs sm:text-sm font-medium">
+                            <i className="fa-solid fa-spinner fa-spin text-base sm:text-xl text-[#0194F3] mr-2"></i>
+                            <span>Memuat galeri...</span>
+                        </div>
+                    ) : galleries.length === 0 ? (
+                        <div className="text-center py-12 sm:py-16 text-slate-400 text-xs sm:text-sm font-medium px-4">
+                            Belum ada foto galeri yang ditambahkan. Klik "Tambah Foto Baru" untuk mengunggah.
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto min-h-[220px]">
+                            <table className="w-full text-left text-[11px] sm:text-xs md:text-sm border-collapse min-w-[500px] sm:min-w-[650px]">
                                 <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">
-                                        <th className="py-3 px-4 text-center w-28">Foto</th>
-                                        <th className="py-3 px-4">Judul Foto / Keterangan</th>
-                                        <th className="py-3 px-4 w-32">Kategori</th>
-                                        <th className="py-3 px-4 text-center">Aksi</th>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[9px] sm:text-[11px] font-extrabold uppercase tracking-wider">
+                                        <th className="py-2.5 sm:py-3.5 px-3 sm:px-4 text-center w-24 sm:w-28">Foto</th>
+                                        <th className="py-2.5 sm:py-3.5 px-3 sm:px-4">Judul Foto / Keterangan</th>
+                                        <th className="py-2.5 sm:py-3.5 px-3 sm:px-4 w-28 sm:w-36">Kategori</th>
+                                        <th className="py-2.5 sm:py-3.5 px-3 sm:px-4 text-center w-16 sm:w-20">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 font-medium">
-                                    {galleries.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="4" className="text-center py-12 text-slate-400">
-                                                Belum ada foto galeri yang ditambahkan.
+                                    {galleries.map((item) => (
+                                        <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                                            <td className="py-2.5 sm:py-3.5 px-3 sm:px-4 text-center">
+                                                <div className="w-16 h-10 sm:w-20 sm:h-12 rounded-lg overflow-hidden border border-slate-200 mx-auto bg-slate-50 shadow-2xs group relative">
+                                                    <img
+                                                        src={getImageUrl(item.image_url)}
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                        alt={item.title}
+                                                    />
+                                                </div>
+                                            </td>
+                                            <td className="py-2.5 sm:py-3.5 px-3 sm:px-4 font-bold text-slate-900 max-w-[180px] sm:max-w-[280px] truncate" title={item.title}>
+                                                {item.title}
+                                            </td>
+                                            <td className="py-2.5 sm:py-3.5 px-3 sm:px-4 whitespace-nowrap">
+                                                <span className="bg-sky-50 text-[#0194F3] border border-sky-100 text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase inline-block">
+                                                    {item.category || 'Destinasi'}
+                                                </span>
+                                            </td>
+                                            <td className="py-2.5 sm:py-3.5 px-3 sm:px-4 text-center whitespace-nowrap">
+                                                <div className="flex items-center justify-center gap-1.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOpenModal(item)}
+                                                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-sky-50 hover:bg-sky-100 text-[#0194F3] transition-colors flex items-center justify-center cursor-pointer"
+                                                        title="Edit Foto"
+                                                    >
+                                                        <i className="fa-solid fa-pen-to-square text-[10px] sm:text-xs"></i>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDelete(item.id, item.title)}
+                                                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors flex items-center justify-center cursor-pointer"
+                                                        title="Hapus Foto"
+                                                    >
+                                                        <i className="fa-solid fa-trash-can text-[10px] sm:text-xs"></i>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
-                                    ) : (
-                                        galleries.map((item) => (
-                                            <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                                                <td className="py-3 px-4 text-center">
-                                                    <div className="w-20 h-12 rounded-lg overflow-hidden border border-slate-200 mx-auto bg-slate-50 shadow-2xs group relative">
-                                                        <img
-                                                            src={getImageUrl(item.image_url)}
-                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                            alt={item.title}
-                                                        />
-                                                    </div>
-                                                </td>
-                                                <td className="py-3 px-4 font-bold text-slate-900 max-w-[180px] sm:max-w-[220px] truncate" title={item.title}>
-                                                    {item.title}
-                                                </td>
-                                                <td className="py-3 px-4">
-                                                    <span className="text-[11px] bg-sky-50 text-[#0194F3] px-2.5 py-1 rounded-lg font-bold inline-block whitespace-nowrap">
-                                                        {item.category || 'Destinasi'}
-                                                    </span>
-                                                </td>
-                                                <td className="py-3 px-4 text-center">
-                                                    <div className="flex items-center justify-center gap-1.5">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleOpenModal(item)}
-                                                            className="w-8 h-8 rounded-lg bg-sky-50 hover:bg-sky-100 text-[#0194F3] transition-colors flex items-center justify-center cursor-pointer"
-                                                            title="Edit Foto"
-                                                        >
-                                                            <i className="fa-solid fa-pen-to-square text-xs"></i>
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleDelete(item.id, item.title)}
-                                                            className="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors flex items-center justify-center cursor-pointer"
-                                                            title="Hapus Foto"
-                                                        >
-                                                            <i className="fa-solid fa-trash-can text-xs"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
 
+                {/* MODAL EDIT / TAMBAH FOTO */}
                 {modalOpen && (
-                    <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md shadow-xl border border-slate-200">
-                            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                                <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
-                                    {editingId ? 'Edit Foto Galeri' : 'Tambah Foto Galeri'}
+                    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-[100] p-3 sm:p-4 overflow-y-auto">
+                        <div className="bg-white rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-2xl border border-slate-200 my-auto animate-in fade-in zoom-in-95 duration-150">
+                            <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-3 sm:mb-4">
+                                <h3 className="text-sm sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                                    <i className="fa-solid fa-image text-[#0194F3]"></i>
+                                    <span>{editingId ? 'Edit Foto Galeri' : 'Tambah Foto Galeri'}</span>
                                 </h3>
                                 <button
                                     type="button"
                                     onClick={handleCloseModal}
-                                    className="text-slate-400 hover:text-slate-600 text-base p-1 cursor-pointer"
+                                    className="text-slate-400 hover:text-slate-600 text-base sm:text-lg p-1 cursor-pointer"
                                 >
                                     <i className="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-3.5">
+                            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-3.5">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-1">
                                         Judul Foto / Keterangan *
                                     </label>
                                     <input
@@ -249,18 +250,18 @@ const AdminGallery = () => {
                                         value={formData.title}
                                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                                         placeholder="Contoh: Keindahan Pantai Kuta Lombok"
-                                        className="w-full h-10 px-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] transition-colors"
+                                        className="w-full h-9 sm:h-10 px-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] focus:ring-2 focus:ring-sky-100 transition-all"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-1">
                                         Kategori *
                                     </label>
                                     <select
                                         value={formData.category}
                                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                        className="w-full h-10 px-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] transition-colors bg-white"
+                                        className="w-full h-9 sm:h-10 px-3 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] focus:ring-2 focus:ring-sky-100 transition-all bg-white cursor-pointer"
                                     >
                                         <option value="Destinasi">Destinasi Wisata</option>
                                         <option value="Armada">Armada &amp; Layanan</option>
@@ -269,7 +270,7 @@ const AdminGallery = () => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-1">
                                         Upload Berkas Gambar{' '}
                                         {editingId && (
                                             <span className="font-normal text-slate-400">
@@ -279,7 +280,7 @@ const AdminGallery = () => {
                                     </label>
 
                                     {imagePreview && (
-                                        <div className="mb-2 relative w-full h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                                        <div className="mb-2 relative w-full h-28 sm:h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
                                             <img src={imagePreview} alt="Preview Foto Galeri" className="w-full h-full object-cover" />
                                         </div>
                                     )}
@@ -289,21 +290,21 @@ const AdminGallery = () => {
                                         accept="image/*"
                                         required={!editingId}
                                         onChange={handleImageChange}
-                                        className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-50 file:text-[#0194F3] hover:file:bg-sky-100 cursor-pointer"
+                                        className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[11px] sm:file:text-xs file:font-bold file:bg-sky-50 file:text-[#0194F3] hover:file:bg-sky-100 cursor-pointer"
                                     />
                                 </div>
 
-                                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 mt-4">
                                     <button
                                         type="button"
                                         onClick={handleCloseModal}
-                                        className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                                        className="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                                     >
                                         Batal
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-4 py-2 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                                        className="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-[#0194F3] hover:bg-sky-600 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
                                     >
                                         {editingId ? 'Simpan Perubahan' : 'Unggah Foto'}
                                     </button>

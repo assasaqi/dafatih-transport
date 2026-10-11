@@ -27,12 +27,13 @@ const FormAntarJemput = () => {
     pickupTime: '',
     pickupLoc: '',
     dropLoc: '',
-    passengers: '1',
+    passengers: '',
     price: 0
   };
 
   const [formData, setFormData] = useState(initialForm);
 
+  const [isPassengerOpen, setIsPassengerOpen] = useState(false);
   const [isPickupOpen, setIsPickupOpen] = useState(false);
   const [isDropoffOpen, setIsDropoffOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -45,6 +46,7 @@ const FormAntarJemput = () => {
     new Date(todayObj.getFullYear(), todayObj.getMonth(), 1)
   );
 
+  const passengerRef = useRef(null);
   const pickupRef = useRef(null);
   const dropoffRef = useRef(null);
   const calendarRef = useRef(null);
@@ -56,14 +58,14 @@ const FormAntarJemput = () => {
   const showAlert = (message, icon = 'warning') => {
     Swal.fire({
       toast: true,
-      position: 'top',
+      position: 'top-end',
       icon: icon,
       title: message,
       showConfirmButton: false,
-      timer: 2500,
+      timer: 3000,
       timerProgressBar: true,
       customClass: {
-        popup: 'rounded-xl shadow-md border border-slate-200 text-xs font-bold text-slate-800 bg-white'
+        popup: 'rounded-2xl shadow-xl border border-slate-100 p-3 text-xs font-semibold text-slate-800 bg-white/95 backdrop-blur-md'
       }
     });
   };
@@ -99,7 +101,7 @@ const FormAntarJemput = () => {
       .catch((err) => console.error('Gagal memuat rute:', err));
   }, []);
 
-  // Sync state dari navigasi (misal dari halaman /tarif)
+  // Sync state dari navigasi
   useEffect(() => {
     if (location.state) {
       const stateData = location.state;
@@ -115,7 +117,7 @@ const FormAntarJemput = () => {
         price: incomingPrice > 0 ? incomingPrice : prev.price,
         pickupDate: stateData.date || stateData.travelDate || prev.pickupDate,
         pickupTime: stateData.time || stateData.pickupTime || prev.pickupTime,
-        passengers: String(stateData.passengers || prev.passengers || '1')
+        passengers: stateData.passengers ? String(stateData.passengers) : prev.passengers
       }));
     }
   }, [location.state]);
@@ -123,6 +125,7 @@ const FormAntarJemput = () => {
   // Click outside listener untuk modal/popover
   useEffect(() => {
     const handleClickOutside = (e) => {
+      if (passengerRef.current && !passengerRef.current.contains(e.target)) setIsPassengerOpen(false);
       if (pickupRef.current && !pickupRef.current.contains(e.target)) setIsPickupOpen(false);
       if (dropoffRef.current && !dropoffRef.current.contains(e.target)) setIsDropoffOpen(false);
       if (calendarRef.current && !calendarRef.current.contains(e.target)) setIsCalendarOpen(false);
@@ -136,6 +139,11 @@ const FormAntarJemput = () => {
     setFormData(initialForm);
     setSelectedHour('08');
     setSelectedMinute('00');
+    setIsPassengerOpen(false);
+    setIsPickupOpen(false);
+    setIsDropoffOpen(false);
+    setIsCalendarOpen(false);
+    setIsTimePickerOpen(false);
     navigate(location.pathname, { replace: true, state: {} });
   };
 
@@ -243,6 +251,7 @@ const FormAntarJemput = () => {
       }
     }
     setIsTimePickerOpen(!isTimePickerOpen);
+    setIsPassengerOpen(false);
     setIsPickupOpen(false);
     setIsDropoffOpen(false);
     setIsCalendarOpen(false);
@@ -265,12 +274,12 @@ const FormAntarJemput = () => {
 
     if (!formData.custName.trim()) return showAlert('Silakan isi nama pemesan!');
     if (!formData.custWa.trim()) return showAlert('Silakan isi nomor WhatsApp!');
+    if (!formData.passengers) return showAlert('Silakan pilih jumlah penumpang!');
     if (!formData.pickupLoc) return showAlert('Silakan pilih lokasi penjemputan!');
     if (!formData.dropLoc) return showAlert('Silakan pilih lokasi tujuan!');
     if (!formData.pickupDate) return showAlert('Silakan pilih tanggal!');
     if (!formData.pickupTime) return showAlert('Silakan pilih waktu!');
 
-    // Cari rute terkait di daftar rute
     const selectedRoute = routes.find(
       (r) =>
         (r.pickup_location || r.origin || '').toLowerCase().trim() === (formData.pickupLoc || '').toLowerCase().trim() &&
@@ -281,7 +290,6 @@ const FormAntarJemput = () => {
 
     setIsLoading(true);
 
-    // Payload disesuaikan penuh dengan Zod Validator & Prisma Controller Backend
     const newBookingPayload = {
       service_type: 'Antar Jemput',
       serviceType: 'Antar Jemput',
@@ -361,7 +369,7 @@ const FormAntarJemput = () => {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {/* JENIS LAYANAN & JUMLAH PENUMPANG */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div className="sm:col-span-2 flex flex-col gap-1">
@@ -382,25 +390,67 @@ const FormAntarJemput = () => {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          {/* CUSTOM DROPDOWN PENUMPANG */}
+          <div className="relative" ref={passengerRef}>
+            <label className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 block">
               Penumpang *
             </label>
-            <div className="relative flex items-center">
-              <i className="fa-solid fa-users text-slate-400 text-xs absolute left-3.5"></i>
-              <select
-                name="passengers"
-                value={formData.passengers}
-                onChange={handleChange}
-                className="w-full h-11 pl-9 pr-8 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-[#0194F3] focus:ring-2 focus:ring-sky-100 transition-all bg-white cursor-pointer"
-              >
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                  <option key={num} value={num}>
-                    {num} Orang
-                  </option>
-                ))}
-              </select>
+            <div
+              onClick={() => {
+                setIsPassengerOpen(!isPassengerOpen);
+                setIsPickupOpen(false);
+                setIsDropoffOpen(false);
+                setIsCalendarOpen(false);
+                setIsTimePickerOpen(false);
+              }}
+              className={`border rounded-xl p-2.5 sm:p-3 bg-white flex items-center justify-between cursor-pointer transition-all ${
+                isPassengerOpen
+                  ? 'border-[#0194F3] ring-2 ring-sky-100'
+                  : 'border-slate-300 hover:border-slate-400'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <i className="fa-solid fa-users text-[#0194F3] text-sm shrink-0"></i>
+                <span
+                  className={`text-xs sm:text-sm font-semibold truncate ${
+                    formData.passengers ? 'text-slate-900' : 'text-slate-400'
+                  }`}
+                >
+                  {formData.passengers || 'Pilih Penumpang'}
+                </span>
+              </div>
+              <i
+                className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${
+                  isPassengerOpen ? 'rotate-180 text-[#0194F3]' : ''
+                }`}
+              ></i>
             </div>
+
+            {isPassengerOpen && (
+              <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-slate-200 z-[60] overflow-hidden">
+                <div className="py-1">
+                  {['1', '2', '3', '4'].map((num) => (
+                    <div
+                      key={num}
+                      onClick={() => {
+                        setFormData((prev) => ({ ...prev, passengers: num }));
+                        setIsPassengerOpen(false);
+                      }}
+                      className={`px-3.5 py-2 text-xs font-semibold cursor-pointer flex items-center justify-between hover:bg-sky-50 ${
+                        formData.passengers === num
+                          ? 'text-[#0194F3] bg-sky-50/50 font-bold'
+                          : 'text-slate-700'
+                      }`}
+                    >
+                      <span>{num}</span>
+                      {formData.passengers === num && (
+                        <i className="fa-solid fa-check text-xs text-[#0194F3]"></i>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -415,7 +465,6 @@ const FormAntarJemput = () => {
               <input
                 type="text"
                 name="custName"
-                required
                 placeholder="Contoh: Dafatih Alamsyah"
                 value={formData.custName}
                 onChange={handleChange}
@@ -442,7 +491,6 @@ const FormAntarJemput = () => {
               <input
                 type="tel"
                 name="custWa"
-                required
                 placeholder="Contoh: 0812xxxxxxxx"
                 value={formData.custWa}
                 onChange={handleChange}
@@ -471,6 +519,7 @@ const FormAntarJemput = () => {
             <div
               onClick={() => {
                 setIsPickupOpen(!isPickupOpen);
+                setIsPassengerOpen(false);
                 setIsDropoffOpen(false);
                 setIsCalendarOpen(false);
                 setIsTimePickerOpen(false);
@@ -536,6 +585,7 @@ const FormAntarJemput = () => {
             <div
               onClick={() => {
                 setIsDropoffOpen(!isDropoffOpen);
+                setIsPassengerOpen(false);
                 setIsPickupOpen(false);
                 setIsCalendarOpen(false);
                 setIsTimePickerOpen(false);
@@ -604,6 +654,7 @@ const FormAntarJemput = () => {
             <div
               onClick={() => {
                 setIsCalendarOpen(!isCalendarOpen);
+                setIsPassengerOpen(false);
                 setIsPickupOpen(false);
                 setIsDropoffOpen(false);
                 setIsTimePickerOpen(false);
