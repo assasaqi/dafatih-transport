@@ -56,20 +56,17 @@ const parseBookingStatus = (statusStr) => {
 // Helper internal untuk fetch include relasi secara aman (mencegah error 500)
 const fetchBookingsWithInclude = async (queryOptions = {}) => {
   try {
-    // Percobaan 1: Menggunakan snake_case
     return await prisma.booking.findMany({
       ...queryOptions,
       include: { vehicle: true, route: true, tour_package: true }
     });
   } catch (err1) {
     try {
-      // Percobaan 2: Menggunakan camelCase
       return await prisma.booking.findMany({
         ...queryOptions,
         include: { vehicle: true, route: true, tourPackage: true }
       });
     } catch (err2) {
-      // Percobaan 3: Tanpa include paket tour jika tabel belum sinkron
       return await prisma.booking.findMany({
         ...queryOptions,
         include: { vehicle: true, route: true }
@@ -96,7 +93,7 @@ exports.getAllBookings = async (req, res) => {
   }
 };
 
-// 2. Buat Booking Baru
+// 2. Buat Booking Baru (Dengan Transaksi & Proteksi Concurrency/Double Booking)
 exports.createBooking = async (req, res) => {
   try {
     const {
@@ -134,59 +131,101 @@ exports.createBooking = async (req, res) => {
     const validRouteId = (route_id || routeId) ? Number(route_id || routeId) : null;
     const validTourPackageId = (tour_package_id || tourPackageId) ? Number(tour_package_id || tourPackageId) : null;
 
-    const bookingDataSnake = {
-      booking_code,
-      customer_name: name,
-      customer_phone: phone,
-      customer_email: customer_email || customerEmail || null,
-      service_type: parseServiceType(service_type || serviceType),
-      vehicle_id: validVehicleId,
-      route_id: validRouteId,
-      tour_package_id: validTourPackageId,
-      passenger_count: Number(passenger_count || passengerCount) || 1,
-      pickup_date: new Date(rawDate),
-      pickup_time: parsePickupTime(rawTime),
-      pickup_address: address || '',
-      notes: notes || '',
-      total_price: price ? parseFloat(price) : 0,
-      status: 'pending'
-    };
+    const parsedDate = new Date(rawDate);
 
-    let newBooking;
-    try {
-      newBooking = await prisma.booking.create({ data: bookingDataSnake });
-    } catch (err) {
-      // Fallback jika Prisma Client menggunakan camelCase
-      const bookingDataCamel = {
-        bookingCode: booking_code,
-        customerName: name,
-        customerPhone: phone,
-        customerEmail: customer_email || customerEmail || null,
-        serviceType: parseServiceType(service_type || serviceType),
-        vehicleId: validVehicleId,
-        routeId: validRouteId,
-        tourPackageId: validTourPackageId,
-        passengerCount: Number(passenger_count || passengerCount) || 1,
-        pickupDate: new Date(rawDate),
-        pickupTime: parsePickupTime(rawTime),
-        pickupAddress: address || '',
+    // Menggunakan Prisma Interactive Transaction untuk mengisolasi proses validasi dan penyimpan data
+    const newBooking = await prisma.$transaction(async (tx) => {
+      // Pengecekan Benturan Jadwal (Double-Booking Check) jika kendaraan dipilih
+      if (validVehicleId) {
+        let existingBooking = null;
+
+        try {
+          // Percobaan 1: Menggunakan nama kolom snake_case
+          existingBooking = await tx.booking.findFirst({
+            where: {
+              vehicle_id: validVehicleId,
+              status: { notIn: ['cancelled', 'rejected'] },
+              pickup_date: parsedDate
+            }
+          });
+        } catch (e) {
+          // Percobaan 2: Fallback ke nama kolom camelCase jika skema DB berbeda
+          existingBooking = await tx.booking.findFirst({
+            where: {
+              vehicleId: validVehicleId,
+              status: { notIn: ['cancelled', 'rejected'] },
+              pickupDate: parsedDate
+            }
+          });
+        }
+
+        if (existingBooking) {
+          throw new Error('DOUBLE_BOOKING');
+        }
+      }
+
+      // Pembuatan Record Booking Baru
+      const bookingDataSnake = {
+        booking_code,
+        customer_name: name,
+        customer_phone: phone,
+        customer_email: customer_email || customerEmail || null,
+        service_type: parseServiceType(service_type || serviceType),
+        vehicle_id: validVehicleId,
+        route_id: validRouteId,
+        tour_package_id: validTourPackageId,
+        passenger_count: Number(passenger_count || passengerCount) || 1,
+        pickup_date: parsedDate,
+        pickup_time: parsePickupTime(rawTime),
+        pickup_address: address || '',
         notes: notes || '',
-        totalPrice: price ? parseFloat(price) : 0,
+        total_price: price ? parseFloat(price) : 0,
         status: 'pending'
       };
-      newBooking = await prisma.booking.create({ data: bookingDataCamel });
-    }
 
-    res.status(201).json({
+      try {
+        return await tx.booking.create({ data: bookingDataSnake });
+      } catch (err) {
+        // Fallback camelCase
+        const bookingDataCamel = {
+          bookingCode: booking_code,
+          customerName: name,
+          customerPhone: phone,
+          customerEmail: customer_email || customerEmail || null,
+          serviceType: parseServiceType(service_type || serviceType),
+          vehicleId: validVehicleId,
+          routeId: validRouteId,
+          tourPackageId: validTourPackageId,
+          passengerCount: Number(passenger_count || passengerCount) || 1,
+          pickupDate: parsedDate,
+          pickupTime: parsePickupTime(rawTime),
+          pickupAddress: address || '',
+          notes: notes || '',
+          totalPrice: price ? parseFloat(price) : 0,
+          status: 'pending'
+        };
+        return await tx.booking.create({ data: bookingDataCamel });
+      }
+    });
+
+    return res.status(201).json({
       success: true,
       message: 'Booking berhasil dibuat!',
       booking_code,
       id: newBooking.id,
       data: formatBooking(newBooking)
     });
+
   } catch (error) {
+    if (error.message === 'DOUBLE_BOOKING') {
+      return res.status(409).json({
+        success: false,
+        message: 'Armada sudah memiliki pesanan aktif pada tanggal tersebut!'
+      });
+    }
+
     console.error('Error pada createBooking:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Gagal membuat booking: ' + error.message
     });
