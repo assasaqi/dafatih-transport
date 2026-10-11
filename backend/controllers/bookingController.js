@@ -1,6 +1,6 @@
 const prisma = require('../config/prisma');
 
-// Helper untuk format respon booking agar fleksibel mendukung snake_case & camelCase untuk Frontend React
+// Helper untuk format respon booking (fleksibel snake_case & camelCase)
 const formatBooking = (item) => {
   if (!item) return null;
   return {
@@ -9,7 +9,7 @@ const formatBooking = (item) => {
     customer_name: item.customer_name || item.customerName || '',
     customer_phone: item.customer_phone || item.customerPhone || '',
     customer_email: item.customer_email || item.customerEmail || '',
-    service_type: item.service_type || item.serviceType || 'Sewa_Mobil',
+    service_type: item.service_type || item.serviceType || 'Sewa Mobil',
     vehicle_id: item.vehicle_id !== undefined ? item.vehicle_id : item.vehicleId,
     route_id: item.route_id !== undefined ? item.route_id : item.routeId,
     tour_package_id: item.tour_package_id !== undefined ? item.tour_package_id : item.tourPackageId,
@@ -20,10 +20,11 @@ const formatBooking = (item) => {
     total_price: item.total_price !== undefined ? item.total_price : item.totalPrice,
     status: item.status || 'pending',
     created_at: item.created_at || item.createdAt,
-    // Include Relasi
+
+    // Relasi aman
     vehicle: item.vehicle || null,
     route: item.route || null,
-    tour_package: item.tour_package || item.tourPackage || null
+    tour_package: item.tour_package || item.tourPackage || item.tour_packages || null
   };
 };
 
@@ -34,11 +35,14 @@ const parsePickupTime = (timeStr) => {
   return new Date(`1970-01-01T${cleanTime}Z`);
 };
 
+// Disesuaikan dengan ENUM Database MySQL ('Sewa Mobil', 'Antar Jemput', 'Paket Tour')
 const parseServiceType = (typeStr) => {
-  if (!typeStr) return 'Sewa_Mobil';
-  const normalized = typeStr.toString().replace(/\s+/g, '_');
-  if (['Sewa_Mobil', 'Antar_Jemput', 'Paket_Tour'].includes(normalized)) return normalized;
-  return 'Sewa_Mobil';
+  if (!typeStr) return 'Sewa Mobil';
+  const clean = typeStr.toString().replace(/_/g, ' ').trim();
+  const validTypes = ['Sewa Mobil', 'Antar Jemput', 'Paket Tour'];
+
+  const match = validTypes.find(t => t.toLowerCase() === clean.toLowerCase());
+  return match || 'Sewa Mobil';
 };
 
 const parseBookingStatus = (statusStr) => {
@@ -49,17 +53,35 @@ const parseBookingStatus = (statusStr) => {
   return 'pending';
 };
 
+// Helper internal untuk fetch include relasi secara aman (mencegah error 500)
+const fetchBookingsWithInclude = async (queryOptions = {}) => {
+  try {
+    // Percobaan 1: Menggunakan snake_case
+    return await prisma.booking.findMany({
+      ...queryOptions,
+      include: { vehicle: true, route: true, tour_package: true }
+    });
+  } catch (err1) {
+    try {
+      // Percobaan 2: Menggunakan camelCase
+      return await prisma.booking.findMany({
+        ...queryOptions,
+        include: { vehicle: true, route: true, tourPackage: true }
+      });
+    } catch (err2) {
+      // Percobaan 3: Tanpa include paket tour jika tabel belum sinkron
+      return await prisma.booking.findMany({
+        ...queryOptions,
+        include: { vehicle: true, route: true }
+      });
+    }
+  }
+};
+
 // 1. Ambil Semua Data Booking (Read All)
 exports.getAllBookings = async (req, res) => {
   try {
-    const bookings = await prisma.booking.findMany({
-      orderBy: { id: 'desc' },
-      include: {
-        vehicle: true,
-        route: true,
-        tour_package: true
-      }
-    });
+    const bookings = await fetchBookingsWithInclude({ orderBy: { id: 'desc' } });
 
     res.json({
       success: true,
@@ -74,7 +96,7 @@ exports.getAllBookings = async (req, res) => {
   }
 };
 
-// 2. Buat Booking Baru (Create dengan Dukungan Paket Tour)
+// 2. Buat Booking Baru
 exports.createBooking = async (req, res) => {
   try {
     const {
@@ -112,62 +134,47 @@ exports.createBooking = async (req, res) => {
     const validRouteId = (route_id || routeId) ? Number(route_id || routeId) : null;
     const validTourPackageId = (tour_package_id || tourPackageId) ? Number(tour_package_id || tourPackageId) : null;
 
+    const bookingDataSnake = {
+      booking_code,
+      customer_name: name,
+      customer_phone: phone,
+      customer_email: customer_email || customerEmail || null,
+      service_type: parseServiceType(service_type || serviceType),
+      vehicle_id: validVehicleId,
+      route_id: validRouteId,
+      tour_package_id: validTourPackageId,
+      passenger_count: Number(passenger_count || passengerCount) || 1,
+      pickup_date: new Date(rawDate),
+      pickup_time: parsePickupTime(rawTime),
+      pickup_address: address || '',
+      notes: notes || '',
+      total_price: price ? parseFloat(price) : 0,
+      status: 'pending'
+    };
+
     let newBooking;
     try {
-      newBooking = await prisma.booking.create({
-        data: {
-          booking_code,
-          customer_name: name,
-          customer_phone: phone,
-          customer_email: customer_email || customerEmail || null,
-          service_type: parseServiceType(service_type || serviceType),
-          vehicle_id: validVehicleId,
-          route_id: validRouteId,
-          tour_package_id: validTourPackageId,
-          passenger_count: Number(passenger_count || passengerCount) || 1,
-          pickup_date: new Date(rawDate),
-          pickup_time: parsePickupTime(rawTime),
-          pickup_address: address || '',
-          notes: notes || '',
-          total_price: price ? parseFloat(price) : 0,
-          status: 'pending'
-        },
-        include: {
-          vehicle: true,
-          route: true,
-          tour_package: true
-        }
-      });
+      newBooking = await prisma.booking.create({ data: bookingDataSnake });
     } catch (err) {
-      // Fallback jika Prisma Client belum di-generate ulang
-      if (err.message && err.message.includes('Unknown field')) {
-        newBooking = await prisma.booking.create({
-          data: {
-            bookingCode: booking_code,
-            customerName: name,
-            customerPhone: phone,
-            customerEmail: customer_email || customerEmail || null,
-            serviceType: parseServiceType(service_type || serviceType),
-            vehicleId: validVehicleId,
-            routeId: validRouteId,
-            tourPackageId: validTourPackageId,
-            passengerCount: Number(passenger_count || passengerCount) || 1,
-            pickupDate: new Date(rawDate),
-            pickupTime: parsePickupTime(rawTime),
-            pickupAddress: address || '',
-            notes: notes || '',
-            totalPrice: price ? parseFloat(price) : 0,
-            status: 'pending'
-          },
-          include: {
-            vehicle: true,
-            route: true,
-            tour_package: true
-          }
-        });
-      } else {
-        throw err;
-      }
+      // Fallback jika Prisma Client menggunakan camelCase
+      const bookingDataCamel = {
+        bookingCode: booking_code,
+        customerName: name,
+        customerPhone: phone,
+        customerEmail: customer_email || customerEmail || null,
+        serviceType: parseServiceType(service_type || serviceType),
+        vehicleId: validVehicleId,
+        routeId: validRouteId,
+        tourPackageId: validTourPackageId,
+        passengerCount: Number(passenger_count || passengerCount) || 1,
+        pickupDate: new Date(rawDate),
+        pickupTime: parsePickupTime(rawTime),
+        pickupAddress: address || '',
+        notes: notes || '',
+        totalPrice: price ? parseFloat(price) : 0,
+        status: 'pending'
+      };
+      newBooking = await prisma.booking.create({ data: bookingDataCamel });
     }
 
     res.status(201).json({
@@ -186,18 +193,22 @@ exports.createBooking = async (req, res) => {
   }
 };
 
-// 3. Cek Booking Berdasarkan Kode Booking (Tracking Pelanggan)
+// 3. Cek Booking Berdasarkan Kode Booking
 exports.getBookingByCode = async (req, res) => {
   try {
     const { code } = req.params;
-    const booking = await prisma.booking.findUnique({
-      where: { booking_code: code },
-      include: {
-        vehicle: true,
-        route: true,
-        tour_package: true
-      }
-    });
+    let booking;
+
+    try {
+      booking = await prisma.booking.findFirst({
+        where: { OR: [{ booking_code: code }, { bookingCode: code }] },
+        include: { vehicle: true, route: true }
+      });
+    } catch (e) {
+      booking = await prisma.booking.findFirst({
+        where: { booking_code: code }
+      });
+    }
 
     if (!booking) {
       return res.status(404).json({
@@ -219,7 +230,7 @@ exports.getBookingByCode = async (req, res) => {
   }
 };
 
-// 4. Perbarui Status Booking (Update Status)
+// 4. Perbarui Status Booking
 exports.updateBookingStatus = async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -237,8 +248,7 @@ exports.updateBookingStatus = async (req, res) => {
 
     const updated = await prisma.booking.update({
       where: { id },
-      data: { status: validStatus },
-      include: { vehicle: true, route: true, tour_package: true }
+      data: { status: validStatus }
     });
 
     res.json({
@@ -255,7 +265,7 @@ exports.updateBookingStatus = async (req, res) => {
   }
 };
 
-// 5. Hapus Booking (Delete)
+// 5. Hapus Booking
 exports.deleteBooking = async (req, res) => {
   try {
     const id = Number(req.params.id);
