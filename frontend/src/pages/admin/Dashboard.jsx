@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getVehicles, getRoutes, getGalleries, getBlogs } from '@/services/api';
+import axios from 'axios';
+import { getVehicles, getRoutes, getGalleries, getBlogs, getBookings } from '@/services/api';
 import AdminNavbar from '@/components/AdminNavbar';
 
 const Dashboard = () => {
@@ -26,27 +27,62 @@ const Dashboard = () => {
     const adminDisplayName = getAdminDisplayName();
 
     const [stats, setStats] = useState({
+        totalRevenue: 0,
+        totalBookings: 0,
         totalVehicles: 0,
         totalRoutes: 0,
         totalGalleries: 0,
-        totalBlogs: 0
+        totalBlogs: 0,
+        favoriteVehicles: []
     });
     const [loading, setLoading] = useState(true);
 
+    const formatRupiah = (number) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            maximumFractionDigits: 0
+        }).format(number || 0);
+    };
+
     useEffect(() => {
-        // Ambil data statistik dari seluruh endpoint backend
+        const token = localStorage.getItem('token');
+
+        // Ambil data analitik serta data seluruh modul secara paralel dengan fallback mandiri
         Promise.all([
+            axios.get('/api/admin/analytics', {
+                headers: { Authorization: `Bearer ${token}` }
+            }).catch(() => ({ data: { success: false, data: null } })),
+            getBookings().catch(() => ({ data: { data: [] } })),
             getVehicles().catch(() => ({ data: { data: [] } })),
             getRoutes().catch(() => ({ data: { data: [] } })),
             getGalleries().catch(() => ({ data: { data: [] } })),
             getBlogs().catch(() => ({ data: { data: [] } }))
         ])
-            .then(([resVehicles, resRoutes, resGalleries, resBlogs]) => {
+            .then(([resAnalytics, resBookings, resVehicles, resRoutes, resGalleries, resBlogs]) => {
+                const analyticsData = resAnalytics.data?.success ? resAnalytics.data.data : null;
+                const bookingsList = Array.isArray(resBookings.data?.data) ? resBookings.data.data : [];
+
+                // Hitung cadangan jumlah transaksi dari endpoint /api/bookings
+                const fallbackTotalBookings = bookingsList.length;
+
+                // Hitung cadangan pendapatan dari pesanan yang berstatus selesai/terkonfirmasi
+                const fallbackTotalRevenue = bookingsList
+                    .filter(b => ['confirmed', 'completed', 'CONFIRMED', 'COMPLETED'].includes(b.status))
+                    .reduce((sum, b) => sum + Number(b.total_price || b.totalPrice || 0), 0);
+
                 setStats({
-                    totalVehicles: resVehicles.data.data?.length || 0,
-                    totalRoutes: resRoutes.data.data?.length || 0,
-                    totalGalleries: resGalleries.data.data?.length || 0,
-                    totalBlogs: resBlogs.data.data?.length || 0
+                    totalRevenue: (analyticsData?.totalRevenue && analyticsData.totalRevenue > 0)
+                        ? analyticsData.totalRevenue
+                        : fallbackTotalRevenue,
+                    totalBookings: (analyticsData?.totalBookings && analyticsData.totalBookings > 0)
+                        ? analyticsData.totalBookings
+                        : fallbackTotalBookings,
+                    totalVehicles: analyticsData?.totalVehicles || resVehicles.data?.data?.length || 0,
+                    totalRoutes: resRoutes.data?.data?.length || 0,
+                    totalGalleries: resGalleries.data?.data?.length || 0,
+                    totalBlogs: resBlogs.data?.data?.length || 0,
+                    favoriteVehicles: analyticsData?.favoriteVehicles || []
                 });
                 setLoading(false);
             })
@@ -62,7 +98,7 @@ const Dashboard = () => {
 
             <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
 
-                {/* Banner Hero Header Diselaraskan dengan Home.jsx */}
+                {/* Banner Hero Header */}
                 <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-200/80 relative overflow-hidden">
                     <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-sky-50 rounded-full blur-2xl pointer-events-none" />
 
@@ -87,7 +123,49 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Grid Kartu Statistik Berstrik & Konsisten */}
+                {/* Baris Utama KPI Keuangan & Transaksi */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                    {/* Card KPI Pendapatan */}
+                    <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs flex items-center justify-between">
+                        <div>
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                                Total Pendapatan Layanan
+                            </span>
+                            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                                {loading ? '...' : formatRupiah(stats.totalRevenue)}
+                            </h2>
+                            <span className="text-[11px] text-emerald-600 font-semibold mt-1 inline-flex items-center gap-1">
+                                <i className="fa-solid fa-circle-check"></i> Pesanan Selesai & Terkonfirmasi
+                            </span>
+                        </div>
+                        <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl shadow-xs">
+                            <i className="fa-solid fa-wallet"></i>
+                        </div>
+                    </div>
+
+                    {/* Card KPI Total Pemesanan */}
+                    <div
+                        onClick={() => navigate('/admin/bookings')}
+                        className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer group flex items-center justify-between"
+                    >
+                        <div>
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                                Total Transaksi Pemesanan
+                            </span>
+                            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0194F3]">
+                                {loading ? '...' : `${stats.totalBookings} Transaksi`}
+                            </h2>
+                            <span className="text-[11px] text-slate-400 font-medium mt-1 inline-block">
+                                Klik untuk mengelola pesanan masuk
+                            </span>
+                        </div>
+                        <div className="w-14 h-14 rounded-2xl bg-sky-50 text-[#0194F3] group-hover:bg-[#0194F3] group-hover:text-white transition-colors flex items-center justify-center text-2xl shadow-xs">
+                            <i className="fa-solid fa-receipt"></i>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Grid Kartu Statistik Modul */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
 
                     {/* Card 1: Rute & Tarif */}
@@ -172,67 +250,6 @@ const Dashboard = () => {
                         <div className="w-13 h-13 rounded-xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors flex items-center justify-center text-xl shadow-xs">
                             <i className="fa-solid fa-blog"></i>
                         </div>
-                    </div>
-                </div>
-
-                {/* Pintasan Akses Cepat Bergaya Form Hero */}
-                <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-md">
-                    <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
-                        <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                            <i className="fa-solid fa-[#0194F3] fa-bolt text-[#0194F3]"></i>
-                            Pintasan Manajemen Cepat
-                        </h3>
-                        <span className="text-[11px] text-slate-400 font-medium">Navigasi Langsung</span>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-                        <button
-                            type="button"
-                            onClick={() => navigate('/admin/bookings')}
-                            className="p-4 rounded-xl border border-slate-200 hover:border-[#0194F3] hover:bg-sky-50/40 text-left transition-all cursor-pointer group shadow-2xs hover:shadow-xs"
-                        >
-                            <div className="w-9 h-9 rounded-lg bg-sky-50 text-[#0194F3] flex items-center justify-center mb-3 group-hover:bg-[#0194F3] group-hover:text-white transition-colors">
-                                <i className="fa-solid fa-clipboard-list text-sm"></i>
-                            </div>
-                            <span className="text-xs font-extrabold text-slate-800 group-hover:text-[#0194F3] block">Kelola Pemesanan</span>
-                            <span className="text-[10px] text-slate-400 block mt-0.5">Cek pesanan masuk</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => navigate('/admin/routes')}
-                            className="p-4 rounded-xl border border-slate-200 hover:border-[#0194F3] hover:bg-sky-50/40 text-left transition-all cursor-pointer group shadow-2xs hover:shadow-xs"
-                        >
-                            <div className="w-9 h-9 rounded-lg bg-sky-50 text-[#0194F3] flex items-center justify-center mb-3 group-hover:bg-[#0194F3] group-hover:text-white transition-colors">
-                                <i className="fa-solid fa-route text-sm"></i>
-                            </div>
-                            <span className="text-xs font-extrabold text-slate-800 group-hover:text-[#0194F3] block">Atur Rute &amp; Tarif</span>
-                            <span className="text-[10px] text-slate-400 block mt-0.5">Kelola harga lokasi</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => navigate('/admin/galleries')}
-                            className="p-4 rounded-xl border border-slate-200 hover:border-[#0194F3] hover:bg-sky-50/40 text-left transition-all cursor-pointer group shadow-2xs hover:shadow-xs"
-                        >
-                            <div className="w-9 h-9 rounded-lg bg-sky-50 text-[#0194F3] flex items-center justify-center mb-3 group-hover:bg-[#0194F3] group-hover:text-white transition-colors">
-                                <i className="fa-solid fa-images text-sm"></i>
-                            </div>
-                            <span className="text-xs font-extrabold text-slate-800 group-hover:text-[#0194F3] block">Upload Galeri</span>
-                            <span className="text-[10px] text-slate-400 block mt-0.5">Tambah dokumentasi</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => navigate('/admin/blogs')}
-                            className="p-4 rounded-xl border border-slate-200 hover:border-[#0194F3] hover:bg-sky-50/40 text-left transition-all cursor-pointer group shadow-2xs hover:shadow-xs"
-                        >
-                            <div className="w-9 h-9 rounded-lg bg-sky-50 text-[#0194F3] flex items-center justify-center mb-3 group-hover:bg-[#0194F3] group-hover:text-white transition-colors">
-                                <i className="fa-solid fa-pen-to-square text-sm"></i>
-                            </div>
-                            <span className="text-xs font-extrabold text-slate-800 group-hover:text-[#0194F3] block">Tulis Blog</span>
-                            <span className="text-[10px] text-slate-400 block mt-0.5">Artikel &amp; berita</span>
-                        </button>
                     </div>
                 </div>
 

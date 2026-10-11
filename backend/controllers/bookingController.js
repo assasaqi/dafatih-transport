@@ -331,3 +331,44 @@ exports.deleteBooking = async (req, res) => {
     });
   }
 };
+
+// 6. Ambil Tanggal Terpesan untuk Kalender Ketersediaan Armada
+exports.getVehicleAvailability = async (req, res) => {
+  try {
+    const vehicleId = Number(req.params.vehicleId);
+    if (isNaN(vehicleId)) {
+      return res.status(400).json({ success: false, message: 'ID kendaraan tidak valid' });
+    }
+
+    let bookings = [];
+    try {
+      bookings = await prisma.booking.findMany({
+        where: {
+          vehicle_id: vehicleId,
+          status: { notIn: ['cancelled', 'rejected'] }
+        },
+        select: { pickup_date: true }
+      });
+    } catch (e) {
+      bookings = await prisma.booking.findMany({
+        where: {
+          vehicleId: vehicleId,
+          status: { notIn: ['cancelled', 'rejected'] }
+        },
+        select: { pickupDate: true }
+      });
+    }
+
+    const bookedDates = bookings
+      .map(b => b.pickup_date || b.pickupDate)
+      .filter(Boolean);
+
+    return res.json({ success: true, data: bookedDates });
+  } catch (error) {
+    console.error('Error pada getVehicleAvailability:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil data ketersediaan: ' + error.message
+    });
+  }
+};

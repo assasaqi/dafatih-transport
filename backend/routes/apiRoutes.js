@@ -9,6 +9,7 @@ const vehicleController = require('../controllers/vehicleController');
 const bookingController = require('../controllers/bookingController');
 const blogController = require('../controllers/blogController');
 const galleryController = require('../controllers/galleryController');
+const adminController = require('../controllers/adminController');
 
 // Import Middleware Upload Multer & Kompresi WebP
 const { upload, compressImage } = require('../middleware/upload');
@@ -71,6 +72,7 @@ router.delete('/routes/:id', authenticateToken, isAdmin, getHandler(routeControl
 // 4. Vehicle / Armada Routes (Publik Read, Admin Write)
 // ==========================================
 router.get('/vehicles', getHandler(vehicleController, 'getAllVehicles', 'getVehicles'));
+router.get('/vehicles/:vehicleId/availability', getHandler(bookingController, 'getVehicleAvailability'));
 router.post('/vehicles', authenticateToken, isAdmin, upload.single('image'), compressImage, validate(vehicleSchema), getHandler(vehicleController, 'createVehicle'));
 router.put('/vehicles/:id', authenticateToken, isAdmin, upload.single('image'), compressImage, validate(vehicleSchema), getHandler(vehicleController, 'updateVehicle'));
 router.delete('/vehicles/:id', authenticateToken, isAdmin, getHandler(vehicleController, 'deleteVehicle'));
@@ -98,5 +100,10 @@ router.get('/galleries', getHandler(galleryController, 'getAllGalleries', 'getGa
 router.post('/galleries', authenticateToken, isAdmin, upload.single('image'), compressImage, validate(gallerySchema), getHandler(galleryController, 'createGallery'));
 router.put('/galleries/:id', authenticateToken, isAdmin, upload.single('image'), compressImage, validate(gallerySchema), getHandler(galleryController, 'updateGallery'));
 router.delete('/galleries/:id', authenticateToken, isAdmin, getHandler(galleryController, 'deleteGallery'));
+
+// ==========================================
+// 8. Admin Analytics & Dashboard Routes
+// ==========================================
+router.get('/admin/analytics', authenticateToken, isAdmin, getHandler(adminController, 'getDashboardAnalytics'));
 
 module.exports = router;

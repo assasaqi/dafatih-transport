@@ -74,7 +74,7 @@ const login = async (req, res) => {
     }
 
     const currentRole = String(user.role || '').toLowerCase().trim();
-    if (currentRole !== 'admin') {
+    if (currentRole !== 'admin' && currentRole !== 'superadmin' && currentRole !== 'super_admin') {
       return res.status(403).json({
         success: false,
         message: 'Akses ditolak! Halaman ini khusus untuk Administrator.'
@@ -88,7 +88,7 @@ const login = async (req, res) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'dafatih-secret-key',
+      process.env.JWT_SECRET || 'dafatih_secret_key_2026',
       { expiresIn: '1d' }
     );
 
@@ -104,16 +104,16 @@ const login = async (req, res) => {
   }
 };
 
-// 3. Get Admin Profile
+// 3. Get Admin Profile (Mendukung JWT req.user & query email)
 const getProfile = async (req, res) => {
   try {
-    const { email } = req.query;
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Email wajib disertakan.' });
+    const emailToFind = req.query.email || (req.user && req.user.email);
+    if (!emailToFind) {
+      return res.status(400).json({ success: false, message: 'Email wajib disertakan atau sertakan Token Autentikasi.' });
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() }
+      where: { email: emailToFind.toLowerCase().trim() }
     });
 
     if (!user) {
@@ -126,17 +126,18 @@ const getProfile = async (req, res) => {
   }
 };
 
-// 4. Update Admin Profile
+// 4. Update Admin Profile (Mendukung JWT req.user & currentEmail)
 const updateProfile = async (req, res) => {
   try {
     const { currentEmail, name, newEmail, oldPassword, newPassword } = req.body;
+    const targetEmail = currentEmail || (req.user && req.user.email);
 
-    if (!currentEmail) {
+    if (!targetEmail) {
       return res.status(400).json({ success: false, message: 'Current Email wajib diisi!' });
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: currentEmail.toLowerCase().trim() }
+      where: { email: targetEmail.toLowerCase().trim() }
     });
 
     if (!user) {
