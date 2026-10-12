@@ -82,6 +82,7 @@ backend/
    Sinkronkan skema Prisma dengan database.
    ```bash
    npx prisma migrate dev --name init
+   npx prisma generate
    ```
 
 4. **Menjalankan Server:**
